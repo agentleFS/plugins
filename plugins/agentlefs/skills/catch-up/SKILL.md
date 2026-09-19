@@ -93,8 +93,8 @@ yet, with how many addressees refused. `your requests answered` lists requests t
 asked that someone closed or refused in the window. Lead with these when present: they are the one part of
 the output that is somebody else asking for something.
 
-Each line ends `[post <id>]`. `mcp__plugin_agentlefs_agentlefs__read_org_board` with `post` reads the
-thread; `mcp__plugin_agentlefs_agentlefs__post_org_board` with `reply_to` answers it, and with
+Each line ends `[post <id>]`. `read_org_board` with `post` reads the
+thread; `post_org_board` with `reply_to` answers it, and with
 `close: "closed"` closes it. Do not answer or close one on the user's behalf
 without asking — a request is addressed to them, not to you.
 
