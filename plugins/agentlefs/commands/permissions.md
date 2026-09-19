@@ -1,7 +1,7 @@
 ---
 description: Summarize what this credential can actually reach in agentleFS
 argument-hint: [folder]
-allowed-tools: mcp__agentlefs__list_org_folders
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders
 ---
 
 Report what **this credential** effectively reaches in agentleFS. Nothing more. This is a self-audit of the current principal's reach, not a report on anyone else's access.
@@ -10,15 +10,15 @@ Argument: `$ARGUMENTS` (optional folder to focus on).
 
 ## Step 1 - the reachable set
 
-Call `mcp__agentlefs__list_org_folders` with no arguments. What comes back is the complete set of folders this principal reaches. A folder absent from that list is either not granted to this principal or does not exist, and the two are indistinguishable by design.
+Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments. What comes back is the complete set of folders this principal reaches. A folder absent from that list is either not granted to this principal or does not exist, and the two are indistinguishable by design.
 
 If the list is empty, stop and say so: this credential reaches no folders. Likely no organization membership or no grants yet. Send them to `/agentlefs:connect`. Do not report "the organization has no content."
 
 ## Step 2 - per-folder shape
 
-If `$ARGUMENTS` names a folder, call `mcp__agentlefs__list_org_folders` with that folder and report only it.
+If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with that folder and report only it.
 
-If `$ARGUMENTS` is empty, orient across everything: call `mcp__agentlefs__list_org_folders` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
+If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
 
 Each per-folder call returns: how many files you can read, how many are `denied` (gated from you), a breakdown by type, and the labels present.
 

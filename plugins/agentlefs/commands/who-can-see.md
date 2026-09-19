@@ -1,16 +1,16 @@
 ---
 description: Answer who can see a agentleFS folder or document, honestly split by what is knowable here
 argument-hint: [folder-or-path]
-allowed-tools: mcp__agentlefs__list_org_folders, mcp__agentlefs__list_org_docs
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs
 ---
 
 Answer "who can see `$1`". The honest answer has two halves and they are not equally knowable from here. Keep them separate and never let the second half drift into speculation.
 
-Target: `$1`. If `$ARGUMENTS` is empty, call `mcp__agentlefs__list_org_folders` with no arguments, list the reachable folders, and ask which one they mean.
+Target: `$1`. If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, list the reachable folders, and ask which one they mean.
 
 ## Part 1 - what YOU can see (answerable now)
 
-Call `mcp__agentlefs__list_org_folders` with the folder. For a specific document, also call `mcp__agentlefs__list_org_docs` with the document's full `location`.
+Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with the folder. For a specific document, also call `mcp__plugin_agentlefs_agentlefs__list_org_docs` with the document's full `location`.
 
 Report:
 

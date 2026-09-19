@@ -1,13 +1,13 @@
 ---
 description: Connect this session to agentleFS and verify the connection with a real call
-allowed-tools: mcp__agentlefs__list_org_folders
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders
 ---
 
 Get the user from zero to a verified agentleFS connection. Work through the phases in order and stop as soon as the connection is proven working.
 
 ## Phase 1 - probe, do not lecture
 
-Call `mcp__agentlefs__list_org_folders` with no arguments. That single call answers almost everything, so make it first rather than asking the user about their setup.
+Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments. That single call answers almost everything, so make it first rather than asking the user about their setup.
 
 Interpret the outcome:
 
@@ -49,7 +49,7 @@ Report concretely:
 
 - Which endpoint is in use.
 - How many folders this credential reaches, and name a few.
-- Optionally, call `mcp__agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`).
+- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`).
 
 Then point onward, without re-explaining them:
 

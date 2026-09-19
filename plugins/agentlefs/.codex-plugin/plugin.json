@@ -1,6 +1,6 @@
 {
   "name": "agentlefs",
-  "version": "0.3.23",
+  "version": "0.3.27",
   "description": "Reach your organization's permissioned context over MCP, with browser sign-in and skills that explain who can see what.",
   "author": {
     "name": "agentleFS",

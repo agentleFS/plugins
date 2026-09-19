@@ -1,7 +1,7 @@
 ---
 name: context-researcher
 description: Answers questions from an organization's agentleFS knowledge with grounded, cited findings. Use when a question should be answered from org context (policies, runbooks, decisions, postmortems, onboarding docs, past projects) rather than from general knowledge or the local repo, and when the answer needs source citations.
-tools: mcp__agentlefs__list_org_folders, mcp__agentlefs__search_org_knowledge, mcp__agentlefs__list_org_docs, mcp__agentlefs__read_org_doc
+tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__read_org_doc
 model: sonnet
 ---
 

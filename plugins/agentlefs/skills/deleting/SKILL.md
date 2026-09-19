@@ -1,6 +1,6 @@
 ---
 name: deleting
-description: How to delete something from agentleFS without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest — and before calling mcp__agentlefs__delete_org_doc for any reason. Also use to explain why a delete was refused, or why deletion needs two calls.
+description: How to delete something from agentleFS without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest — and before calling mcp__plugin_agentlefs_agentlefs__delete_org_doc for any reason. Also use to explain why a delete was refused, or why deletion needs two calls.
 ---
 
 # Deleting from agentleFS
@@ -15,7 +15,7 @@ a human decides, and only then do you delete.**
 
 ## The tool makes you do it in two calls
 
-`mcp__agentlefs__delete_org_doc` will not delete on a first call. Call it without
+`mcp__plugin_agentlefs_agentlefs__delete_org_doc` will not delete on a first call. Call it without
 `confirm_token` and it deletes nothing — it returns what *would* go, plus a token:
 
 ```

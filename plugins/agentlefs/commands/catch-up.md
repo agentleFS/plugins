@@ -1,7 +1,7 @@
 ---
 description: Catch up on what you have been working on in agentleFS, and pick the thread back up
 argument-hint: [topic]
-allowed-tools: mcp__agentlefs__list_my_recent_work, mcp__agentlefs__list_org_folders, mcp__agentlefs__search_org_knowledge, mcp__agentlefs__read_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_my_recent_work, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
 ---
 
 Work out where the user left off and hand it back to them in a few sentences they can act on.
@@ -10,7 +10,7 @@ Focus: `$1` (optional). If `$ARGUMENTS` names a topic, let it steer everything b
 
 ## Step 1 - orient, once
 
-Call `mcp__agentlefs__list_my_recent_work`. Default window is 30 days; pass `days` only if they asked about something older.
+Call `mcp__plugin_agentlefs_agentlefs__list_my_recent_work`. Default window is 30 days; pass `days` only if they asked about something older.
 
 One call. If it did not tell you what you hoped, calling it again with a different window will not change that.
 
@@ -32,7 +32,7 @@ This matters because adoption varies enormously: some people put everything in a
 
 Orientation tells you where this person's work *tends* to live. That is a strong hint and a terrible filter.
 
-If their activity is all in `product/` and `$1` is about a deployment runbook, scoping `mcp__agentlefs__search_org_knowledge` to `product` guarantees you miss it — and you will never find out, because a search returning nothing looks exactly like a subject nobody wrote about.
+If their activity is all in `product/` and `$1` is about a deployment runbook, scoping `mcp__plugin_agentlefs_agentlefs__search_org_knowledge` to `product` guarantees you miss it — and you will never find out, because a search returning nothing looks exactly like a subject nobody wrote about.
 
 So use it to **interpret** ("the pricing doc" means the one in their folder), to **rank**, and to **go first**. Run at least one search without a folder scope before concluding the store has nothing.
 
@@ -40,7 +40,7 @@ So use it to **interpret** ("the pricing doc" means the one in their folder), to
 
 Orientation hands you filenames and they are tempting. Two or three well-chosen ones is almost always enough to answer or to ask a good question, and every extra one costs context they would rather spend on the actual work.
 
-Call `mcp__agentlefs__read_org_doc` on the ones that match what they asked, not the ones that are merely most recent. If nothing looks right, say what you found and ask — that is faster for them than watching you open six files that turn out to be wrong.
+Call `mcp__plugin_agentlefs_agentlefs__read_org_doc` on the ones that match what they asked, not the ones that are merely most recent. If nothing looks right, say what you found and ask — that is faster for them than watching you open six files that turn out to be wrong.
 
 ## Step 5 - report
 
@@ -58,7 +58,7 @@ Two things to keep straight when you write it up:
 
 - Do not describe their role, seniority, or team from activity counts. Writing eight documents in `engineering/` does not make someone an engineer — they might be the founder, a designer writing specs, or covering for someone on leave. Read the counts as places, not as a person.
 - Do not pass a folder filter to search based only on orientation.
-- Do not call `mcp__agentlefs__list_my_recent_work` repeatedly hunting for a better answer.
+- Do not call `mcp__plugin_agentlefs_agentlefs__list_my_recent_work` repeatedly hunting for a better answer.
 - Do not open every filename the orientation returned.
 - Do not report a thin or empty result as though the organization has written nothing.
 - Do not narrate your tool calls. They want to know where things stand.

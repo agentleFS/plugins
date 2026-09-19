@@ -14,9 +14,9 @@ Most requests that sound like publishing are not. Get this wrong and you copy co
 | The user wants | The right move | Not this |
 |---|---|---|
 | A colleague to read a document | A grant on the file or folder | A package |
-| To save something durable | `mcp__agentlefs__write_org_doc` | A package |
+| To save something durable | `mcp__plugin_agentlefs_agentlefs__write_org_doc` | A package |
 | One team to see a folder | A grant on that folder | A package |
-| Content **reused** in other workspaces — a handbook, a prompt library, a policy set, docs | `mcp__agentlefs__registry_publish` | A grant |
+| Content **reused** in other workspaces — a handbook, a prompt library, a policy set, docs | `mcp__plugin_agentlefs_agentlefs__registry_publish` | A grant |
 | The same content installed in many places, tracking updates | Publish, then install per site | Copying files |
 
 The test: **does someone need their own copy of this, somewhere else?** If they only need to *read* it where it already lives, that is a grant, and the `authorization-model` skill covers it.
@@ -61,24 +61,24 @@ So on a republish: omit `visibility` unless the user asked to CHANGE the audienc
 ### 1. Find out which handle you can publish under
 
 ```
-mcp__agentlefs__registry_handles
+mcp__plugin_agentlefs_agentlefs__registry_handles
 ```
 
 A package name is `@publisher/package` and **both halves are required**. Handles are owned globally, first-come — `@anthropic` is not free to take — so publishing under one you do not own is refused rather than silently renamed.
 
-If the list is empty, claim one with `mcp__agentlefs__registry_claim_handle`. Confirm the exact spelling with the user first: the claim is global, permanent, and there is no release.
+If the list is empty, claim one with `mcp__plugin_agentlefs_agentlefs__registry_claim_handle`. Confirm the exact spelling with the user first: the claim is global, permanent, and there is no release.
 
 ### 2. Choose the root and list its files
 
 ```
-mcp__agentlefs__list_org_folders          # what folders exist
-mcp__agentlefs__list_org_docs             # what is in the one you picked
+mcp__plugin_agentlefs_agentlefs__list_org_folders          # what folders exist
+mcp__plugin_agentlefs_agentlefs__list_org_docs             # what is in the one you picked
 ```
 
 ### 3. Publish
 
 ```
-mcp__agentlefs__registry_publish
+mcp__plugin_agentlefs_agentlefs__registry_publish
   name: "@acme/handbook"
   version: "1.0.0"
   root: "handbook"
@@ -97,9 +97,9 @@ Quote the package name, version and visibility back to the user. If the result c
 ## Installing a package
 
 ```
-mcp__agentlefs__registry_browse                     # the catalog
-mcp__agentlefs__registry_install                    # into a site you own
-mcp__agentlefs__registry_retrieve                   # which version a site serves
+mcp__plugin_agentlefs_agentlefs__registry_browse                     # the catalog
+mcp__plugin_agentlefs_agentlefs__registry_install                    # into a site you own
+mcp__plugin_agentlefs_agentlefs__registry_retrieve                   # which version a site serves
 ```
 
 **The install site is the ACL.** Installing does not copy files into the organization; it links the package at a folder, and that folder's permissions decide who can read it. So install into a folder whose audience already matches who should see the package, and check that before installing rather than after.

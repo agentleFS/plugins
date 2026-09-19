@@ -1,7 +1,7 @@
 ---
 description: Seed agentleFS with what you already know about this project, so the store isn't empty
 argument-hint: [folder]
-allowed-tools: mcp__agentlefs__list_org_folders, mcp__agentlefs__list_org_docs, mcp__agentlefs__write_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__write_org_doc
 ---
 
 Fill a reachable-but-empty agentleFS with durable knowledge about the current project. A new store has working semantic search and nothing to search — this closes that gap in one pass.
@@ -10,14 +10,14 @@ Target folder: `$1` (optional). If `$ARGUMENTS` is empty, pick the target in Ste
 
 ## Step 1 - find a folder you can write to
 
-Call `mcp__agentlefs__list_org_folders` with no arguments.
+Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments.
 
 | Outcome | Do this |
 |---|---|
 | One or more folders | If `$1` names one, use it. Otherwise show the list and ask which to write into. |
 | Empty list | Stop. This credential reaches nothing — send them to `/agentlefs:connect`, and do not report the organization as having no content. |
 
-Then call `mcp__agentlefs__list_org_docs` on the chosen folder. Two reasons: it tells you whether the store is actually empty, and it shows you the `type` and label conventions already in use.
+Then call `mcp__plugin_agentlefs_agentlefs__list_org_docs` on the chosen folder. Two reasons: it tells you whether the store is actually empty, and it shows you the `type` and label conventions already in use.
 
 ## Step 2 - decide what is worth persisting
 
@@ -36,7 +36,7 @@ Take stock of what you have learned in this session and from the repository in f
 
 One idea per document. A single dumped file is a file nobody finds.
 
-For each, call `mcp__agentlefs__write_org_doc` with the chosen folder, a descriptive path, and frontmatter that **matches the neighboring files you listed in Step 1** — `type` and `tags` especially. Tags drive search; they are not access controls. A mis-tagged file is a file nobody retrieves.
+For each, call `mcp__plugin_agentlefs_agentlefs__write_org_doc` with the chosen folder, a descriptive path, and frontmatter that **matches the neighboring files you listed in Step 1** — `type` and `tags` especially. Tags drive search; they are not access controls. A mis-tagged file is a file nobody retrieves.
 
 The write commits if your grant allows it and is refused if it does not. There is no staging step to choose and no review queue between you and the store, so a successful write is live and agent-visible immediately.
 

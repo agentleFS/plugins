@@ -1,19 +1,19 @@
 ---
 description: Plan sharing a agentleFS folder or document, then hand off to the console
 argument-hint: [folder-or-path]
-allowed-tools: mcp__agentlefs__list_org_folders, mcp__agentlefs__list_org_docs
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs
 ---
 
 Help the user share `$1` with someone. Your job is to get the decision right and show its blast radius **before** they click. The grant itself happens in the console, because this credential cannot mutate grants.
 
-Target: `$1` (a `location` — a full path from the workspace root, naming either a folder like `product` or a single document like `product/runbooks/deploy.md`). If `$ARGUMENTS` is empty, call `mcp__agentlefs__list_org_folders` with no arguments, show the reachable folders, and ask which one they mean.
+Target: `$1` (a `location` — a full path from the workspace root, naming either a folder like `product` or a single document like `product/runbooks/deploy.md`). If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, show the reachable folders, and ask which one they mean.
 
 ## Step 1 - orient on what the recipient would get
 
 Do this first. Sharing decisions go wrong because the sharer does not know how much is under the thing they are sharing.
 
-- For a folder: call `mcp__agentlefs__list_org_folders` with that folder. Report how many files are there, the type breakdown, and the labels.
-- For a single document: call `mcp__agentlefs__list_org_docs` with the document's `location` to confirm it exists and is the intended file.
+- For a folder: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with that folder. Report how many files are there, the type breakdown, and the labels.
+- For a single document: call `mcp__plugin_agentlefs_agentlefs__list_org_docs` with the document's `location` to confirm it exists and is the intended file.
 
 Then state the blast radius explicitly: **grants cascade down the folder tree.** A grant on a folder reaches every descendant of that folder, including subdirectories and files added later. A grant scoped to one document reaches only that document.
 
