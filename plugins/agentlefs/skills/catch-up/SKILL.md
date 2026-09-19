@@ -84,6 +84,20 @@ Pick by what the user asked, not by what is most recent. If nothing looks right,
 say what you found and ask — that is faster for them than watching you open six
 files that turn out to be wrong.
 
+## What is waiting on them
+
+Three sections may follow the activity. `waiting on you` lists open requests other
+people or their agents left on a board and addressed to this person, anywhere they
+can read. `you asked, still open` lists requests they asked that nobody has answered
+yet, with how many addressees refused. `your requests answered` lists requests they
+asked that someone closed or refused in the window. Lead with these when present: they are the one part of
+the output that is somebody else asking for something.
+
+Each line ends `[post <id>]`. `mcp__agentlefs__read_org_board` with `post` reads the
+thread; `mcp__agentlefs__post_org_board` with `reply_to` answers it, and with
+`close: "closed"` closes it. Do not answer or close one on the user's behalf
+without asking — a request is addressed to them, not to you.
+
 ## What the output is not
 
 `list_my_recent_work` reports what someone **did**. It never says what they

@@ -30,7 +30,7 @@ Explain these points, briefly:
 
 After they report signing in, re-run Phase 1. Do not claim success on the strength of the browser flow alone; only a successful tool call proves it.
 
-If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` returns `{"ok":true,"vectorIndex":true,"paths":{"/mcp":"all"},"oauth":true}` when healthy.
+If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` returns `{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"paths":{"/mcp":"all"},"oauth":true}` when healthy.
 
 ## Phase 3 - signed in, but seeing nothing
 
@@ -75,7 +75,7 @@ Say plainly that semantic search is already on server-side (`vectorIndex: true`)
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Tools absent from `/mcp` entirely | Plugin installed but Claude Code not restarted since | Restart Claude Code — `/reload-plugins` does not bring up the MCP server |
+| Tools absent from `/mcp` entirely | Plugin installed from a shell, so the `/plugin` menu never closed and never reloaded | Type `/reload-plugins`. On v2.1.268+ it connects plugin MCP servers in an interactive terminal; only the desktop app, the Agent SDK and `-p` still need a restart |
 | Tools vanished after a crash | Prior session died without a clean shutdown, so project plugin state was never written back | Restart. The credential is almost certainly still valid; do not re-auth first |
 | 401 loop, sign-in never sticks | Browser flow was abandoned or cookies blocked | Re-run `/mcp`, complete the flow in a normal browser window |
 | 404 on every call | Endpoint points at the console host instead of the MCP host | It must be `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |

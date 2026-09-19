@@ -40,7 +40,7 @@ The `denied` count is your single most useful signal. A folder where gated files
 
 Labels carry zero authority. No authorization decision reads them. An unlabeled file is not public; a sensitively-labeled file is not thereby restricted. Access comes only from explicit reach grants.
 
-Console role is not the same question as file access, but it is not a separate engine either. Cerbos is gone; console actions resolve through the same OpenFGA ladder, where anything above a small read-only floor requires ownership of the tenant root. So a tenant-root owner does reach every file in the workspace — that is what owning the root means — while a folder-scope owner reaches only their subtree.
+Console role is not the same question as file access, but it is not a separate engine either. There is no separate policy engine; console actions resolve through the same OpenFGA ladder, where anything above a small read-only floor requires ownership of the tenant root. So a tenant-root owner does reach every file in the workspace — that is what owning the root means — while a folder-scope owner reaches only their subtree.
 
 If a call errors rather than returning a shorter list, surface the error. The read path is fail-closed: a truncated allow-set throws rather than filtering on a subset. An error is the system refusing to under-report, and it must not be smoothed into a partial summary.
 

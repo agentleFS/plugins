@@ -1,12 +1,15 @@
 {
   "name": "agentlefs",
   "displayName": "agentleFS",
-  "version": "0.3.0",
+  "version": "0.3.23",
   "description": "Reach your organization's permissioned context over MCP, with browser sign-in and commands that explain who can see what.",
   "author": {
-    "name": "agentleFS"
+    "name": "agentleFS",
+    "url": "https://agentlefs.com"
   },
   "homepage": "https://agentlefs.com",
+  "repository": "https://github.com/agentleFS/plugins",
+  "license": "MIT",
   "keywords": [
     "mcp",
     "agentlefs",

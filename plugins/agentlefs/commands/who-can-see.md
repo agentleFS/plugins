@@ -46,7 +46,7 @@ Give the user these three ideas, because a grant list is misleading without them
 - **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. The "Shared with" list marks that as inherited.
 - **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. The reach lens resolves this; a raw grant list does not.
 
-Also worth stating: console tools and file reads are different questions, but not different engines. Cerbos is gone — both resolve through the same OpenFGA ladder. Console actions above a small read-only floor require ownership of the **tenant root**, and owning the root does reach every file in the workspace, because that is what owning the root means. A folder-scope owner reaches only their subtree.
+Also worth stating: console tools and file reads are different questions, but not different engines. There is no separate policy engine — both resolve through the same OpenFGA ladder. Console actions above a small read-only floor require ownership of the **tenant root**, and owning the root does reach every file in the workspace, because that is what owning the root means. A folder-scope owner reaches only their subtree.
 
 ## What you must NOT do
 

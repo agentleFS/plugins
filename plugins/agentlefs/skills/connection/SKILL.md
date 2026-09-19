@@ -17,10 +17,12 @@ description: How the agentleFS MCP connection authenticates, and how to diagnose
 Healthy `GET /healthz` returns:
 
 ```json
-{"ok":true,"vectorIndex":true,"paths":{"/mcp":"all"},"oauth":true}
+{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"paths":{"/mcp":"all"},"oauth":true}
 ```
 
 `vectorIndex: true` means semantic search is available. Without it, `how="meaning"` degrades to text search rather than failing.
+
+`build` names the deployed container — the commit sha it was built from, or the release name when one is set, and the literal `"unknown"` on a stack that was built without either (a local `docker compose` run, normally). It is the fact to quote when a deploy looks stale or when two clients disagree about what the server just did: the console answers the same field at `https://agentlefs.com/v1/health`, and the two services deploy separately, so they can legitimately name different builds for a few minutes and illegitimately for much longer (#840).
 
 ## The auth flow: OAuth with Dynamic Client Registration
 

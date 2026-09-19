@@ -21,19 +21,25 @@ plugin is what makes your agent reach for it unprompted, and - just as important
 stops it from telling you "your org never documented this" when the honest answer is "I
 can't see that."
 
-## Claude Code and Claude Desktop (3 steps, about a minute)
+## Claude Code and Claude Desktop (2 steps, about a minute)
 
 **1. Add the marketplace and install.**
 
 ```
-/plugin marketplace add ContextHubApps/plugins
+/plugin marketplace add agentleFS/plugins
 /plugin install agentlefs@agentlefs
 ```
 
-**2. Restart Claude Code.** The plugin's MCP server only comes up on a fresh start.
-Skipping this is the single most common reason the tools don't appear.
+**No restart, on Claude Code v2.1.268 or later.** Closing the `/plugin` menu runs
+`/reload-plugins` for you, and that connects the plugin's MCP server in the session you
+are already in. If you installed from a shell instead — `claude plugin install …`, or an
+agent doing it for you — the menu never opened, so type `/reload-plugins` yourself.
 
-**3. Connect.**
+Below v2.1.268, and in Claude Desktop, restart instead: the reload does not connect
+plugin MCP servers in a session without an interactive terminal, which includes the
+desktop app, the Agent SDK and `-p`.
+
+**2. Connect.**
 
 ```
 /agentlefs:connect
@@ -114,7 +120,7 @@ expect to work the other way round.
 **1. Add the marketplace** in a terminal:
 
 ```
-codex plugin marketplace add ContextHubApps/plugins
+codex plugin marketplace add agentleFS/plugins
 ```
 
 **2. Install it.** In the CLI, start `codex` and run `/plugins` to open the plugin

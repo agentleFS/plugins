@@ -1,13 +1,13 @@
 {
   "name": "agentlefs",
-  "version": "0.3.0",
+  "version": "0.3.23",
   "description": "Reach your organization's permissioned context over MCP, with browser sign-in and skills that explain who can see what.",
   "author": {
     "name": "agentleFS",
     "url": "https://agentlefs.com"
   },
   "homepage": "https://agentlefs.com",
-  "repository": "https://github.com/ContextHubApps/plugins",
+  "repository": "https://github.com/agentleFS/plugins",
   "license": "MIT",
   "keywords": [
     "mcp",
@@ -25,7 +25,10 @@
     "longDescription": "agentleFS is a permissioned org-context store. This plugin registers the hosted MCP server with browser sign-in — no token to mint or paste — and bundles the skills that explain how authorization works, what a thin result means, and how to write durable conclusions back.",
     "developerName": "agentleFS",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://agentlefs.com",
     "privacyPolicyURL": "https://agentlefs.com/privacy",
     "termsOfServiceURL": "https://agentlefs.com/terms",

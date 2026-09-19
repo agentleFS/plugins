@@ -1,6 +1,6 @@
 ---
 name: authorization-model
-description: How agentleFS decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, Cerbos anywhere, and owner-outside-the-ladder).
+description: How agentleFS decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, a separate policy engine anywhere, and owner-outside-the-ladder).
 ---
 
 # agentleFS authorization
@@ -104,8 +104,8 @@ Labels inherit from a folder or directory for discovery purposes, so a folder's 
 **Wrong: tag-based ABAC, where untagged content is publicly readable.**
 This design is REMOVED and repeating it is a correctness failure. There was a version where security tags formed an authorization axis and untagged content was readable by anyone in the tenant. Since the security-tag axis was removed, reach grants plus group membership are the ONLY axis. Untagged content is not public. It is ungranted, therefore invisible.
 
-**Wrong: Cerbos decides anything.**
-Cerbos is GONE — the policy files, the sidecar, the service. It decided console RBAC until #219, and an older design put it on file access before that. Every decision is OpenFGA ReBAC now. If you find yourself explaining any denial in terms of a Cerbos policy, you have the wrong model.
+**Wrong: a separate policy engine or sidecar decides anything.**
+There is no policy service, no policy file and no sidecar. One existed until #219 — it decided console RBAC, and an older design put it on file access before that. Every decision is OpenFGA ReBAC now. If you find yourself explaining any denial in terms of a a policy file, you have the wrong model.
 
 **Wrong: an empty result proves nothing exists.**
 See above. This is the failure this system is specifically built to prevent you from making.
@@ -135,5 +135,5 @@ That was true, and it was the defect #219 fixed. Ownership is the top of one lad
 | Existence-oracle parity tests | `apps/mcp-server/tests/exposure-parity.test.ts` |
 | The console ladder and the tenant root | `packages/core/src/authz/console-ladder.ts` |
 | Expected behavior matrix | `docs/permissioning-test-matrix.md` |
-| Engine choice and its addendum | `docs/adr/0001-authorization-engine-cerbos-now-openfga-when-hierarchical.md` |
+| Why OpenFGA, and the addendum that replaced what came before | `docs/adr/0001-authorization-engine-cerbos-now-openfga-when-hierarchical.md` (historical record; the filename names the engine #219 removed) |
 | Why the model is folders all the way down | `docs/adr/0003-drop-the-bundle-abstraction-folders-all-the-way-down.md` |
