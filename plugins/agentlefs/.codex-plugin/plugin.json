@@ -1,7 +1,7 @@
 {
   "name": "agentlefs",
-  "version": "0.3.28",
-  "description": "Reach your organization's permissioned context over MCP, with browser sign-in and skills that explain who can see what.",
+  "version": "0.3.33",
+  "description": "afs: one permissioned folder for you and your AI agents",
   "author": {
     "name": "agentleFS",
     "url": "https://agentlefs.com"
@@ -11,18 +11,22 @@
   "license": "MIT",
   "keywords": [
     "mcp",
+    "afs",
     "agentlefs",
     "knowledge",
     "permissions",
     "authorization",
-    "retrieval"
+    "retrieval",
+    "memory",
+    "notes",
+    "shared"
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "agentleFS",
-    "shortDescription": "Your organization's permissioned context, filtered to what you are granted.",
-    "longDescription": "agentleFS is a permissioned org-context store. This plugin registers the hosted MCP server with browser sign-in — no token to mint or paste — and bundles the skills that explain how authorization works, what a thin result means, and how to write durable conclusions back.",
+    "shortDescription": "afs: one permissioned folder for you and your AI agents",
+    "longDescription": "agentleFS (afs) is one permissioned folder that you, your team and your AI agents share. This plugin connects the hosted server with browser sign-in — no token to create or paste — and adds skills for finding what is stored, saving what you work out, and checking who can see what.",
     "developerName": "agentleFS",
     "category": "Productivity",
     "capabilities": [
@@ -33,8 +37,8 @@
     "privacyPolicyURL": "https://agentlefs.com/privacy",
     "termsOfServiceURL": "https://agentlefs.com/terms",
     "defaultPrompt": [
-      "What has my organization written down about how we do deploys?",
-      "Check agentleFS before answering, and say if a thin result may be a permission boundary."
+      "What has my team written down in afs about how we do deploys?",
+      "Save a summary of what we just decided to afs."
     ]
   }
 }

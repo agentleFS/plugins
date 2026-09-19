@@ -1,8 +1,8 @@
 {
   "name": "agentlefs",
   "displayName": "agentleFS",
-  "version": "0.3.28",
-  "description": "Reach your organization's permissioned context over MCP, with browser sign-in and commands that explain who can see what.",
+  "version": "0.3.33",
+  "description": "afs: one permissioned folder for you and your AI agents",
   "author": {
     "name": "agentleFS",
     "url": "https://agentlefs.com"
@@ -12,10 +12,14 @@
   "license": "MIT",
   "keywords": [
     "mcp",
+    "afs",
     "agentlefs",
     "knowledge",
     "permissions",
     "authorization",
-    "retrieval"
+    "retrieval",
+    "memory",
+    "notes",
+    "shared"
   ]
 }

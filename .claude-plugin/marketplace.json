@@ -9,7 +9,7 @@
     {
       "name": "agentlefs",
       "source": "./plugins/agentlefs",
-      "description": "Reach your organization's permissioned context over MCP, with browser sign-in and commands that explain who can see what."
+      "description": "afs: one permissioned folder for you and your AI agents"
     }
   ]
 }

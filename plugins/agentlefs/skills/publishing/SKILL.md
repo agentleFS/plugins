@@ -1,6 +1,6 @@
 ---
 name: publishing
-description: How to publish folders and files as reusable packages in the agentleFS registry, and how to install them. Use when the user asks to publish, package, share publicly, distribute, or "make available to other teams" any folder or set of documents; when they ask how to reuse content across organizations; when a publish is refused with HANDLE_UNCLAIMED, HANDLE_NOT_YOURS, PACKAGE_NOT_YOURS, TOO_LARGE or a visibility error; when they ask about @publisher handles, package versions, or the public catalog; or when deciding whether a request means "publish" or merely "let someone read this".
+description: How to publish folders and files as reusable packages in the agentleFS (afs) registry, and how to install them. Use when the user asks to publish, package, share publicly, distribute, or "make available to other teams" any folder or set of documents; when they ask how to reuse content across organizations; when a publish is refused with HANDLE_UNCLAIMED, HANDLE_NOT_YOURS, PACKAGE_NOT_YOURS, TOO_LARGE or a visibility error; when they ask about @publisher handles, package versions, or the public catalog; or when deciding whether a request means "publish" or merely "let someone read this".
 ---
 
 # Publishing to the agentleFS registry

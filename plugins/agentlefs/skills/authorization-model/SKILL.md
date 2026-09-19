@@ -1,6 +1,6 @@
 ---
 name: authorization-model
-description: How agentleFS decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, a separate policy engine anywhere, and owner-outside-the-ladder).
+description: How agentleFS (afs) decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, a separate policy engine anywhere, and owner-outside-the-ladder).
 ---
 
 # agentleFS authorization
@@ -110,8 +110,10 @@ There is no policy service, no policy file and no sidecar. One existed until #21
 **Wrong: an empty result proves nothing exists.**
 See above. This is the failure this system is specifically built to prevent you from making.
 
-**Wrong: there is a tool to list grants or read the audit trail.**
-There is not, by design. No grants tool, and `audit_tail` was deliberately removed so a token holder cannot audit a whole tenant. Audit is a console surface, admin-gated. For cross-principal questions, deep-link the console.
+**Wrong: an agent can read the audit trail.**
+It cannot, by design. `audit_tail` was deliberately removed so a token holder cannot audit a whole tenant; audit is a console surface, admin-gated.
+
+Who reaches something, though, IS answerable: `who_can_read` on a folder or document you reach names the people and groups inside the Organization (direct or inherited, with role) and anyone outside it holding a share. It names people, never their content, and for a scope you cannot reach it answers not-found.
 
 **Wrong: "owner grants access but cannot itself read".**
 That was true, and it was the defect #219 fixed. Ownership is the top of one ladder: an owner reads and writes everything beneath it. Any explanation that treats ownership as an orthogonal badge rather than the highest rung is describing the old model.
@@ -120,7 +122,7 @@ That was true, and it was the defect #219 fixed. Ownership is the top of one lad
 
 - Never assert a document does not exist. Say you could not reach one.
 - Never infer access from a name, path, or label.
-- Never name who can see something unless a tool returned it. Route cross-principal questions to the console: the **Share panel**, the **"Shared with"** list (granted-here versus inherited), the **reach lens / "View as"** on the Files tree, the **share summary** panel, **Groups**, and **Access → Roles**.
+- Never name who can see something unless a tool returned it. `who_can_read` answers "who reaches this?"; for a file-by-file view of one person's access, or group membership, route to the console: the **reach lens / "View as"** on the Files tree, **Groups**, and **Access → Roles**.
 - Never call a console API endpoint from an agent context. That API takes a Clerk browser session JWT only; an OAuth or `afs_` credential gets 401 every time.
 - A write is authorized or it is refused, and there is no third state. This bullet used to describe `how="propose"` staging for review and commits landing in quarantine for operator promotion in Triage; propose, quarantine and Triage are all gone. A successful `write_org_doc` is live immediately. Who can then READ it is decided by the grants on the path, not by anything the writer sets.
 

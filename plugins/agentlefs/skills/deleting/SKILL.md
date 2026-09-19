@@ -1,14 +1,15 @@
 ---
 name: deleting
-description: How to delete something from agentleFS without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest — and before calling delete_org_doc for any reason. Also use to explain why a delete was refused, or why deletion needs two calls.
+description: How to delete something from agentleFS (afs) without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest — and before calling delete_org_doc for any reason. Also use to explain why a delete was refused, or why deletion needs two calls.
 ---
 
 # Deleting from agentleFS
 
-Deletion is the one mutation with no inverse. A write leaves the previous version in
-history and a rename relocates something that still exists; a delete ends the object.
-The store is built so this is recoverable by an operator, but nothing in your session
-can undo it.
+A delete is reversible from this session: `undo_delete` puts back exactly what one delete
+removed, sharing included. `erase_org_doc` is the one that is not — it destroys content and
+every past version, and nothing brings it back. Reversible still does not mean harmless: a
+folder delete takes everything under it, including items you cannot see, and every agent
+that relied on them loses them until someone notices.
 
 So the rule for this skill is one sentence: **you find out what would be destroyed,
 a human decides, and only then do you delete.**
@@ -25,8 +26,9 @@ Target: the entire folder engineering
 Files removed: 240
   e.g. onboarding.md, runbooks/deploy.md, adr/0003-folders.md
   …and 232 more not listed here (beyond this sample, or owned by you without a read grant)
-Connector: syncs from the GitHub repository acme/platform — deleting the folder stops that sync.
-Reach grants on this folder are revoked with it.
+Connector: syncs from the GitHub repository acme/platform into engineering — deleting the folder stops that sync.
+
+Reach grants survive a delete, and undo_delete restores the documents and their sharing — it is recoverable, not shredded. A connector is the one thing an undo does NOT bring back: reconnecting it is a decision, not a restoration.
 ```
 
 This is not a formality to route around. It is the sentence that prevents the
@@ -67,25 +69,38 @@ unless they ask; the answer to "should this be gone" was no.
 - **A connector line changes the decision.** If the folder mirrors a GitHub repo or
   a Drive folder, deleting it here stops that sync. The upstream content survives;
   the organization's access to it through agentleFS does not. Say this out loud —
-  people delete folders thinking they are tidying a copy.
-- **Reach grants go with a folder.** Everyone who could reach it loses that, and the
-  grants do not come back if the folder is later recreated under the same name.
+  people delete folders thinking they are tidying a copy. **An undo does not reconnect
+  it**: `undo_delete` brings back the documents and their sharing, and the sync stays
+  stopped until someone connects the source again.
+- **Everyone who could reach it loses it until it is undone.** The grants themselves survive
+  the delete, which is why `undo_delete` brings the folder back shared as it was. Do
+  not re-share after an undo: the access never went away, and a second share mints grants
+  nobody asked for.
 
 ## When it refuses
 
 | What you see | What it means | What to do |
 |---|---|---|
-| `denied: 'delete_file' not permitted for roles [...]` | Deletion needs the **admin** console role. Most agent credentials do not have it, by design. | Stop. A human deletes this in the console. Do not look for another route. |
-| `not permitted: N files here can't be deleted with your access` | You are admin but you do not **own** every affected file. Deletion is all-or-nothing on purpose — a partial delete is the worst outcome available. | Report which files blocked it. The named ones are ones you can read; any remainder is counted, not named, and you cannot find out what they are. |
+| `not permitted: N items here can't be deleted with your access — …` | Deleting needs **owner** on every item it would remove, including items you cannot see. You do not own all of them. Deletion is all-or-nothing on purpose — a partial delete is the worst outcome available. | Stop and report which items blocked it. The named ones are ones you can read; any remainder is counted, not named, and you cannot find out what they are. An owner of the folder deletes it, or grants ownership first. Do not look for another route. |
 | `this folder changed since that confirmation was issued` | Someone wrote to the folder between your preview and your confirm, so the numbers the person approved are stale. | Re-preview, show the person what changed, ask again. Do not re-confirm on the old answer. |
 | `that confirmation has expired` | More than ten minutes passed. | Re-preview. If the delay was because the person is still deciding, that is the system working. |
 
-## What you cannot do from here
+## Undoing a delete, and the one that cannot be undone
 
-There is no undelete tool, and no tool that lists what was deleted. Restoring a
-folder means an operator re-inserting its ref at the commit named in the delete
-response — so **keep that commit hash in your reply**. It is the only thing standing
-between a mistaken delete and a support conversation.
+**A delete can be undone.** `undo_delete` with the same `location` restores exactly what
+that one delete removed, at the version it had, with its sharing intact — except a folder's
+connector, which stays disconnected. When you undo a folder delete whose preview named a
+connector, say that the sync did not come back. Offer it straight
+away when a delete turns out to be a mistake. Undoing twice is harmless: the second call finds
+nothing left to restore and says so. A document that was deleted before it ever had content
+cannot be restored, and is reported separately rather than brought back empty.
+
+There is no tool that lists what was deleted, so **keep the delete's reply** — its location
+and commit — in your answer. That is what makes a later undo easy to aim.
+
+`erase_org_doc` is different: it destroys content, every past version, comments and the name,
+and **nothing** brings it back, `undo_delete` included. Use it only for a genuine erasure
+request, and prefer `delete_org_doc` for tidying.
 
 You also cannot delete `.permissions.json`, and you cannot delete a file a connector
 mirrors — that content is a mirror, and the next sync would bring it back anyway.

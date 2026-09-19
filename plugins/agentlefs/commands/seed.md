@@ -1,7 +1,7 @@
 ---
-description: Seed agentleFS with what you already know about this project, so the store isn't empty
+description: Seed agentleFS (afs) with what you already know about this project, so the store isn't empty
 argument-hint: [folder]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__write_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__write_org_doc, mcp__plugin_agentlefs_agentlefs__create_org_folder
 ---
 
 Fill a reachable-but-empty agentleFS with durable knowledge about the current project. A new store has working semantic search and nothing to search — this closes that gap in one pass.
@@ -15,9 +15,11 @@ Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments.
 | Outcome | Do this |
 |---|---|
 | One or more folders | If `$1` names one, use it. Otherwise show the list and ask which to write into. |
-| Empty list | Stop. This credential reaches nothing — send them to `/agentlefs:connect`, and do not report the organization as having no content. |
+| "(nothing stored yet …)" | The user owns an empty Organization. Ask what to call a first folder, create it with `mcp__plugin_agentlefs_agentlefs__create_org_folder`, and write into it. |
+| "(no folders of your own yet)" followed by shared folders | Everything this credential reaches was shared with it from another workspace. Show the shared folders and ask which to write into. Skip any marked `(read-only)`. **Also offer to create a folder of their own** with `mcp__plugin_agentlefs_agentlefs__create_org_folder`: this message does not rule out that they own an empty Organization (the listing prints it whenever any share is present), and knowledge about their own project usually belongs in their own workspace rather than someone else's. Note the chosen folder's `[share <id>]` — every later call on it must pass that id as `share`, or it resolves in this user's own workspace instead and finds nothing. |
+| "(no folders you can reach …)" | This credential holds no grants, so there is nowhere it may write. Stop, say so plainly, and say what fixes it: a folder owner shares one with them. Do not report the Organization as having no content, and do not send them to `/agentlefs:connect`, which will say the same. |
 
-Then call `mcp__plugin_agentlefs_agentlefs__list_org_docs` on the chosen folder. Two reasons: it tells you whether the store is actually empty, and it shows you the `type` and label conventions already in use.
+Then call `mcp__plugin_agentlefs_agentlefs__list_org_docs` on the chosen folder (with `share` if it came from the shared block). Two reasons: it tells you whether the store is actually empty, and it shows you the `type` and label conventions already in use.
 
 ## Step 2 - decide what is worth persisting
 
@@ -36,7 +38,7 @@ Take stock of what you have learned in this session and from the repository in f
 
 One idea per document. A single dumped file is a file nobody finds.
 
-For each, call `mcp__plugin_agentlefs_agentlefs__write_org_doc` with the chosen folder, a descriptive path, and frontmatter that **matches the neighboring files you listed in Step 1** — `type` and `tags` especially. Tags drive search; they are not access controls. A mis-tagged file is a file nobody retrieves.
+For each, call `mcp__plugin_agentlefs_agentlefs__write_org_doc` with the chosen folder (and its `share` id, if it is a shared one), a descriptive path, and frontmatter that **matches the neighboring files you listed in Step 1** — `type` and `tags` especially. Tags drive search; they are not access controls. A mis-tagged file is a file nobody retrieves.
 
 The write commits if your grant allows it and is refused if it does not. There is no staging step to choose and no review queue between you and the store, so a successful write is live and agent-visible immediately.
 

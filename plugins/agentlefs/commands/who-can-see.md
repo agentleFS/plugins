@@ -1,10 +1,10 @@
 ---
-description: Answer who can see a agentleFS folder or document, honestly split by what is knowable here
+description: Answer who can see an agentleFS (afs) folder or document — the people and groups who reach it, and what you can see yourself
 argument-hint: [folder-or-path]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__who_can_read
 ---
 
-Answer "who can see `$1`". The honest answer has two halves and they are not equally knowable from here. Keep them separate and never let the second half drift into speculation.
+Answer "who can see `$1`". The answer has two halves: who ELSE reaches it (a real tool answers that), and what YOU can see of it. Keep them separate, and never let either drift into speculation.
 
 Target: `$1`. If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, list the reachable folders, and ask which one they mean.
 
@@ -22,28 +22,33 @@ This is a fact about **your** principal, established by a real call. Present it 
 
 The gated count is the interesting number. It tells you how many files sit in this folder that you cannot see, and nothing else. Not their names, not their paths, not their subject matter. Do not speculate about them.
 
-## Part 2 - who ELSE can see it (requires the console)
+## Part 2 - who ELSE can see it
 
-State the limitation plainly rather than working around it: **there is no MCP tool that returns grants.** That is deliberate, not an oversight. A token holder should not be able to enumerate a tenant's access, so no such tool exists, and the audit surface is console-only and admin-gated. The console API authenticates with a Clerk browser session JWT that this credential does not hold, so you must not attempt an API call for this either.
+Call `mcp__plugin_agentlefs_agentlefs__who_can_read` with the `location` (and `scope_type: "document"` for a single file). It names:
 
-Send the human to `https://agentlefs.com` and name the screen that answers their actual question:
+- **people and groups inside this Organization** who reach it, each marked **direct** (granted here) or **inherited** (from an ancestor folder), with their role;
+- **people outside the Organization** who hold a share on it, by the email it was shared with.
+
+It names people, never their content. It answers only for a scope **you** reach yourself: for one you do not, it answers not-found, exactly as for a scope that does not exist — so a not-found here is not evidence of anything.
+
+Present the list as the tool returned it. Do not add, merge or guess at names.
+
+For what the tool does not answer, send the human to `https://agentlefs.com` and name the screen:
 
 | Question | Console screen |
 |---|---|
-| Who has a grant on this, and is it granted here or inherited? | the **"Shared with"** list on the folder or file |
 | What exactly can a specific person or group see, file by file? | the **reach lens** ("View as") on the Files tree |
-| How much is visible versus denied, by type and label, and who can reach it? | the **share summary** panel |
 | Who is in a group, and what does the group reach? | **Groups** |
-| Who is a console admin versus a member? | **Access → Roles** |
+| Change a grant held by someone inside the Organization | the **"Shared with"** list on the folder or file |
 
-The reach lens is usually the right recommendation, because it shows a chosen principal's effective per-file access **with provenance**, which is what people mean when they ask this question.
+To take back a share given to someone OUTSIDE the Organization, `/agentlefs:share` covers it with `revoke_org_share`.
 
-## Explain how to read the console answer
+## Explain how to read the answer
 
-Give the user these three ideas, because a grant list is misleading without them:
+Give the user these three ideas, because a list of who reaches something is misleading without them:
 
 - **Granted-here versus inherited.** A grant made directly on this scope shows as granted-here. One arriving from an ancestor folder shows as inherited. Removing an inherited grant means finding the ancestor it was made on; there is nothing to remove here.
-- **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. The "Shared with" list marks that as inherited.
+- **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. `who_can_read` marks that as inherited.
 - **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. The reach lens resolves this; a raw grant list does not.
 
 Also worth stating: console tools and file reads are different questions, but not different engines. There is no separate policy engine — both resolve through the same OpenFGA ladder. Console actions above a small read-only floor require ownership of the **tenant root**, and owning the root does reach every file in the workspace, because that is what owning the root means. A folder-scope owner reaches only their subtree.
@@ -51,13 +56,13 @@ Also worth stating: console tools and file reads are different questions, but no
 ## What you must NOT do
 
 - **Never guess at a name.** Do not say "probably the engineering team" or "likely whoever owns this folder." If you do not have it from a tool result, you do not have it.
-- Do not call any console API endpoint. No `/api/reach/grants`, no `/api/share/summary`, no `/api/folders/reach`. Every one would 401.
+- Do not call any console API endpoint. No `/api/reach/grants`, no `/api/share/summary`, no `/api/folders/reach`. Every one would 401; `who_can_read` is the route.
 - Do not present your own reach as the full picture. Other principals may reach far more than you, or far less, and you cannot see which.
 - Do not infer access from labels. Labels carry zero authority; an unlabeled file is not public.
 - Do not read a thin result as "nothing exists here." **Denied is byte-identical to not-found.** A folder that looks nearly empty to you may be full of content gated from you.
 
 ## Shape of the answer
 
-1. What you can see, with real numbers from the calls you made.
-2. What you cannot determine from here, and why the tool deliberately does not exist.
-3. The console screen that answers it, plus how to read granted-here versus inherited.
+1. Who else reaches it, from `who_can_read`: inside the Organization (direct or inherited, with role), and outside it.
+2. What you can see yourself, with real numbers from the calls you made.
+3. For a file-by-file view of one person's access, the console's reach lens.

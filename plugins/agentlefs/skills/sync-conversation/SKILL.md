@@ -1,6 +1,6 @@
 ---
 name: sync-conversation
-description: Persist the current AI session's conversation into agentleFS as a durable document. Use when the user asks to sync, save, capture, persist, archive, or write up this conversation, session, chat, or thread to agentleFS; when they want a record of what was decided or figured out here; or when they say something like "put this in agentleFS" or "remember this for next time". Always asks where it should land, defaulting to the user's own home folder.
+description: Persist the current AI session's conversation into agentleFS (afs) as a durable document. Use when the user asks to sync, save, capture, persist, archive, or write up this conversation, session, chat, or thread to agentleFS; when they want a record of what was decided or figured out here; or when they say something like "put this in agentleFS" or "remember this for next time". Always asks where it should land, defaulting to the user's own home folder.
 ---
 
 # Sync this conversation to agentleFS

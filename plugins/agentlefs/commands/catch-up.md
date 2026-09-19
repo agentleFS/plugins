@@ -1,5 +1,5 @@
 ---
-description: Catch up on what you have been working on in agentleFS, and pick the thread back up
+description: Catch up on what you have been working on in agentleFS (afs), and pick the thread back up
 argument-hint: [topic]
 allowed-tools: mcp__plugin_agentlefs_agentlefs__list_my_recent_work, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
 ---

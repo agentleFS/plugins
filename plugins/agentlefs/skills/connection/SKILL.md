@@ -1,6 +1,6 @@
 ---
 name: connection
-description: How the agentleFS MCP connection authenticates, and how to diagnose it. Use when agentleFS tools are unavailable, return 401, 404, or auth errors; when the user asks how to connect, sign in, or authenticate to agentleFS; when a connection succeeds but returns no folders; when configuring a self-hosted endpoint; or when setting up headless/CI access. Also use before concluding that agentleFS is broken.
+description: How the agentleFS (afs) MCP connection authenticates, and how to diagnose it. Use when agentleFS tools are unavailable, return 401, 404, or auth errors; when the user asks how to connect, sign in, or authenticate to agentleFS; when a connection succeeds but returns no folders; when configuring a self-hosted endpoint; or when setting up headless/CI access. Also use before concluding that agentleFS is broken.
 ---
 
 # agentleFS connection
@@ -51,9 +51,9 @@ The endpoint is a literal `url` in the plugin's `.mcp.json`. Self-hosted deploym
 
 It is deliberately a literal rather than a templated value. Claude Code can interpolate `${user_config.…}` there, but no other agent does: Codex installs the same plugin and reads that string verbatim, producing a server that can never connect and reports no error. A hardcoded URL is correct in every client.
 
-## Prerequisite: organization membership
+## Signed in, and what that reaches
 
-Signing in is not sufficient. The user must be a **member of a agentleFS organization**, and within it must hold grants. A valid sign-in with no org membership authenticates fine and reaches nothing. This looks like a working connection returning an empty world, which it is.
+Everyone who signs in has at least one Organization: their personal one, if they have not created or joined another. A new personal account owns its Organization and reaches everything in it. What a sign-in does not bring is **grants** elsewhere. In a company Organization, a member reaches only what has been shared with them — except an organization admin, who owns the Organization's root and reaches all of it — and an agent token reaches only what it was granted. A credential with no grants authenticates fine and reaches nothing, which looks like a working connection returning an empty world — and is.
 
 ## Headless and CI fallback
 
@@ -79,7 +79,7 @@ Only a successful tool call proves a working connection. Call `list_org_folders`
 | 401 in CI or a headless shell | No browser for the OAuth flow | Use the `afs_` token path above |
 | 404 on every call | Pointed at the console host instead of the MCP host | Must be `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
-| Connected, zero folders | No org membership, or membership with no grants | Confirm membership in the console; ask a folder owner to share via the Share panel |
+| Connected, zero folders | An empty Organization you own, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Own it: `/agentlefs:connect` offers to make the first folder. No grants: ask a folder owner to share one |
 | Connected, folder looks nearly empty | Content is gated from this principal | Expected. Denied is byte-identical to not-found. |
 | `how="meaning"` silently searched by text | Deployment has no vector index | Check `vectorIndex` in `/healthz`. Degradation is intentional. |
 | Tools are absent from `/mcp` entirely | Plugin not enabled, or the server is unreachable | Check plugin state, then `/healthz` |

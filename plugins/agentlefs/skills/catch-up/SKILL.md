@@ -1,6 +1,6 @@
 ---
 name: catch-up
-description: Work out what the user has been doing in agentleFS recently, so a fresh session can find the right documents fast instead of guessing. Use at the START of a session as soon as you know roughly what the user wants — especially when they say "catch me up", "what was I working on", "where did I leave off", "get up to speed", "remind me what's going on with X", or when they refer to ongoing work ("the pricing thing", "that migration", "my spec") as though you should already know what they mean. Also use before searching agentleFS when the request clearly concerns their current work but you have no idea which folder holds it, since orienting first is usually cheaper than searching blind.
+description: Work out what the user has been doing in agentleFS (afs) recently, so a fresh session can find the right documents fast instead of guessing. Use at the START of a session as soon as you know roughly what the user wants — especially when they say "catch me up", "what was I working on", "where did I leave off", "get up to speed", "remind me what's going on with X", or when they refer to ongoing work ("the pricing thing", "that migration", "my spec") as though you should already know what they mean. Also use before searching agentleFS when the request clearly concerns their current work but you have no idea which folder holds it, since orienting first is usually cheaper than searching blind.
 ---
 
 # Catch up on what the user has been working on
