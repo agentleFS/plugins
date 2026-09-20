@@ -1,0 +1,10 @@
+{
+  "name": "agentlefs",
+  "version": "0.3.36",
+  "description": "Agent permissions for the files your team shares",
+  "mcpServers": {
+    "agentlefs": {
+      "httpUrl": "https://mcp.agentlefs.com/mcp?ref=gemini-extensions"
+    }
+  }
+}
