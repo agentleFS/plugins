@@ -61,7 +61,7 @@ Report concretely:
 
 - Which endpoint is in use.
 - How many folders this credential reaches, and name a few.
-- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`). Only for a folder of this user's own: `list_org_folders` takes no `share` argument, so for a folder under "shared with you" it would look in the wrong workspace. Name shared folders from the listing instead.
+- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`). For a folder under "shared with you", pass the `share` id printed beside it in that same call — without it the path is looked for in this user's own workspace, which is not where that folder is.
 
 Then point onward, without re-explaining them:
 

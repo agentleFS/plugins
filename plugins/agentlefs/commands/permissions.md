@@ -12,15 +12,21 @@ Argument: `$ARGUMENTS` (optional folder to focus on).
 
 Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments. What comes back is the complete set of folders this principal reaches. A folder absent from that list is either not granted to this principal or does not exist, and the two are indistinguishable by design.
 
-If the list is empty, stop and say so: this credential reaches no folders. The listing says which of two cases this is. On "(nothing stored yet …)" the Organization is empty and you own it, and saying so is correct. On "(no folders you can reach …)" this credential holds no grants: do not report "the organization has no content", because denied is byte-identical to not-found. Either way, send them to `/agentlefs:connect`.
+An empty list of your OWN folders is three different facts, and the listing says which:
+
+| What it prints | What is true | Do this |
+|---|---|---|
+| "(nothing stored yet …)" | You own the Organization and it holds nothing | Say so — it is correct here, and only here. Send them to `/agentlefs:connect`. |
+| "(no folders you can reach …)" | This credential holds no grants | Say the credential reaches nothing. Do **not** report "the organization has no content": denied is byte-identical to not-found. Send them to `/agentlefs:connect`. |
+| "(no folders of your own yet)" followed by "── shared with you ──" | Everything it reaches was shared from another workspace | Do not stop, and do not say it reaches no folders — it reaches every folder in that block. Report those in Step 2, each with the `[share <id>]` printed beside it. |
 
 ## Step 2 - per-folder shape
 
-If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with that folder and report only it.
+If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with that folder and report only it. If Step 1 listed that folder under "── shared with you ──", pass the `share` id printed beside it in the same call.
 
-If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once per reachable folder **of this user's own** to collect each folder's shape.
+If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once per reachable folder to collect each folder's shape — the user's own by location, each shared one by location **and** its `share` id.
 
-**Do not make that call for a folder under "── shared with you ──".** `list_org_folders` takes no `share` argument, so it looks for that path in this user's own workspace. There it answers with the zeroed shape an absent folder gets: 0 readable, 0 gated. Reporting that would tell the user they can read nothing in a folder they can read. List shared folders in their own section instead, from Step 1's listing: the name, where it came from, and whether it is `(read-only)`. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
+**The `share` id is what decides which workspace is answered**, so a shared folder asked about without it is looked for in this user's own workspace, where the path names nothing: the reply is the zeroed shape an absent folder gets (0 readable, 0 gated), which would tell the user they can read nothing in a folder they can read. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
 
 Each per-folder call returns: how many files you can read, how many are `denied` (gated from you), a breakdown by type, and the labels present.
 
@@ -31,7 +37,7 @@ Lead with a table, not prose:
 | Folder | Readable | Gated | Types | Labels |
 |---|---|---|---|---|
 
-This table holds this user's own folders only. Put shared folders in a short list after it, without counts.
+Put the user's own folders first, then the shared ones with their counts, marked as shared and with the workspace they came from — a folder shared with you is part of what this credential reaches, and the point of the report is what it reaches.
 
 Then add, in a few lines:
 

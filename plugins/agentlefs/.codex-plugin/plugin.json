@@ -1,7 +1,7 @@
 {
   "name": "agentlefs",
-  "version": "0.3.33",
-  "description": "afs: one permissioned folder for you and your AI agents",
+  "version": "0.3.35",
+  "description": "Agent permissions for the files your team shares",
   "author": {
     "name": "agentleFS",
     "url": "https://agentlefs.com"
@@ -13,20 +13,23 @@
     "mcp",
     "afs",
     "agentlefs",
-    "knowledge",
+    "agent-permissions",
+    "mcp-server",
+    "claude-code",
+    "cursor",
+    "codex",
     "permissions",
-    "authorization",
+    "file-sharing",
+    "knowledge",
     "retrieval",
-    "memory",
-    "notes",
-    "shared"
+    "notes"
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "agentleFS",
-    "shortDescription": "afs: one permissioned folder for you and your AI agents",
-    "longDescription": "agentleFS (afs) is one permissioned folder that you, your team and your AI agents share. This plugin connects the hosted server with browser sign-in — no token to create or paste — and adds skills for finding what is stored, saving what you work out, and checking who can see what.",
+    "shortDescription": "Agent permissions for the files your team shares",
+    "longDescription": "agentleFS (afs) gives your AI agents permissions on the files your team shares. An agent reads only what the person who created it can read, every write is kept as a version, and a folder can be shared outside your company. This plugin connects the hosted server with browser sign-in, so there is no token to create or paste, and adds skills for finding what is stored, saving what you work out, and checking who can see what.",
     "developerName": "agentleFS",
     "category": "Productivity",
     "capabilities": [

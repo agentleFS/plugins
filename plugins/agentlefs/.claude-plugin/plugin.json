@@ -1,8 +1,8 @@
 {
   "name": "agentlefs",
   "displayName": "agentleFS",
-  "version": "0.3.33",
-  "description": "afs: one permissioned folder for you and your AI agents",
+  "version": "0.3.35",
+  "description": "Agent permissions for the files your team shares",
   "author": {
     "name": "agentleFS",
     "url": "https://agentlefs.com"
@@ -14,12 +14,15 @@
     "mcp",
     "afs",
     "agentlefs",
-    "knowledge",
+    "agent-permissions",
+    "mcp-server",
+    "claude-code",
+    "cursor",
+    "codex",
     "permissions",
-    "authorization",
+    "file-sharing",
+    "knowledge",
     "retrieval",
-    "memory",
-    "notes",
-    "shared"
+    "notes"
   ]
 }

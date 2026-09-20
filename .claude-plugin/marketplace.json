@@ -9,7 +9,7 @@
     {
       "name": "agentlefs",
       "source": "./plugins/agentlefs",
-      "description": "afs: one permissioned folder for you and your AI agents"
+      "description": "Agent permissions for the files your team shares"
     }
   ]
 }
