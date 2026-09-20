@@ -1,10 +1,11 @@
 {
   "name": "agentlefs",
   "displayName": "agentleFS",
-  "version": "0.3.37",
+  "version": "0.3.38",
   "description": "Agent permissions for the files your team shares",
   "author": {
     "name": "agentleFS",
+    "email": "contact@agentlefs.com",
     "url": "https://agentlefs.com"
   },
   "homepage": "https://agentlefs.com",
