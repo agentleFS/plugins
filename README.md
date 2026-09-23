@@ -99,7 +99,6 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `deleting` | Something is about to be removed, and the blast radius needs saying out loud first |
 | `authorization-model` | Anything turns on who can read what, or a result comes back thinner than expected |
 | `connection` | The tools are missing, returning 401, or connected but reaching nothing |
-| `publishing` | A folder is to be packaged for reuse elsewhere — including the difference between publishing it and simply letting someone read it |
 | `slack` | You ask your AI to tell someone in Slack about a doc, or for the latest on something split between docs and Slack — it checks the person can open the doc before sending. Needs Slack's own MCP connected in your client |
 
 Plus two agents: `context-researcher` for grounded retrieve-and-cite work, and

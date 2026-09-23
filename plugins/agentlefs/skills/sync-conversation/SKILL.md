@@ -1,6 +1,6 @@
 ---
 name: sync-conversation
-description: Persist the current AI session's conversation into agentleFS (afs) as a durable document. Use when the user asks to sync, save, capture, persist, archive, or write up this conversation, session, chat, or thread to agentleFS; when they want a record of what was decided or figured out here; or when they say something like "put this in agentleFS" or "remember this for next time". Always asks where it should land, defaulting to the user's own home folder.
+description: Persist the current AI session's conversation into agentleFS (afs) as a durable document. Use when the user asks to sync, save, capture, persist, archive, or write up this conversation, session, chat, or thread to agentleFS; when they want a record of what was decided or figured out here; or when they say something like "put this in agentleFS" or "remember this for next time". Always asks where it should land, and never picks a folder for the user.
 ---
 
 # Sync this conversation to agentleFS
@@ -27,38 +27,29 @@ made from, and it is also the connection check.
 | Empty list | Stop. This credential reaches nothing to write into. Send them to `/agentlefs:connect`. Do **not** report the organization as having no content — see the `authorization-model` skill. |
 | Error / tools missing | Stop and diagnose with the `connection` skill. Do not paraphrase a 401 as "agentleFS is down". |
 
-## Step 2 — ask where it goes, defaulting to their home
+## Step 2 — ask where it goes
 
-**Default: the user's own home folder.** Every member of an org is provisioned a
-private top-level folder named after them — "Manoj Singireddy", sitting beside
-`context` and `engineering` — with a `home/` directory inside holding `notes/`,
-`projects/`, `drafts/` and `reference/`. They hold owner and reader on it, and no
-other member can read it, list it, or learn it exists.
+**There is no default destination.** Ask. agentleFS no longer gives each member a
+private folder of their own, so there is no location that is safe to assume — every
+folder in the Step 1 listing is one somebody else may be granted on.
 
-That is the right default for a conversation, for a reason worth saying out loud:
-a session contains half-formed reasoning, dead ends and things said in passing.
-Landing it somewhere private and sharing it outward later is a decision the user
-can still make. Landing it in a team folder is a decision already made for them.
+That matters more for a conversation than for most documents: a session contains
+half-formed reasoning, dead ends and things said in passing. Landing it somewhere few
+people can read and sharing it outward later is a decision the user can still make.
+Landing it in a team folder is a decision already made for them. So put the question
+to them, and let them weigh it.
 
-So the default target is:
+Offer:
 
-```
-<Their Name>/home/notes/<descriptive-slug>.md
-```
-
-Spot the home folder in the Step 1 listing: it is the top-level folder named after
-the person (display name, or the local part of their email — never the full
-address). **If no such folder appears, do not invent one and do not write to a
-folder you have not seen listed** — say the home is not visible to this credential
-and ask where they want it instead.
-
-Now ask, with the default pre-selected. Offer:
-
-- **Their home** — `<Their Name>/home/notes/…`, private to them (recommended).
-- **A shared folder** — name the specific reachable folders from Step 1 that plausibly
-  fit, and say plainly that anyone granted on that folder will be able to read the
-  conversation.
+- **A folder from Step 1** — name the specific reachable folders that plausibly fit,
+  and say plainly that anyone granted on that folder will be able to read the
+  conversation. If one of them is a folder only they can reach (for example one under
+  `users/` bearing their name), say so, but do not pre-select it — only
+  `/agentlefs:who-can-see` can tell you who else reaches it.
 - **Somewhere else** — let them name the full location.
+
+**Do not write to a folder you have not seen listed.** If nothing in the listing fits,
+say so and ask.
 
 Confirm the exact `location` back to them before writing. A path is cheap to
 get right now and expensive to move later: moving a file re-permissions it.
@@ -103,8 +94,8 @@ Anything else — `conversation`, `session-summary`, whatever reads best — is 
 rejected**. It is silently coerced to `misc`, with nothing said about it in the write
 response, so the document lands in a bucket you did not choose and never find out.
 
-Expect to have nothing to copy from. A fresh home holds one file, `home/welcome.md`,
-and the folder you are writing into may hold none at all — "match the neighbors" has
+Expect to have nothing to copy from. The folder you are writing into may hold no
+documents at all — "match the neighbors" has
 no answer there. When that happens, pick from the list above rather than inventing:
 `meeting-notes` is the closest bucket for a record of a working session, and `misc`
 is the honest choice when it is not.
@@ -159,15 +150,15 @@ names any directory that did not exist before. Read both back before you report:
 be new, means you wrote somewhere other than where you meant to — say so rather than
 reporting a clean write.
 
-Name what you deliberately left out. If it went to their home, remind them it is
-private to them and that `/agentlefs:share` is how it reaches anyone else.
+Name what you deliberately left out, and say who can now read it: anyone granted on
+the folder it went into. `/agentlefs:share` is how it reaches anyone else.
 
 ## Do not
 
 - **Do not pick the destination silently.** Even when the answer is obvious, ask.
 - Do not write a verbatim transcript, and do not paste whole files into the document.
 - Do not write secrets, even ones the user pasted themselves.
-- Do not invent a home folder that did not appear in `list_org_folders`.
+- Do not invent a folder that did not appear in `list_org_folders`.
 - Do not create a second document for a conversation that already has one.
 - Do not report a refused write as though it had landed.
 - Do not claim you shared it with anyone. Writing is not sharing; grants happen in

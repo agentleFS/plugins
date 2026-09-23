@@ -1,6 +1,6 @@
 ---
 description: Connect this session to agentleFS (afs) and verify the connection with a real call
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__create_org_folder, mcp__plugin_agentlefs_agentlefs__claim_share_link
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__create_org_folder
 ---
 
 Get the user from zero to a verified agentleFS connection. Work through the phases in order and stop as soon as the connection is proven working.
@@ -14,9 +14,8 @@ Interpret the outcome:
 | Outcome | Meaning | Go to |
 |---|---|---|
 | A list of folders comes back | Already connected and granted. Done. | Phase 4 |
-| "(nothing stored yet — this Organization has no folders…)" | Connected, and you own an Organization with nothing in it yet | Phase 3a |
+| "(nothing stored yet — this Organization has no folders…)" | Connected, and you are an approver of an Organization with nothing in it yet | Phase 3a |
 | "(no folders you can reach — …)" | Connected, but this credential holds no grants | Phase 3b |
-| "(no folders of your own yet)" followed by shared folders | Connected, and reaching only what others shared with you — what a claimed share link produces | Phase 4 |
 | Auth error, 401, or the tool is not available at all | Not signed in yet, or the server is not configured | Phase 2 |
 
 ## Phase 2 - sign in through the browser
@@ -38,20 +37,19 @@ If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` retu
 
 Authentication succeeded either way; this is not a broken connection, and saying so plainly is the value of this step. The server tells the two cases apart for you.
 
-### 3a - "nothing stored yet": an empty Organization you own
+### 3a - "nothing stored yet": an empty Organization you approve
 
-You own this Organization and it holds no folders. Nothing is hidden from you — an owner reaches everything. Offer to make the first folder:
+You are an approver of this Organization and it holds no folders. Nothing is hidden from you — an approver of the Organization reaches everything. Offer to make the first folder:
 
 1. Ask what to call it (for example the project's name).
-2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with that name. You become its owner, which is what lets you share it later.
+2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with that name. You become its approver, which is what lets you share it later.
 3. Offer `/agentlefs:seed` to put what this session already knows into it.
 
 ### 3b - "no folders you can reach": a credential with no grants
 
 Every person has at least one Organization, so this is never "no membership". It means this credential holds no grants on anything in it yet: content access comes only from explicit grants, and nothing is readable by default. Most often this is an **agent** token that has not been granted a folder, or a member nobody has shared anything with.
 
-- Ask a folder owner to share it (the Share panel at `https://agentlefs.com`, or `/agentlefs:share` from their session).
-- If someone sent a share link, `mcp__plugin_agentlefs_agentlefs__claim_share_link` with the link claims it.
+- Ask a folder approver to share it (the Share panel at `https://agentlefs.com`, or `/agentlefs:share` from their session). Sharing reaches members of the same Organization only, so someone outside it has to be invited to the Organization first.
 
 State clearly: this listing is never proof that the Organization has no content. Denied is byte-identical to not-found, so it may simply mean everything is gated from this credential.
 
@@ -61,7 +59,7 @@ Report concretely:
 
 - Which endpoint is in use.
 - How many folders this credential reaches, and name a few.
-- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`). For a folder under "shared with you", pass the `share` id printed beside it in that same call — without it the path is looked for in this user's own workspace, which is not where that folder is.
+- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`).
 
 Then point onward, without re-explaining them:
 
@@ -91,7 +89,7 @@ Say plainly that semantic search is already on server-side (`vectorIndex: true`)
 | Tools vanished after a crash | Prior session died without a clean shutdown, so project plugin state was never written back | Restart. The credential is almost certainly still valid; do not re-auth first |
 | 401 loop, sign-in never sticks | Browser flow was abandoned or cookies blocked | Re-run `/mcp`, complete the flow in a normal browser window |
 | 404 on every call | Endpoint points at the console host instead of the MCP host | It must be `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |
-| Connects, zero folders | An empty Organization you own, or a credential with no grants | Phase 3 |
+| Connects, zero folders | An empty Organization you approve, or a credential with no grants | Phase 3 |
 | "startup failed" in a non-Claude client | That client sends only configured headers and never walks the OAuth discovery chain, so it gets the initial 401 | Set `Authorization: Bearer afs_…` as a static header. See the headless note below |
 | Works locally, fails in CI | No browser available for OAuth | See the headless note below |
 

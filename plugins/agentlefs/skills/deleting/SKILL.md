@@ -58,10 +58,10 @@ unless they ask; the answer to "should this be gone" was no.
 - **The file count includes files you cannot see.** If the target holds content
   gated from you, the number is still the true number — the gate counts every file
   at HEAD. That is why a preview can say 240 when you can list 237.
-- **The "not listed" number is not an alarm.** Owning a folder does not by itself
-  grant you read access to what is in it, so the commonest caller — an admin who
-  owns the folder — sees a small sample and a large remainder. That means "you own
-  these and hold no read grant", not "these are hidden from you".
+- **The "not listed" number is not an alarm.** It means the preview's sample stopped
+  short of everything that will go, not "these are hidden from you". Deleting needs
+  `approver`, and `approver` includes read, so everything you may delete is something
+  you may read.
 - **The sample is exact, never approximate.** Every path named is a path that will
   actually go. A file that merely shares the prefix — `reports-archive/` when you
   named `reports`, or `open.md.bak` when you named `open.md` — is not in the blast
@@ -81,7 +81,7 @@ unless they ask; the answer to "should this be gone" was no.
 
 | What you see | What it means | What to do |
 |---|---|---|
-| `not permitted: N items here can't be deleted with your access — …` | Deleting needs **owner** on every item it would remove, including items you cannot see. You do not own all of them. Deletion is all-or-nothing on purpose — a partial delete is the worst outcome available. | Stop and report which items blocked it. The named ones are ones you can read; any remainder is counted, not named, and you cannot find out what they are. An owner of the folder deletes it, or grants ownership first. Do not look for another route. |
+| `not permitted: N items here can't be deleted with your access — …` | Deleting needs **approver** on every item it would remove, including items you cannot see. You are not an approver of all of them. Deletion is all-or-nothing on purpose — a partial delete is the worst outcome available. | Stop and report which items blocked it. The named ones are ones you can read; any remainder is counted, not named, and you cannot find out what they are. An approver of the folder deletes it, or grants approver first. Do not look for another route. |
 | `this folder changed since that confirmation was issued` | Someone wrote to the folder between your preview and your confirm, so the numbers the person approved are stale. | Re-preview, show the person what changed, ask again. Do not re-confirm on the old answer. |
 | `that confirmation has expired` | More than ten minutes passed. | Re-preview. If the delay was because the person is still deciding, that is the system working. |
 

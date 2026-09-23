@@ -53,17 +53,16 @@ reads as a broken product to them and as a done job to the user.
      see its members before concluding anything. A member marked "nested group" is
      another group: walk it too, until no unexplored group is left — groups nest at
      any depth, and that call lists one level.
-   - **Outside people are listed by email, and an unaccepted invite says so** — the
-     line ends "(invited; no account yet, so nothing is granted until they sign in)".
-     That person is on the list and still cannot open the doc.
+   - **Nobody outside the organization is ever on it.** Sharing does not cross
+     Organizations, so a Slack person who is not a member cannot open the doc whatever
+     the roster says.
 
 3. **Act on the answer:**
 
    | Result | Do this |
    |---|---|
-   | They are listed by name, or are a member of a listed group, or are an outside person whose invite is accepted | Send the message. |
-   | They are an outside person whose invite is not accepted yet | Do not send the link as if it works. Tell the user the invite is still pending, and offer to send a message that says so. |
-   | Nobody on the roster is them, and every listed group — nested ones included — has been walked to the bottom | Stop before sending. Tell the user "<person> can't open that doc", and offer to share the folder with them first (`share_org_folder`) — which changes who can read it, so it needs the user's yes, not yours. |
+   | They are listed by name, or are a member of a listed group | Send the message. |
+   | Nobody on the roster is them, and every listed group — nested ones included — has been walked to the bottom | Stop before sending. Tell the user "<person> can't open that doc", and offer to share the folder with them first (`share_org_folder`) — which changes who can read it, so it needs the user's yes, not yours, and reaches them only if they are a member of this organization. |
    | You cannot tell — `not found`, a refusal, a group whose members you cannot list, a roster of bare ids with no names, or no confident name match | Say which, and ask whether to send anyway. Never offer a new grant on an answer you could not read: widening access to fix a problem that may not exist is the one mistake here that outlives the message. |
 
 4. **Send it** through Slack's tools, to the person or channel the user named. Include
@@ -93,7 +92,7 @@ Two reasons, both firm:
 
 - **The destination decides who can read it**, and a private channel's contents moved
   into a shared folder reach people the channel never included. Ask where it goes, the
-  same way the `sync-conversation` skill does, defaulting to the user's own home folder.
+  same way the `sync-conversation` skill does, with no default folder.
 - **Slack's terms bar keeping copies of Slack data.** A person deciding to write down
   what was decided is their own note; an agent mirroring messages is a copy.
 

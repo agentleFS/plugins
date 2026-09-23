@@ -1,64 +1,57 @@
 ---
 description: Catch up on what you have been working on in agentleFS (afs), and pick the thread back up
 argument-hint: [topic]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_my_recent_work, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
 ---
 
 Work out where the user left off and hand it back to them in a few sentences they can act on.
 
 Focus: `$1` (optional). If `$ARGUMENTS` names a topic, let it steer everything below — it is a far better signal than recency. If it is empty, report on their recent work generally.
 
-## Step 1 - orient, once
+## Step 1 - brief, once
 
-Call `mcp__plugin_agentlefs_agentlefs__list_my_recent_work`. Default window is 30 days; pass `days` only if they asked about something older.
+Call `mcp__plugin_agentlefs_agentlefs__brief_me` with no arguments. It is keyed to this identity, not this session, so it picks up where the last session stopped.
 
-One call. If it did not tell you what you hoped, calling it again with a different window will not change that.
+One call. Read its structured fields:
+
+| Field | What it tells you |
+|---|---|
+| `claims` | What this identity said it was working on and has not released — the most direct answer to "where was I" |
+| `waiting` | Requests addressed to them that are still open |
+| `changed` | What other people and agents did near their work (nodes they own, claimed or wrote) since the last acknowledged brief |
+| `contested` | Someone else's claim overlapping theirs, and inconsistencies flagged on their documents |
 
 | Outcome | Do this |
 |---|---|
-| Documents and folders come back | Continue to Step 2. |
-| Empty, and no folders moved | They have not used the store recently, or their grants changed. Say so in one sentence and go to Step 3 anyway — `$1` may still be answerable from the store. |
+| Any of the above is non-empty | Continue to Step 2. |
+| All empty | Nothing has moved near their work since the last acknowledged brief, or they have not worked in the store yet. Say so in one sentence and go to Step 2 anyway — `$1` may still be answerable from the store. |
+| `not_an_identity` | This credential has no place in the identity tree. Say so; search still works. |
 | Error / tools missing | Stop and diagnose with the `connection` skill. Do not paraphrase a 401 as "agentleFS is down". |
 
-## Step 2 - read the basis line before you trust anything above it
+## Step 2 - search, aimed but not fenced
 
-The response ends with something like `basis: 12 document(s) across 3 folder(s)`. It governs how much weight the rest deserves.
+The locations in `claims` and `changed` tell you where this person's work *tends* to live. That is a strong hint and a terrible filter.
 
-Under about five documents is a weak signal — real, but close to noise. Let it break ties and nothing more. A dozen or more across several folders is a genuine picture of where this person works.
-
-This matters because adoption varies enormously: some people put everything in agentleFS, some put in fragments. A confident account of someone's work built on four events is worse than admitting you cannot tell, because they have no way to see it was invented. When the basis is thin, say so in one clause and move on.
-
-## Step 3 - search, aimed but not fenced
-
-Orientation tells you where this person's work *tends* to live. That is a strong hint and a terrible filter.
-
-If their activity is all in `product/` and `$1` is about a deployment runbook, scoping `mcp__plugin_agentlefs_agentlefs__search_org_knowledge` to `product` guarantees you miss it — and you will never find out, because a search returning nothing looks exactly like a subject nobody wrote about.
+If their work is all in `product/` and `$1` is about a deployment runbook, scoping `mcp__plugin_agentlefs_agentlefs__search_org_knowledge` to `product` guarantees you miss it — and you will never find out, because a search returning nothing looks exactly like a subject nobody wrote about.
 
 So use it to **interpret** ("the pricing doc" means the one in their folder), to **rank**, and to **go first**. Run at least one search without a folder scope before concluding the store has nothing.
 
-## Step 4 - open two or three documents, then stop
+## Step 3 - open two or three documents, then stop
 
-Orientation hands you filenames and they are tempting. Two or three well-chosen ones is almost always enough to answer or to ask a good question, and every extra one costs context they would rather spend on the actual work.
+Call `mcp__plugin_agentlefs_agentlefs__read_org_doc` on the ones that match what they asked, not the ones that merely changed most recently. If nothing looks right, say what you found and ask — that is faster for them than watching you open six files that turn out to be wrong.
 
-Call `mcp__plugin_agentlefs_agentlefs__read_org_doc` on the ones that match what they asked, not the ones that are merely most recent. If nothing looks right, say what you found and ask — that is faster for them than watching you open six files that turn out to be wrong.
-
-## Step 5 - report
+## Step 4 - report
 
 Lead with where things stand, not with what you did. Three or four sentences, then stop.
 
-Cover what they were last working on, anything that looks unfinished, and what the obvious next step is. Cite documents by folder and path so they can open them. If you leaned on the orientation to pick a folder, say so in passing ("looks like this lives in your `product/` area") — a wrong guess should be visible and correctable rather than silent.
+Lead with anything in `waiting` or `contested`: those are somebody else asking for something, or about to collide with them. Then what they were last working on, anything that looks unfinished, and the obvious next step. Cite documents by path so they can open them. Do not answer or close a request on their behalf without asking.
 
-Two things to keep straight when you write it up:
-
-**Recent often means finished.** The most recently touched document is frequently the one they just wrapped up. Recency marks where they have been, not where they are going. If `$1` is set, it outranks everything the orientation said.
-
-**Absence is never evidence.** Documents they cannot currently read are filtered out, and folders they hold no grant on never appear. Empty means "nothing I can reach", never "nothing exists".
+**Absence is never evidence.** Documents they cannot currently read are filtered out of every field. Empty means "nothing I can reach", never "nothing exists".
 
 ## Do not
 
-- Do not describe their role, seniority, or team from activity counts. Writing eight documents in `engineering/` does not make someone an engineer — they might be the founder, a designer writing specs, or covering for someone on leave. Read the counts as places, not as a person.
-- Do not pass a folder filter to search based only on orientation.
-- Do not call `mcp__plugin_agentlefs_agentlefs__list_my_recent_work` repeatedly hunting for a better answer.
-- Do not open every filename the orientation returned.
+- Do not describe their role, seniority, or team from where they work. Read locations as places, not as a person.
+- Do not pass a folder filter to search based only on the brief.
+- Do not call `mcp__plugin_agentlefs_agentlefs__brief_me` repeatedly hunting for a better answer. The one further call worth making is the acknowledgement — `ack_through` set to `cursor.head` — and only once the user has picked the work back up: it moves their cursor, so the next session starts after what you summarized.
 - Do not report a thin or empty result as though the organization has written nothing.
 - Do not narrate your tool calls. They want to know where things stand.

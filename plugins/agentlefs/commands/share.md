@@ -1,12 +1,14 @@
 ---
-description: Share an agentleFS (afs) folder or document by email or link — shows exactly who gets what, and shares only after you say yes
+description: Share an agentleFS (afs) folder or document with members of your Organization by email — shows exactly who gets what, and shares only after you say yes
 argument-hint: [folder-or-path]
 allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__who_can_read
 ---
 
-Help the user share `$1` with someone. Your job is to get the decision right, show its blast radius, and share **only after they say yes** to the exact preview.
+Help the user share `$1` with someone in their Organization. Your job is to get the decision right, show its blast radius, and share **only after they say yes** to the exact preview.
 
-The share tools are deliberately left out of this command's pre-approved tools, so Claude Code also asks the user before each share call. That prompt is a second guard, not a substitute for asking them yourself.
+Sharing reaches **members of this Organization only**. There is no way to share with someone outside it, by email or by link: an address that does not belong to a member is refused and nothing is shared. If the user wants someone outside to have access, that person has to be invited to the Organization first, by a person who manages it, in the console.
+
+The share tool is deliberately left out of this command's pre-approved tools, so Claude Code also asks the user before each share call. That prompt is a second guard, not a substitute for asking them yourself.
 
 Target: `$1` (a `location` — a full path from the workspace root, naming either a folder like `product` or a single document like `product/runbooks/deploy.md`). If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, show the reachable folders, and ask which one they mean.
 
@@ -25,19 +27,20 @@ One caveat to state honestly: the counts you can see are **your** counts. If the
 
 ## Step 2 - choose the role
 
-Three roles are offered outward. The console labels them view / edit / manage.
+Three roles are offered. The console labels them Reader / Editor / Approver.
 
 | Console label | Role | Grants | Use when |
 |---|---|---|---|
-| view | `reader` | read and search the content | the default; the recipient needs to know, not change |
-| edit | `writer` | read plus write and edit documents | the recipient maintains the content |
-| manage | `owner` | ownership of the scope, and satisfies the writer bar | the recipient is accountable for it |
+| Reader | `reader` | read and search the content | the default; the recipient needs to know, not change |
+| Editor | `writer` | read plus write and edit documents | the recipient maintains the content |
+| Approver | `approver` | can share and manage access at and below the scope, and edit | the recipient decides who else gets in |
 
 Guidance to give:
 
-- Default to view. Escalate only on a stated need.
-- **One ladder: `reader` < `writer` < `owner`.** Each rung contains the one below it, so an owner reads and writes everything at or below what it owns, and additionally grants and revokes there. Treat manage as "accountable for it, and can change it".
-- The ladder is stated once, in `openfga/model.fga`, and there is no app-layer fold — asking the engine for `writer` already returns allow for an owner, so the console and MCP cannot give different answers. This guidance used to say `owner ⇏ writer` and that the authority layer folded it; that was the pre-#219 model.
+- Default to Reader. Escalate only on a stated need.
+- **One ladder: `reader` < `writer` < `approver`.** Each rung contains the one below it, so an approver reads and writes everything at or below where the grant sits, and additionally grants, revokes, deletes and erases there. Treat Approver as "decides who else gets in, and can change it".
+- `approver` was called `owner` until September 2026; it is the same authority under a new name. "Owner" now means only the single owner every document and folder has, which is not a role you can share.
+- The ladder is stated once, in `openfga/model.fga`, and there is no app-layer fold — asking the engine for `writer` already returns allow for an approver, so the console and MCP cannot give different answers. This guidance used to say `owner ⇏ writer` and that the authority layer folded it; that was the pre-#219 model.
 - There are three roles and no others. `proposer` and `member` are retired, and neither was ever granted to anyone.
 
 Pick the narrowest scope that does the job. A document-scoped grant is almost always safer than a folder-scoped one, and re-sharing a second document later is cheap.
@@ -48,23 +51,19 @@ Call `mcp__plugin_agentlefs_agentlefs__who_can_read` on the target. If the recip
 
 ## Step 4 - preview, ask, then share
 
-The two tools do NOT work the same way, and the difference decides when you ask.
-
-**By email — `share_org_folder`, TWO calls.** Pass `location`, `emails` and `role` (`reader` / `writer` / `owner`; add `scope_type: "document"` for one file). The first call **previews and shares nothing**; only a second call carrying its `confirm_token` shares. Someone in this Organization gets an ordinary grant; anyone else finds it under "Shared with me"; a stranger is invited to sign up. It sends real email.
+**`share_org_folder`, TWO calls.** Pass `location`, `emails` and `role` (`reader` / `writer` / `approver`; add `scope_type: "document"` for one file). The first call **previews and shares nothing**; only a second call carrying its `confirm_token` shares. Each address that belongs to a member of this Organization gets an ordinary grant; any other address is refused with "not a member of this organization", and nothing is shared with it. It sends no email.
 
 1. Make the preview call now, without asking first. It shares nothing, and its reply is the preview you are about to show — asking before it means asking the user to approve something they have not seen.
 2. Show the user the preview in plain words: who, what role, how many files it reaches (from Step 1), and that it cascades.
 3. **Ask. Wait for an explicit yes to THAT preview.** "Share it" before the preview is not a yes to the preview.
 4. On yes, call again with the `confirm_token`. On anything else, stop — nothing was shared.
-5. Report what the tool returned, and confirm with `mcp__plugin_agentlefs_agentlefs__who_can_read`.
+5. Report what the tool returned, per address — including any address it refused as not a member — and confirm with `mcp__plugin_agentlefs_agentlefs__who_can_read`.
 
 A token expires after ten minutes, and it is refused if the folder, the role or the address list changed since the preview; either way, preview again and ask again.
 
-**By link — `create_org_share_link`, ONE call, and it mints the link immediately.** There is no preview and no `confirm_token`, so the user's yes comes BEFORE the only call. Describe the link you would make — target, role, and whether it is open (no `emails`: anyone holding the link can claim `role`, so it is a credential — safe to forward, not to post) or restricted (`emails`: only those addresses can) — get an explicit yes, then call it once. The link is returned exactly once; hand it over and do not repeat it elsewhere.
+**If a share tool refuses with "you cannot change who reaches content"**, nothing was shared, and the console will refuse for the same reason. Handing out access is authority over the whole Organization, not over the folder, so being an approver of the folder does not help in either place. Say that plainly, and name the move: ask an approver of the Organization to share it, or to make you an approver of the Organization.
 
-**If a share tool refuses with "you cannot change who reaches content"**, nothing was shared, and the console will refuse for the same reason. Handing out access is authority over the whole Organization, not over the folder, so owning the folder does not help in either place. Say that plainly, and name the move: ask an owner of the Organization to share it, or to make you an owner of the Organization. The same refusal and the same answer apply to `create_org_share_link` and `revoke_org_share`.
-
-**Taking a share back.** For someone OUTSIDE the Organization, `revoke_org_share` with the email as `who_can_read` prints it. Grants held by members of this Organization can be inherited from a parent folder, so change those in the console, where you can see where each grant actually lives.
+**Taking a share back.** Grants can be inherited from a parent folder, so change them in the console, where you can see where each grant actually lives.
 
 **Groups and the console.** To grant a whole group, or to see file by file what one person reaches, use `https://agentlefs.com` (**Groups**, and the reach lens on the Files tree).
 

@@ -1,6 +1,6 @@
 ---
 name: authorization-model
-description: How agentleFS (afs) decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, a separate policy engine anywhere, and owner-outside-the-ladder).
+description: How agentleFS (afs) decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, a separate policy engine anywhere, and the grant role outside the ladder).
 ---
 
 # agentleFS authorization
@@ -30,10 +30,10 @@ A row in `reach_grants` says "subject holds `role` on scope".
 | Field | Values |
 |---|---|
 | subject | `user` (a principal) or `group` |
-| role | `owner`, `writer`, `reader` |
+| role | `approver`, `writer`, `reader` |
 | scope | `tenant`, `folder`, or `document` |
 
-**Breadth comes from WHERE a grant sits, not from a second vocabulary.** A `tenant`-scope owner is what used to be called a console admin and reaches the whole workspace; a folder-scope owner reaches that subtree. There is no `admin` role.
+**Breadth comes from WHERE a grant sits, not from a second vocabulary.** A `tenant`-scope approver is what used to be called a console admin and reaches the whole workspace; a folder-scope approver reaches that subtree. There is no `admin` role.
 
 Postgres `reach_grants` is the source of truth. OpenFGA tuples are a derived projection, so a grant survives an OpenFGA outage and can be reconciled afterward.
 
@@ -47,11 +47,13 @@ Postgres `reach_grants` is the source of truth. OpenFGA tuples are a derived pro
 
 ### Roles
 
-**One ladder: `reader` < `writer` < `owner`.** Each rung contains the one below it, so an owner reads and writes everything it owns. The console offers them outward as view / edit / manage.
+**One ladder: `reader` < `writer` < `approver`.** Each rung contains the one below it, so an approver reads and writes everything at or below where its grant sits. The console shows `approver` as **Approver**: can share and manage access, and edit.
 
-The containment is stated once, in `openfga/model.fga`, and nowhere else. There is no app-layer fold: asking the engine for `writer` already returns allow for an owner. Two places stating the same rule is how they come to disagree.
+The containment is stated once, in `openfga/model.fga`, and nowhere else. There is no app-layer fold: asking the engine for `writer` already returns allow for an approver. Two places stating the same rule is how they come to disagree.
 
-`owner` additionally carries what the ladder cannot express — granting, revoking, and reading the audit log — bounded to the subtree the grant sits on.
+`approver` additionally carries what the ladder cannot express — granting, revoking, deleting, erasing, renaming, adding agents, and reading the audit log — bounded to the subtree the grant sits on. Many principals may hold it on the same node.
+
+**`approver` was called `owner` until September 2026.** It was renamed, not changed: the same principals can do the same things. The word "owner" now means only **single ownership** — every node has exactly one owner, the identity that created it (or whoever it was reassigned to), recorded on the node itself. Ownership says whose a thing is; it grants no access on its own and is not a rung of this ladder. If you see `owner` used as a grant role anywhere, it is the old name. (A group also has an `owner` relation — who manages its membership — which is a third, unrelated thing.)
 
 `proposer` and `member` are RETIRED as roles. Neither was ever granted anywhere, and both rendered as reader.
 
@@ -85,9 +87,9 @@ Never report a thin result as evidence of absence. Say "nothing I can reach matc
 
 ## One decider, for the console as well as for content
 
-There is no second engine. Console actions resolve through the same OpenFGA ladder: anything above a small read-only floor requires ownership of the **tenant root**, which is the node every folder hangs off. So "may you use this console tool" and "may you read this file" are the same kind of question asked about different objects.
+There is no second engine. Console actions resolve through the same OpenFGA ladder: anything above a small read-only floor requires approver on the **tenant root**, which is the node every folder hangs off. So "may you use this console tool" and "may you read this file" are the same kind of question asked about different objects.
 
-A tenant-root owner therefore does reach every file in the workspace — deliberately, because that is what being an owner of the root means. This is a change: under the old model a console admin had no file access they were not separately granted.
+A tenant-root approver therefore does reach every file in the workspace — deliberately, because that is what being an approver of the root means. This is a change: under the old model a console admin had no file access they were not separately granted.
 
 ## Labels carry ZERO authority
 
@@ -113,10 +115,13 @@ See above. This is the failure this system is specifically built to prevent you 
 **Wrong: an agent can read the audit trail.**
 It cannot, by design. `audit_tail` was deliberately removed so a token holder cannot audit a whole tenant; audit is a console surface, admin-gated.
 
-Who reaches something, though, IS answerable: `who_can_read` on a folder or document you reach names the people and groups inside the Organization (direct or inherited, with role) and anyone outside it holding a share. It names people, never their content, and for a scope you cannot reach it answers not-found.
+Who reaches something, though, IS answerable: `who_can_read` on a folder or document you reach names the people and groups in the Organization (direct or inherited, with role). Nobody outside the Organization can hold access to anything in it. It names people, never their content, and for a scope you cannot reach it answers not-found.
 
-**Wrong: "owner grants access but cannot itself read".**
-That was true, and it was the defect #219 fixed. Ownership is the top of one ladder: an owner reads and writes everything beneath it. Any explanation that treats ownership as an orthogonal badge rather than the highest rung is describing the old model.
+**Wrong: "the grant role that shares cannot itself read".**
+That was true, and it was the defect #219 fixed (the role was then called `owner`). The sharing role is the top of one ladder: an approver reads and writes everything beneath it. Any explanation that treats it as an orthogonal badge rather than the highest rung is describing the old model.
+
+**Wrong: "the owner of a folder is whoever holds the top grant on it".**
+Not any more. Many principals may hold `approver` on a node, and it inherits down the tree; a node has exactly one owner, and ownership is not access. Keep the two words apart.
 
 ## Consequences for how you work
 

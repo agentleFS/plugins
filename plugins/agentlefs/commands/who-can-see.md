@@ -24,10 +24,7 @@ The gated count is the interesting number. It tells you how many files sit in th
 
 ## Part 2 - who ELSE can see it
 
-Call `mcp__plugin_agentlefs_agentlefs__who_can_read` with the `location` (and `scope_type: "document"` for a single file). It names:
-
-- **people and groups inside this Organization** who reach it, each marked **direct** (granted here) or **inherited** (from an ancestor folder), with their role;
-- **people outside the Organization** who hold a share on it, by the email it was shared with.
+Call `mcp__plugin_agentlefs_agentlefs__who_can_read` with the `location` (and `scope_type: "document"` for a single file). It names the **people and groups in this Organization** who reach it, each marked **direct** (granted here) or **inherited** (from an ancestor folder), with their role. Nobody outside the Organization can reach anything in it: sharing does not cross Organizations.
 
 It names people, never their content. It answers only for a scope **you** reach yourself: for one you do not, it answers not-found, exactly as for a scope that does not exist — so a not-found here is not evidence of anything.
 
@@ -39,9 +36,7 @@ For what the tool does not answer, send the human to `https://agentlefs.com` and
 |---|---|
 | What exactly can a specific person or group see, file by file? | the **reach lens** ("View as") on the Files tree |
 | Who is in a group, and what does the group reach? | **Groups** |
-| Change a grant held by someone inside the Organization | the **"Shared with"** list on the folder or file |
-
-To take back a share given to someone OUTSIDE the Organization, `/agentlefs:share` covers it with `revoke_org_share`.
+| Change a grant | the **"Shared with"** list on the folder or file |
 
 ## Explain how to read the answer
 
@@ -51,7 +46,7 @@ Give the user these three ideas, because a list of who reaches something is misl
 - **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. `who_can_read` marks that as inherited.
 - **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. The reach lens resolves this; a raw grant list does not.
 
-Also worth stating: console tools and file reads are different questions, but not different engines. There is no separate policy engine — both resolve through the same OpenFGA ladder. Console actions above a small read-only floor require ownership of the **tenant root**, and owning the root does reach every file in the workspace, because that is what owning the root means. A folder-scope owner reaches only their subtree.
+Also worth stating: console tools and file reads are different questions, but not different engines. There is no separate policy engine — both resolve through the same OpenFGA ladder. Console actions above a small read-only floor require approver on the **tenant root**, and approver on the root does reach every file in the workspace, because that is what it means. A folder-scope approver reaches only their subtree.
 
 ## What you must NOT do
 
@@ -63,6 +58,6 @@ Also worth stating: console tools and file reads are different questions, but no
 
 ## Shape of the answer
 
-1. Who else reaches it, from `who_can_read`: inside the Organization (direct or inherited, with role), and outside it.
+1. Who else reaches it, from `who_can_read`: direct or inherited, with role.
 2. What you can see yourself, with real numbers from the calls you made.
 3. For a file-by-file view of one person's access, the console's reach lens.

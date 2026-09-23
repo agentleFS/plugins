@@ -14,7 +14,7 @@ You can establish two things from here: **what this credential reaches**, and **
 1. `list_org_folders` with no arguments returns the complete set of folders this principal reaches.
 2. `list_org_folders` with a folder returns that folder's shape: readable file count, `denied` count (gated from you), type breakdown, labels.
 3. `list_org_docs` on a folder enumerates the documents you are authorized to read, optionally filtered by `path`, `type`, or `label`.
-4. `who_can_read` on a folder or document names who reaches it: people and groups in this Organization, **direct** or **inherited**, with their role, and people outside it who hold a share. It answers only for a scope you reach yourself; for one you do not it answers not-found, identical to a scope that does not exist.
+4. `who_can_read` on a folder or document names who reaches it: people and groups in this Organization, **direct** or **inherited**, with their role. Nobody outside the Organization reaches anything in it. It answers only for a scope you reach yourself; for one you do not it answers not-found, identical to a scope that does not exist.
 
 That is the whole read surface for access questions. There is deliberately **no `audit_tail` tool**; it was removed so a token holder cannot audit an entire tenant. Audit is a console surface, admin-gated.
 
@@ -41,7 +41,7 @@ The `denied` count is your single most useful signal. A folder where gated files
 
 Labels carry zero authority. No authorization decision reads them. An unlabeled file is not public; a sensitively-labeled file is not thereby restricted. Access comes only from explicit reach grants.
 
-Console role is not the same question as file access, but it is not a separate engine either. There is no separate policy engine; console actions resolve through the same OpenFGA ladder, where anything above a small read-only floor requires ownership of the tenant root. So a tenant-root owner does reach every file in the workspace — that is what owning the root means — while a folder-scope owner reaches only their subtree.
+Console role is not the same question as file access, but it is not a separate engine either. There is no separate policy engine; console actions resolve through the same OpenFGA ladder, where anything above a small read-only floor requires approver on the tenant root. So a tenant-root approver does reach every file in the workspace — that is what being approver of the root means — while a folder-scope approver reaches only their subtree.
 
 If a call errors rather than returning a shorter list, surface the error. The read path is fail-closed: a truncated allow-set throws rather than filtering on a subset. An error is the system refusing to under-report, and it must not be smoothed into a partial summary.
 
@@ -58,7 +58,7 @@ If a call errors rather than returning a shorter list, surface the error. The re
 
 Explain, when relevant, that grants **cascade** down the folder tree, that groups **nest** so reach can arrive through several hops, and that an **inherited** grant must be removed at the ancestor it was made on because there is nothing to remove at this level.
 
-Role vocabulary: `reader` / `writer` / `owner`, surfaced as view / edit / manage. **One ladder, each rung containing the one below it** — `owner` ⟹ `writer` ⟹ `reader`. An owner reads and writes everything at or below what it owns, and additionally grants and revokes there.
+Role vocabulary: `reader` / `writer` / `approver`, surfaced as Reader / Editor / Approver. **One ladder, each rung containing the one below it** — `approver` ⟹ `writer` ⟹ `reader`. An approver reads and writes everything at or below where the grant sits, and additionally grants and revokes there. `approver` was named `owner` until September 2026; "owner" now means only a node's single owner, which is not access and not a rung.
 
 This paragraph used to say `owner` was not a rung, that `owner ⇏ writer/reader`, and that an authority layer folded owner into the writer bar. That was the pre-#219 model and the engine never agreed with it. The containment is now stated once, in `openfga/model.fga`, and there is no app-layer fold. `proposer` and `member` are retired roles, never granted to anyone; there are three rungs and no others.
 

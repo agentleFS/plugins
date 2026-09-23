@@ -10,16 +10,17 @@ search, but a store holding several functions' worth of documents will answer
 "pricing" from sales, product, finance and engineering at once, and the session
 has no way to tell which one this user means.
 
-`list_my_recent_work` closes that gap in one call. It reports which folders they
-have been editing and opening, which documents they touched, and when. It does not
-answer questions and it does not summarize anything — it tells you **where to
-point the tools you already have.**
+`brief_me` closes that gap in one call. It is keyed to the identity rather than the
+session, so a new session reads the same brief the last one would have, from the
+same cursor. It does not answer questions and it does not summarize documents — it
+tells you **where to point the tools you already have**, and what is waiting on the
+person.
 
 ## The shape of a good catch-up
 
 ```
-list_my_recent_work        ← once
-   ↓ read the folders and filenames
+brief_me                   ← once
+   ↓ read claims, waiting, changed, contested
 search_org_knowledge       ← aimed, but not fenced in
    ↓
 read_org_doc               ← two or three, then stop and talk
@@ -28,120 +29,116 @@ read_org_doc               ← two or three, then stop and talk
 Four to six calls, then a reply. If you are on your seventh call you have stopped
 orienting and started excavating.
 
-## Step 1 — orient, once
+## Step 1 — brief, once
 
-Call `list_my_recent_work`. The default 30-day window suits most sessions; widen
-it with `days` only if the user is asking about something they describe as older.
+Call `brief_me` with no arguments. Its structured output has these parts:
 
-One call is the whole budget for this step. The output is small on purpose — if it
-did not tell you what you hoped, calling it again with a different window will not
-change that, and the user's own words are a better source anyway.
+| Field | What it is |
+|---|---|
+| `me` | Who this identity is, where it sits in the organization's tree of people and agents, its capability card |
+| `claims` | What it said it was working on and has not released — the most direct answer to "where was I" |
+| `waiting` | Requests other people or agents left on a board, addressed to it and still open |
+| `changed` | What others did near its work — nodes it owns, holds claims on, or wrote — since the last acknowledged brief |
+| `contested` | Other identities' claims overlapping its own, and inconsistencies flagged on its documents |
+| `cursor` | Where the brief started (`position`) and where the log is now (`head`) |
 
-## Step 2 — read the basis line before you trust anything above it
+One call is the whole budget for this step. If it did not tell you what you hoped,
+calling it again will not change that, and the user's own words are a better source
+anyway.
 
-Every response ends with something like `basis: 12 document(s) across 3 folder(s)`.
-Read it first. It governs how much weight the rest deserves:
+## Step 2 — read how much there is before you trust it
 
-| Basis | What it means | What to do |
-|---|---|---|
-| Nothing at all | They have not used the store recently, or their grants changed | Say so plainly, then search normally. Do **not** guess at their work. |
-| Under ~5 documents | A weak signal — real, but it could be noise | Let it break ties. Never let it steer. |
-| A dozen or more across folders | A genuine picture of where they work | Aim your search with it. |
+A brief with open claims and a dozen changes across several documents is a genuine
+picture of where this person is working. A brief with nothing in `claims` and two
+items in `changed` is a weak signal — let it break ties and nothing more. All empty
+means nothing moved near their work since the last acknowledged brief, or they have
+not worked in the store yet; say so in one sentence and search normally. Do **not**
+guess at their work.
 
 Adoption of agentleFS varies enormously — some people put everything in it, some
-put in fragments. A confident-sounding account of someone's work built on four
+put in fragments. A confident-sounding account of someone's work built on two
 events is worse than admitting you cannot tell, because the user has no way to see
-that it was invented. When the basis is thin, the honest move is one sentence
-saying so, and then getting on with the actual question.
+that it was invented.
 
 ## Step 3 — let it aim your search, never fence it
 
 This is the part that goes wrong, so it is worth being precise about.
 
-Orientation tells you where this person's work *tends* to live. That is a strong
-hint and a terrible filter. If their activity is all in `product/` and they ask
-about a deployment runbook, passing `location: "product"` to `search_org_knowledge`
-guarantees you miss it — and you will never find out, because a search that
-returns nothing looks exactly like a subject nobody wrote about.
+The locations in the brief tell you where this person's work *tends* to live. That
+is a strong hint and a terrible filter. If their work is all in `product/` and they
+ask about a deployment runbook, passing `location: "product"` to
+`search_org_knowledge` guarantees you miss it — and you will never find out,
+because a search that returns nothing looks exactly like a subject nobody wrote
+about.
 
 So:
 
 - **Use it to interpret.** "The pricing doc" means the one in *their* folder.
-- **Use it to rank.** A hit in a folder they work in daily is likelier to be the
-  one they meant than an identically-worded hit somewhere they have never been.
+- **Use it to rank.** A hit in a folder they work in is likelier to be the one they
+  meant than an identically-worded hit somewhere they have never been.
 - **Use it to go first.** Search their active area before the rest of the store.
 - **Do not use it to exclude.** Run at least one search unscoped by folder before
   concluding the store has nothing.
 
 ## Step 4 — open two or three documents, then stop
 
-Orientation hands you filenames, and filenames are tempting. Resist opening them
-all. Two or three well-chosen documents is almost always enough to answer or to
-ask a good question, and every extra one costs context the user would rather spend
-on the actual work.
-
-Pick by what the user asked, not by what is most recent. If nothing looks right,
-say what you found and ask — that is faster for them than watching you open six
-files that turn out to be wrong.
+Two or three well-chosen documents is almost always enough to answer or to ask a
+good question, and every extra one costs context the user would rather spend on the
+actual work. Pick by what the user asked, not by what changed most recently.
 
 ## What is waiting on them
 
-Three sections may follow the activity. `waiting on you` lists open requests other
-people or their agents left on a board and addressed to this person, anywhere they
-can read. `you asked, still open` lists requests they asked that nobody has answered
-yet, with how many addressees refused. `your requests answered` lists requests they
-asked that someone closed or refused in the window. Lead with these when present: they are the one part of
-the output that is somebody else asking for something.
+Lead with `waiting` and `contested` when they are non-empty: they are the one part
+of the brief that is somebody else asking for something, or about to collide with
+this person's work. Each waiting item is a message and carries its id. `message`
+with `action: "thread"` and its `thread_id` reads the conversation; `action: "send"`
+with `reply_to` answers it, and `action: "decline"` with a reason says no. Do not
+answer or decline one on the user's behalf without asking — it is addressed to
+them, not to you.
 
-Each line ends `[post <id>]`. `read_org_board` with `post` reads the
-thread; `post_org_board` with `reply_to` answers it, and with
-`close: "closed"` closes it. Do not answer or close one on the user's behalf
-without asking — a request is addressed to them, not to you.
+What the user asked of others and is still open is the brief's `asked`, and
+answers that came back since the last acknowledged session are `answered`. Only
+the sender closes a message (`action: "close"`), so close one of the user's own
+asks once it is settled.
+
+## Acknowledging
+
+When the work is picked up and `changed` has been taken in, call `brief_me` again
+with `ack_through` set to `cursor.head`, so the next session starts after it. Not
+before: a cursor moved past something nobody read means the next session skips it,
+and re-reading is the cheaper failure.
 
 ## What the output is not
 
-`list_my_recent_work` reports what someone **did**. It never says what they
+The brief reports what happened near someone's work. It never says what they
 **are**, and neither should you.
 
-Writing eight documents in `engineering/` does not make someone an engineer. They
-might be the founder, a designer who writes specs, a support lead documenting
-bugs, or someone covering for a colleague on leave. If you decide they are an
-engineer and quietly answer everything from there, that assumption shapes every
-reply and the user cannot see it happening.
-
-Read the counts as *places*, not as a *person*. And when the user says something
-that cuts against them, the user is right — they know their job and this is a
-30-day window of file activity.
+Working in `engineering/` does not make someone an engineer. They might be the
+founder, a designer who writes specs, a support lead documenting bugs, or someone
+covering for a colleague on leave. Read locations as *places*, not as a *person*.
+When the user says something that cuts against them, the user is right.
 
 ## Reading what is missing
 
-Two things the output genuinely cannot tell you, worth holding in mind:
+**Recent often means finished.** The thing that changed most recently is frequently
+the thing that just wrapped up. Their message says where they are going.
 
-**Recent often means finished.** The thing someone touched most recently is
-frequently the thing they just wrapped up. Recency marks where they have *been*,
-not where they are going. Their message says where they are going.
-
-**Absence is never evidence.** Documents the user cannot currently read are
-filtered out, including ones they wrote before their access changed, and folders
-they hold no grant on never appear at all. An empty or thin result means "nothing
-I can reach", never "nothing exists". Say it that way.
+**Absence is never evidence.** Nothing an identity cannot read appears in the brief,
+not even as a count. An empty or thin brief means "nothing I can reach", never
+"nothing exists". Say it that way.
 
 ## Reporting back
 
 Lead with the answer to what they asked. Weave the context in rather than
-narrating your process — they want to know where things stand, not which tools you
-called.
-
-Cite documents by path so they can open them. If you leaned on orientation to pick
-a folder, say so in passing ("looks like this lives in your `product/` area") so a
-wrong guess is visible and correctable rather than silent.
+narrating your process. Cite documents by path so they can open them. If you leaned
+on the brief to pick a folder, say so in passing ("looks like this lives in your
+`product/` area") so a wrong guess is visible and correctable rather than silent.
 
 ## Do not
 
-- Do not call `list_my_recent_work` repeatedly with different windows hunting for
-  a better answer. One call, then move on.
-- Do not pass a folder filter to search based only on orientation.
-- Do not describe the user's role, seniority, or team from activity counts.
+- Do not call `brief_me` repeatedly hunting for a better answer. One call, then
+  move on (plus the one acknowledgement above).
+- Do not pass a folder filter to search based only on the brief.
+- Do not describe the user's role, seniority, or team from where they work.
 - Do not report a thin or empty result as though the organization has written
   nothing — see the `authorization-model` skill on why absence is not evidence.
-- Do not open every filename the orientation returned.
