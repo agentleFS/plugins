@@ -1,7 +1,7 @@
 ---
 description: Catch up on what you have been working on in agentleFS (afs), and pick the thread back up
 argument-hint: [topic]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
 ---
 
 Work out where the user left off and hand it back to them in a few sentences they can act on.
@@ -17,9 +17,11 @@ One call. Read its structured fields:
 | Field | What it tells you |
 |---|---|
 | `claims` | What this identity said it was working on and has not released — the most direct answer to "where was I" |
-| `waiting` | Requests addressed to them that are still open |
+| `waiting` | Messages addressed to them that are still open — questions, requests, handoffs |
+| `approvals` | Access requests waiting on their decision |
+| `resolvedWaits` | Answers or changes they were waiting for that have arrived, or waits that timed out |
 | `changed` | What other people and agents did near their work (nodes they own, claimed or wrote) since the last acknowledged brief |
-| `contested` | Someone else's claim overlapping theirs, and inconsistencies flagged on their documents |
+| `contested` | Other identities' claims overlapping theirs, truths under debate on their documents, debates they are asked to decide (`toDecide`), and spans gone stale because a truth they cite was superseded |
 
 | Outcome | Do this |
 |---|---|
@@ -32,7 +34,7 @@ One call. Read its structured fields:
 
 The locations in `claims` and `changed` tell you where this person's work *tends* to live. That is a strong hint and a terrible filter.
 
-If their work is all in `product/` and `$1` is about a deployment runbook, scoping `mcp__plugin_agentlefs_agentlefs__search_org_knowledge` to `product` guarantees you miss it — and you will never find out, because a search returning nothing looks exactly like a subject nobody wrote about.
+If their work is all in `product/` and `$1` is about a deployment runbook, scoping `mcp__plugin_agentlefs_agentlefs__search` to `product` guarantees you miss it — and you will never find out, because a search returning nothing looks exactly like a subject nobody wrote about.
 
 So use it to **interpret** ("the pricing doc" means the one in their folder), to **rank**, and to **go first**. Run at least one search without a folder scope before concluding the store has nothing.
 
@@ -44,7 +46,7 @@ Call `mcp__plugin_agentlefs_agentlefs__read_org_doc` on the ones that match what
 
 Lead with where things stand, not with what you did. Three or four sentences, then stop.
 
-Lead with anything in `waiting` or `contested`: those are somebody else asking for something, or about to collide with them. Then what they were last working on, anything that looks unfinished, and the obvious next step. Cite documents by path so they can open them. Do not answer or close a request on their behalf without asking.
+Lead with anything in `waiting`, `approvals`, `resolvedWaits` or `contested`: those are somebody else asking for something, an answer they were waiting for, or about to collide with them. Then what they were last working on, anything that looks unfinished, and the obvious next step. Cite documents by path so they can open them. Do not answer or close a request on their behalf without asking.
 
 **Absence is never evidence.** Documents they cannot currently read are filtered out of every field. Empty means "nothing I can reach", never "nothing exists".
 

@@ -1,5 +1,5 @@
 ---
-description: Connect this session to agentleFS (afs) and verify the connection with a real call
+description: Sign this client in to agentleFS (afs) and verify the connection with a real call — not for syncing GitHub or Google Drive content into afs
 allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__create_org_folder
 ---
 
@@ -42,14 +42,15 @@ Authentication succeeded either way; this is not a broken connection, and saying
 You are an approver of this Organization and it holds no folders. Nothing is hidden from you — an approver of the Organization reaches everything. Offer to make the first folder:
 
 1. Ask what to call it (for example the project's name).
-2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with that name. You become its approver, which is what lets you share it later.
+2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its approver, which is what lets you share it later.
 3. Offer `/agentlefs:seed` to put what this session already knows into it.
 
 ### 3b - "no folders you can reach": a credential with no grants
 
 Every person has at least one Organization, so this is never "no membership". It means this credential holds no grants on anything in it yet: content access comes only from explicit grants, and nothing is readable by default. Most often this is an **agent** token that has not been granted a folder, or a member nobody has shared anything with.
 
-- Ask a folder approver to share it (the Share panel at `https://agentlefs.com`, or `/agentlefs:share` from their session). Sharing reaches members of the same Organization only, so someone outside it has to be invited to the Organization first.
+- If the user knows which folder they need, request it: `share` with `action: "request"`, that folder's `location`, and a `reason` in their words. The request routes itself to someone who can grant it, and with `wait: true` and a `deadline` the answer comes back to this identity. The `sharing` skill has the details.
+- Otherwise ask an approver of the Organization to share a folder with them (`/agentlefs:share` from their session, or **Manage access** on the folder at `https://agentlefs.com`).
 
 State clearly: this listing is never proof that the Organization has no content. Denied is byte-identical to not-found, so it may simply mean everything is gated from this credential.
 
@@ -59,15 +60,15 @@ Report concretely:
 
 - Which endpoint is in use.
 - How many folders this credential reaches, and name a few.
-- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with a folder argument to show that folder's shape, including how many files are visible versus gated (`denied`).
+- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with `location` set to one folder to show its shape: how many files are readable, how many are gated, types and labels.
 
 Then point onward, without re-explaining them:
 
 - `/agentlefs:permissions` for what this credential reaches.
 - `/agentlefs:who-can-see` for who else can reach something.
-- `search_org_knowledge` to prime a retrieve-then-cite pass.
+- `search` to prime a retrieve-then-cite pass.
 
-**If the store is reachable but nearly empty, offer to seed it.** A connected user staring at an empty store is the most common dead end in first-touch, and the fix is one paste. Show them this, verbatim, in a code block so it is copyable:
+**If the store is reachable but nearly empty, you can offer to seed it.** A connected store with nothing in it gives the next search nothing to find, and the fix is one paste. Show them this, verbatim, in a code block so it is copyable:
 
 ```
 Use agentleFS as our team's long-term memory. Call list_org_folders to see what
@@ -79,7 +80,7 @@ write one short doc capturing what this repo is and how to run it, so the store
 isn't empty. Tell me what you wrote and where.
 ```
 
-Say plainly that semantic search is already on server-side (`vectorIndex: true`); what a new store lacks is content, not capability. Do not run this for them unprompted - writing to a shared org store is the user's call.
+Say plainly that semantic search is already on server-side (`vectorIndex: true`); what a new store lacks is content, not capability. Leave running it to them: writing to a shared org store is the user's call, and `/agentlefs:seed` does the same thing and asks where first.
 
 ## Troubleshooting
 
@@ -88,17 +89,17 @@ Say plainly that semantic search is already on server-side (`vectorIndex: true`)
 | Tools absent from `/mcp` entirely | Plugin installed from a shell, so the `/plugin` menu never closed and never reloaded | Type `/reload-plugins`. On v2.1.268+ it connects plugin MCP servers in an interactive terminal; only the desktop app, the Agent SDK and `-p` still need a restart |
 | Tools vanished after a crash | Prior session died without a clean shutdown, so project plugin state was never written back | Restart. The credential is almost certainly still valid; do not re-auth first |
 | 401 loop, sign-in never sticks | Browser flow was abandoned or cookies blocked | Re-run `/mcp`, complete the flow in a normal browser window |
-| 404 on every call | Endpoint points at the console host instead of the MCP host | It must be `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |
+| 404 on every call | Endpoint points at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |
 | Connects, zero folders | An empty Organization you approve, or a credential with no grants | Phase 3 |
 | "startup failed" in a non-Claude client | That client sends only configured headers and never walks the OAuth discovery chain, so it gets the initial 401 | Set `Authorization: Bearer afs_…` as a static header. See the headless note below |
 | Works locally, fails in CI | No browser available for OAuth | See the headless note below |
 
 ## Headless fallback
 
-For CI and other non-interactive contexts there is a legacy agent-token path: `Authorization: Bearer afs_…` over HTTP, or `AGENTLEFS_TOKEN` in the environment for stdio. Mention it only when the user is genuinely headless. The plugin's committed configuration ships no token, and you must never write one into a file.
+For CI and other non-interactive contexts there is a legacy agent-token path: `Authorization: Bearer afs_…` over HTTP, or `AGENTLEFS_TOKEN` in the environment for stdio. Mention it only when the user is genuinely headless. The plugin's committed configuration ships no token. Keep it that way: a token written into a file is a credential anyone with the file can use.
 
 ## Do not
 
 - Do not treat the first 401 as an error.
-- Do not call any console API endpoint. The console authenticates with a Clerk browser session JWT only, so a CLI credential gets 401 every time. Deep-link the human instead.
+- Do not call any console API endpoint. The console accepts only a browser session, so a CLI credential gets 401 every time. Deep-link the human instead.
 - Do not claim the connection works until a tool call has actually returned.

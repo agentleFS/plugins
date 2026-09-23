@@ -1,6 +1,6 @@
 ---
 name: catch-up
-description: Work out what the user has been doing in agentleFS (afs) recently, so a fresh session can find the right documents fast instead of guessing. Use at the START of a session as soon as you know roughly what the user wants — especially when they say "catch me up", "what was I working on", "where did I leave off", "get up to speed", "remind me what's going on with X", or when they refer to ongoing work ("the pricing thing", "that migration", "my spec") as though you should already know what they mean. Also use before searching agentleFS when the request clearly concerns their current work but you have no idea which folder holds it, since orienting first is usually cheaper than searching blind.
+description: Catch the user up on their work in agentleFS (afs) — what is waiting on them, what changed near their work, and where they left off. Use when they say "catch me up", "what's waiting on me", "what changed", "what was I working on", "where did I leave off" or "get me up to speed", or when they refer to their own ongoing work in afs ("the pricing thing", "my spec") as though you should already know which document they mean. Not for general questions, coding tasks in the open repository, or a session that has not touched afs.
 ---
 
 # Catch up on what the user has been working on
@@ -20,8 +20,8 @@ person.
 
 ```
 brief_me                   ← once
-   ↓ read claims, waiting, changed, contested
-search_org_knowledge       ← aimed, but not fenced in
+   ↓ read claims, waiting, approvals, changed, contested
+search                     ← aimed, but not fenced in
    ↓
 read_org_doc               ← two or three, then stop and talk
 ```
@@ -37,9 +37,13 @@ Call `brief_me` with no arguments. Its structured output has these parts:
 |---|---|
 | `me` | Who this identity is, where it sits in the organization's tree of people and agents, its capability card |
 | `claims` | What it said it was working on and has not released — the most direct answer to "where was I" |
-| `waiting` | Requests other people or agents left on a board, addressed to it and still open |
+| `waiting` | Messages addressed to it and still open — questions, requests, handoffs |
+| `approvals` | Access requests routed to it for a decision |
+| `invitations` | Rooms it has been invited to |
+| `asked` / `answered` | What it asked of others that is still open, and answers that came back |
+| `resolvedWaits` | Waits that fired, timed out or lost their counterparty, each with the note left for whoever picks it up |
 | `changed` | What others did near its work — nodes it owns, holds claims on, or wrote — since the last acknowledged brief |
-| `contested` | Other identities' claims overlapping its own, and inconsistencies flagged on its documents |
+| `contested` | Other identities' claims overlapping its own, truths under debate on its documents, debates it is asked to decide (`toDecide`), and spans gone stale because a truth they cite was superseded |
 | `cursor` | Where the brief started (`position`) and where the log is now (`head`) |
 
 One call is the whole budget for this step. If it did not tell you what you hoped,
@@ -52,8 +56,8 @@ A brief with open claims and a dozen changes across several documents is a genui
 picture of where this person is working. A brief with nothing in `claims` and two
 items in `changed` is a weak signal — let it break ties and nothing more. All empty
 means nothing moved near their work since the last acknowledged brief, or they have
-not worked in the store yet; say so in one sentence and search normally. Do **not**
-guess at their work.
+not worked in the store yet; say so in one sentence and search normally rather
+than guessing at their work.
 
 Adoption of agentleFS varies enormously — some people put everything in it, some
 put in fragments. A confident-sounding account of someone's work built on two
@@ -62,12 +66,12 @@ that it was invented.
 
 ## Step 3 — let it aim your search, never fence it
 
-This is the part that goes wrong, so it is worth being precise about.
+This is the step that most often goes wrong, so it is worth being precise about.
 
 The locations in the brief tell you where this person's work *tends* to live. That
 is a strong hint and a terrible filter. If their work is all in `product/` and they
-ask about a deployment runbook, passing `location: "product"` to
-`search_org_knowledge` guarantees you miss it — and you will never find out,
+ask about a deployment runbook, passing `scope: "product"` to
+`search` guarantees you miss it — and you will never find out,
 because a search that returns nothing looks exactly like a subject nobody wrote
 about.
 
@@ -88,11 +92,14 @@ actual work. Pick by what the user asked, not by what changed most recently.
 
 ## What is waiting on them
 
-Lead with `waiting` and `contested` when they are non-empty: they are the one part
-of the brief that is somebody else asking for something, or about to collide with
-this person's work. Each waiting item is a message and carries its id. `message`
+Lead with `waiting`, `approvals`, `contested` and `resolvedWaits` when they are
+non-empty: they are the parts of the brief that are somebody else asking for
+something, an answer the user was waiting for, or about to collide with this
+person's work. Deciding an access request is `share` with `action: "approve"` or
+`"decline"` and its `request_id`; the `sharing` skill has the rest. Each waiting item is a message and carries its id. `message`
 with `action: "thread"` and its `thread_id` reads the conversation; `action: "send"`
-with `reply_to` answers it, and `action: "decline"` with a reason says no. Do not
+with `reply_to` answers it, and `action: "decline"` with `message_id` and a `reason`
+says no. Do not
 answer or decline one on the user's behalf without asking — it is addressed to
 them, not to you.
 

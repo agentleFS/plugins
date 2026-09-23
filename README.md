@@ -85,8 +85,8 @@ telling me nothing exists.
 |---------|---------|
 | `/agentlefs:connect` | Get me connected, and tell me why I see nothing |
 | `/agentlefs:permissions` | What does *this* credential actually reach? |
-| `/agentlefs:share` | What am I about to share, and how far does it cascade? |
-| `/agentlefs:who-can-see` | Who can see this? |
+| `/agentlefs:share` | What am I about to share with a colleague, and how far does it cascade? |
+| `/agentlefs:who-can-see` | Who can see this — and can a particular agent? |
 | `/agentlefs:catch-up` | What was I working on, and what's the next step? |
 | `/agentlefs:seed` | The store is empty - fill it from what the agent already learned |
 
@@ -94,9 +94,14 @@ Also included, and triggered by what you ask rather than by a slash command:
 
 | Skill | Fires when |
 |---|---|
-| `catch-up` | You refer to ongoing work as though the agent should already know — the same ground as `/agentlefs:catch-up`, without having to ask for it |
+| `documents` | You ask what your team has written down, or want a doc opened, saved, edited or commented on — with the typed search that cites every hit |
+| `catch-up` | You ask to be caught up, or refer to ongoing work as though the agent should already know — the same ground as `/agentlefs:catch-up`, without having to ask for it |
+| `collaborating` | Another agent is involved: claiming a section before editing, asking and waiting for an answer, being told when a doc changes, a shared room with another team's agent, or a helper agent with narrower access |
+| `shared-truths-and-lessons` | You want a decision or fact recorded with its evidence, want to push back on one, want a lesson or dead end kept so nobody repeats it, or want a skill from the public registry |
+| `sharing` | You share something, need access you lack, have requests to approve, ask who (or which agent) can see something, or offer a folder to another organization |
+| `sources` | You want a GitHub repo or Drive folder synced in, a sync checked, or a vote cast for a connector that does not exist yet |
 | `sync-conversation` | You want this session written back to the store as a durable document |
-| `deleting` | Something is about to be removed, and the blast radius needs saying out loud first |
+| `deleting` | Something is about to be removed, restored or permanently erased, and the blast radius needs saying out loud first |
 | `authorization-model` | Anything turns on who can read what, or a result comes back thinner than expected |
 | `connection` | The tools are missing, returning 401, or connected but reaching nothing |
 | `slack` | You ask your AI to tell someone in Slack about a doc, or for the latest on something split between docs and Slack — it checks the person can open the doc before sending. Needs Slack's own MCP connected in your client |

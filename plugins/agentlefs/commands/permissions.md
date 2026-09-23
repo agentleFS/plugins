@@ -4,7 +4,7 @@ argument-hint: [folder]
 allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders
 ---
 
-Report what **this credential** effectively reaches in agentleFS. Nothing more. This is a self-audit of the current principal's reach, not a report on anyone else's access.
+Report what this credential effectively reaches in agentleFS, and nothing more. This is a self-audit of the current principal's reach, not a report on anyone else's access.
 
 Argument: `$ARGUMENTS` (optional folder to focus on).
 
@@ -17,15 +17,15 @@ An empty list is two different facts, and the listing says which:
 | What it prints | What is true | Do this |
 |---|---|---|
 | "(nothing stored yet …)" | You are an approver of the Organization and it holds nothing | Say so — it is correct here, and only here. Send them to `/agentlefs:connect`. |
-| "(no folders you can reach …)" | This credential holds no grants | Say the credential reaches nothing. Do **not** report "the organization has no content": denied is byte-identical to not-found. Send them to `/agentlefs:connect`. |
+| "(no folders you can reach …)" | This credential holds no grants | Say the credential reaches nothing. It is not evidence that the organization has no content, because denied reads exactly like not-found. Send them to `/agentlefs:connect`. |
 
 ## Step 2 - per-folder shape
 
-If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with that folder and report only it.
+If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` set to that folder and report only it. (`location` returns the folder's shape; `parent` would list its subfolders instead.)
 
-If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
+If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
 
-Each per-folder call returns: how many files you can read, how many are `denied` (gated from you), a breakdown by type, and the labels present.
+Each per-folder call returns how many files you can read, how many are gated from you, a breakdown by type, and the labels present.
 
 ## Step 3 - report
 
@@ -40,20 +40,20 @@ Then add, in a few lines:
 - Any folder where the gated count dominates the readable count. That is the most useful signal in the whole report: it means substantial content sits next to what you can see, and you would never encounter it through search.
 - Any folder that is fully readable with zero gated files.
 
-## What you must state
+## What to state
 
-Include this, in your own words, every time:
+Include this, in your own words, because a reach table is easy to misread without it:
 
-> Denied is byte-identical to not-found. A gated file is invisible, not marked. Where a `denied` count appears it tells you how many files are gated, never which ones or what they are about. Where a listing looks thin, "gated from you" and "does not exist" cannot be distinguished from here.
+> Denied reads exactly like not-found. A gated file is invisible, not marked. Where a gated count appears it tells you how many files are gated, never which ones or what they are about. Where a listing looks thin, "gated from you" and "does not exist" cannot be distinguished from here.
 
-Also state that labels carry zero authority. They organize content and nothing else. An unlabeled file is not public, and a sensitively-labeled file is not thereby restricted. Access comes only from explicit grants.
+Also state that labels carry no authority. They organize content and nothing else. An unlabeled file is not public, and a sensitively-labeled file is not thereby restricted. Access comes only from explicit grants.
 
-## What you must NOT do
+## Keep to this credential
 
-- **This command is about THIS credential's reach.** For "who else can see this", route to `/agentlefs:who-can-see`, which calls `who_can_read`. Never guess at anyone else's access.
-- **Do not call a console API endpoint.** The console API accepts a Clerk browser session JWT only; this credential would 401.
-- **Do not infer a grant from a label, a filename, or a folder name.**
-- **Do not describe a thin result as evidence that content does not exist.**
+- This command is about this credential's reach. For "who else can see this", route to `/agentlefs:who-can-see`, which calls `who_can_read`, rather than guessing at anyone else's access.
+- Do not call a console API endpoint. It accepts only a browser session, so this credential would get a 401.
+- Do not infer a grant from a label, a filename, or a folder name.
+- Do not describe a thin result as evidence that content does not exist.
 - Do not present the reachable set as the organization's full inventory. It is this principal's view of it.
 
 ## If a call errors

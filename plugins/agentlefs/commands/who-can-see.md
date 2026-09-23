@@ -4,29 +4,31 @@ argument-hint: [folder-or-path]
 allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__who_can_read
 ---
 
-Answer "who can see `$1`". The answer has two halves: who ELSE reaches it (a real tool answers that), and what YOU can see of it. Keep them separate, and never let either drift into speculation.
+Answer "who can see `$1`". The answer has two halves: who else reaches it (a real tool answers that), and what you can see of it yourself. Keep them separate, and keep both to what a tool returned.
 
 Target: `$1`. If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, list the reachable folders, and ask which one they mean.
 
-## Part 1 - what YOU can see (answerable now)
+## Part 1 - what you can see yourself
 
-Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with the folder. For a specific document, also call `mcp__plugin_agentlefs_agentlefs__list_org_docs` with the document's full `location`.
+Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` set to the folder (for a document, the folder that holds it). `location` returns the folder's shape; `parent` would list its subfolders instead. For a specific document, also call `mcp__plugin_agentlefs_agentlefs__list_org_docs` with `location` set to the folder that holds it (for `product/runbooks/deploy.md`, `product/runbooks`) and check the document is listed — `list_org_docs` lists a folder, and a document's own path finds nothing.
 
 Report:
 
 - How many files in this folder you can read.
-- How many are `denied`, meaning gated from you.
+- How many are gated from you.
 - The type and label breakdown.
 
-This is a fact about **your** principal, established by a real call. Present it as such.
+This is a fact about your own principal, established by a real call. Present it as such.
 
 The gated count is the interesting number. It tells you how many files sit in this folder that you cannot see, and nothing else. Not their names, not their paths, not their subject matter. Do not speculate about them.
 
-## Part 2 - who ELSE can see it
+## Part 2 - who else can see it
 
-Call `mcp__plugin_agentlefs_agentlefs__who_can_read` with the `location` (and `scope_type: "document"` for a single file). It names the **people and groups in this Organization** who reach it, each marked **direct** (granted here) or **inherited** (from an ancestor folder), with their role. Nobody outside the Organization can reach anything in it: sharing does not cross Organizations.
+Call `mcp__plugin_agentlefs_agentlefs__who_can_read` with the `location` (and `scope_type: "document"` for a single file). It names the people and groups in this Organization who reach it, each marked **direct** (granted here) or **inherited** (from an ancestor folder), with their role. Nobody outside the Organization holds a grant on it; if it was offered to another organization, `share` with `action: "shared"` lists that.
 
-It names people, never their content. It answers only for a scope **you** reach yourself: for one you do not, it answers not-found, exactly as for a scope that does not exist — so a not-found here is not evidence of anything.
+**If the question is about an agent** ("can the reviewer agent see drafts?"), `who_can_read` is the wrong tool: agents carry a scope cut down from their person's grants rather than grants of their own, so they are not on that list. Ask `share` with `action: "can_see"`, `who` (the agent's id or exact name) and `location`; it answers yes or no after the agent's whole delegation chain is applied, and only about something you can read yourself. Claude Code asks before that call, because the same tool can also change access.
+
+It names people, never their content. It answers only for a scope you reach yourself: for one you do not, it answers not-found, exactly as for a scope that does not exist — so a not-found here is not evidence of anything.
 
 Present the list as the tool returned it. Do not add, merge or guess at names.
 
@@ -34,9 +36,9 @@ For what the tool does not answer, send the human to `https://agentlefs.com` and
 
 | Question | Console screen |
 |---|---|
-| What exactly can a specific person or group see, file by file? | the **reach lens** ("View as") on the Files tree |
-| Who is in a group, and what does the group reach? | **Groups** |
-| Change a grant | the **"Shared with"** list on the folder or file |
+| What does a specific person reach? | **Permission management → People**, then open the person: their Access section lists each scope, direct or through a group |
+| Who is in a group? | **Permission management → Groups** |
+| Change a grant | **Manage access** on the folder or file (its "Shared with" list) |
 
 ## Explain how to read the answer
 
@@ -44,20 +46,20 @@ Give the user these three ideas, because a list of who reaches something is misl
 
 - **Granted-here versus inherited.** A grant made directly on this scope shows as granted-here. One arriving from an ancestor folder shows as inherited. Removing an inherited grant means finding the ancestor it was made on; there is nothing to remove here.
 - **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. `who_can_read` marks that as inherited.
-- **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. The reach lens resolves this; a raw grant list does not.
+- **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. `list_org_people` with `group` walks one level at a time; a raw grant list does not resolve it.
 
-Also worth stating: console tools and file reads are different questions, but not different engines. There is no separate policy engine — both resolve through the same OpenFGA ladder. Console actions above a small read-only floor require approver on the **tenant root**, and approver on the root does reach every file in the workspace, because that is what it means. A folder-scope approver reaches only their subtree.
+Also worth stating: console actions and file reads are decided by the same engine and the same ladder. Console actions above a small read-only floor need approver on the Organization's root, and an approver of the root reaches every file in the Organization, because that is what the role means there. A folder approver reaches only that folder's subtree.
 
-## What you must NOT do
+## Do not
 
-- **Never guess at a name.** Do not say "probably the engineering team" or "likely whoever owns this folder." If you do not have it from a tool result, you do not have it.
-- Do not call any console API endpoint. No `/api/reach/grants`, no `/api/share/summary`, no `/api/folders/reach`. Every one would 401; `who_can_read` is the route.
-- Do not present your own reach as the full picture. Other principals may reach far more than you, or far less, and you cannot see which.
-- Do not infer access from labels. Labels carry zero authority; an unlabeled file is not public.
-- Do not read a thin result as "nothing exists here." **Denied is byte-identical to not-found.** A folder that looks nearly empty to you may be full of content gated from you.
+- Guess at a name. "Probably the engineering team" or "likely whoever owns this folder" reads as a finding; if it did not come from a tool result, leave it out.
+- Call a console API endpoint. It accepts only a browser session, so this credential would get a 401; `who_can_read` is the route.
+- Present your own reach as the full picture. Other principals may reach far more than you, or far less, and you cannot see which.
+- Infer access from labels. Labels carry no authority; an unlabeled file is not public.
+- Read a thin result as "nothing exists here." Denied reads exactly like not-found, so a folder that looks nearly empty to you may be full of content gated from you.
 
 ## Shape of the answer
 
 1. Who else reaches it, from `who_can_read`: direct or inherited, with role.
 2. What you can see yourself, with real numbers from the calls you made.
-3. For a file-by-file view of one person's access, the console's reach lens.
+3. For everything one person reaches, the console's **Permission management → People** page.

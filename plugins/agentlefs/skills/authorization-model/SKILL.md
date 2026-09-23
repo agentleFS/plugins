@@ -1,146 +1,178 @@
 ---
 name: authorization-model
-description: How agentleFS (afs) decides what a principal may read. Use when reasoning about agentleFS access, grants, roles, cascade, or groups; when a search or listing returns less than expected and you need to know whether content is missing or gated; when explaining why an agent cannot see a document; when asked who can see something; or before claiming anything about permissions, visibility, or what exists in the store. Also use to correct the three dead designs (tag-based ABAC, a separate policy engine anywhere, and the grant role outside the ladder).
+description: How agentleFS (afs) decides what a person or agent may read. Use when reasoning about afs access, grants, roles, cascade, groups or an agent's delegated scope; when a search or listing came back thinner than expected and you need to tell missing content from gated content; when explaining why someone or some agent cannot see a document; or when about to state who can or cannot see something. For carrying out a share, an access request or a who-can-see check, the sharing skill.
 ---
 
 # agentleFS authorization
 
-Retrieval is authorization-filtered. An agent sees exactly what its principal is granted, and the filter is applied inside the query rather than bolted on afterward.
+Retrieval is authorization-filtered. An agent sees exactly what its principal is granted,
+and the filter is applied inside the query rather than bolted on afterward.
 
-## The decision chain
+## The decision
 
-```
-credential (afs_ token | Clerk OAuth access token)
-  → principal (tenant-bound)
-    → reach_grants rows  (subject × role × scope)
-      → projected into OpenFGA tuples
-        → decide.ts: canDo (point check) | readableSet (set query)
-          → read-filter.ts compiles the set to a SQL WHERE fragment
-            → embedded in every listing and every retrieval
-```
+A credential (an OAuth access token or an `afs_` token) resolves to one principal in one
+Organization. That principal's grants — and, for an agent, its delegation chain — are the
+entire input. Nothing in the request adds authority: not the folder name, not a label, not
+the query, not a flag. Same principal, same answer.
 
-The principal's identity is the entire authorization input. Nothing in the request adds authority: not the folder name, not the label, not the query, not a flag. Same principal, same answer.
-
-**Content access is decided ONLY by OpenFGA ReBAC.** One axis, no others.
+Content access is decided by relationship-based grants in one engine (OpenFGA). There is
+no second axis and no separate policy service.
 
 ## Grants
 
-A row in `reach_grants` says "subject holds `role` on scope".
+A grant says "subject holds `role` on scope".
 
 | Field | Values |
 |---|---|
-| subject | `user` (a principal) or `group` |
-| role | `approver`, `writer`, `reader` |
-| scope | `tenant`, `folder`, or `document` |
+| subject | a person (or other principal) or a group |
+| role | `reader`, `writer`, `approver` |
+| scope | the Organization root, a folder, or a document |
 
-**Breadth comes from WHERE a grant sits, not from a second vocabulary.** A `tenant`-scope approver is what used to be called a console admin and reaches the whole workspace; a folder-scope approver reaches that subtree. There is no `admin` role.
+Breadth comes from where a grant sits, not from a second vocabulary. An approver of the
+Organization's root reaches the whole Organization; a folder approver reaches that subtree.
+There is no separate `admin` role.
 
-Postgres `reach_grants` is the source of truth. OpenFGA tuples are a derived projection, so a grant survives an OpenFGA outage and can be reconciled afterward.
-
-**Nothing is readable by default.** Ungranted is ungranted. There is no ambient read, no public tier, no fallback that opens content up.
+Nothing is readable by default. Ungranted is ungranted: there is no ambient read, no public
+tier, no fallback that opens content up.
 
 ### Cascade and nesting
 
-- Grants **cascade down the folder tree**. A grant on a folder reaches every descendant, including files created later.
-- A grant is **granted-here** (made directly on this scope) or **inherited** (arriving from an ancestor). The console marks which.
-- **Groups nest.** A grant to a group reaches its members, and a group can contain groups, so a principal may reach a file through several hops. Resolution is live, not snapshotted.
+- Grants cascade down the folder tree. A grant on a folder reaches every descendant,
+  including files created later.
+- A grant is **granted-here** (made directly on this scope) or **inherited** (arriving from
+  an ancestor). `who_can_read` marks which.
+- Groups nest. A grant to a group reaches its members, and a group can contain groups, so a
+  principal may reach a file through several hops. Resolution is live, not snapshotted.
 
 ### Roles
 
-**One ladder: `reader` < `writer` < `approver`.** Each rung contains the one below it, so an approver reads and writes everything at or below where its grant sits. The console shows `approver` as **Approver**: can share and manage access, and edit.
+One ladder: `reader` < `writer` < `approver`. Each rung contains the one below it, so an
+approver reads and writes everything at or below where its grant sits. The console shows
+`approver` as **Approver**: can share and manage access, and edit.
 
-The containment is stated once, in `openfga/model.fga`, and nowhere else. There is no app-layer fold: asking the engine for `writer` already returns allow for an approver. Two places stating the same rule is how they come to disagree.
+`approver` additionally carries what the ladder alone does not express — deciding access
+requests, deleting, erasing and renaming — bounded to the subtree the grant sits on. Many
+principals may hold it on the same node. Handing a member a new grant directly is the one
+exception to "bounded to the subtree": `share_org_folder` and the console's share panel both
+ask for approver on the Organization's root, so a folder approver's route is approving the
+requests that reach them (`share` with `action: "request"` and `"approve"`).
 
-`approver` additionally carries what the ladder cannot express — granting, revoking, deleting, erasing, renaming, adding agents, and reading the audit log — bounded to the subtree the grant sits on. Many principals may hold it on the same node.
+**Owner is not a role.** Every document and folder has exactly one owner — the identity that
+created it, or whoever it was reassigned to. Ownership says whose a thing is, and it is who
+decides a debate or a proposal about it; it grants no access on its own and is not a rung of
+the ladder. If you see `owner` used as a grant role, it is an old name for `approver`. (A
+group also has an owner — who manages its membership — which is a third, unrelated thing.)
 
-**`approver` was called `owner` until September 2026.** It was renamed, not changed: the same principals can do the same things. The word "owner" now means only **single ownership** — every node has exactly one owner, the identity that created it (or whoever it was reassigned to), recorded on the node itself. Ownership says whose a thing is; it grants no access on its own and is not a rung of this ladder. If you see `owner` used as a grant role anywhere, it is the old name. (A group also has an `owner` relation — who manages its membership — which is a third, unrelated thing.)
+There are three roles and no others.
 
-`proposer` and `member` are RETIRED as roles. Neither was ever granted anywhere, and both rendered as reader.
+## Agents carry a scope, not a grant
+
+An agent's access is computed, never copied: its root person's grants, cut down to the scope
+of every link in its delegation chain (`identity` with `action: "spawn"` sets a child's
+scope as `role@location`, never wider than its parent's). So an agent can reach much less
+than its person, and a grant listing cannot show that. `who_can_read` lists the people and
+groups whose grants reach something; whether one particular agent can read it is `share`
+with `action: "can_see"`, which applies the whole chain.
+
+Two more things narrow what an identity reads: a **room** is decided by membership rather
+than grants, and a document mirrored from a connected source is capped by that source's own
+recorded permissions, whatever is granted above it.
 
 ## Fail-closed
 
-The read path refuses to under-report. If the allow-set is truncated, `read-filter.ts` throws `ReachTruncatedError` rather than filtering on a subset and returning a partial answer that looks complete. An error here is the system declining to silently show you less than your grants allow. Surface it; never paper over it with a partial summary.
+The read path refuses to under-report. If the set of things a principal may read is too
+large to apply in full, the read errors rather than filtering on a subset and returning a
+partial answer that looks complete. An error there is the system declining to silently show
+you less than your grants allow. Surface it rather than papering over it with a partial
+summary.
 
-## Denied is byte-identical to not-found
+## Denied reads exactly like not-found
 
-**This is the most important idea in the system.** There is no existence oracle.
+This is the idea the rest depends on: there is no existence oracle.
 
 - A path you cannot read returns not-found, worded identically to a path that does not exist.
-- A folder you do not reach is simply absent from `list_org_folders`. No count, no marker, no placeholder.
+- A folder you do not reach is simply absent from `list_org_folders`. No count, no marker,
+  no placeholder.
 - An empty search says it cannot settle the question, not that nothing exists.
-- The empty-listing text is deliberately unchanged between "nothing here" and "nothing for you".
-
-`apps/mcp-server/tests/exposure-parity.test.ts` asserts this, including that a denied *directory* which genuinely exists is indistinguishable from an absent one.
+- The empty-listing text is deliberately the same for "nothing here" and "nothing for you".
 
 ### Reading a thin result
 
-| What you observe | What it means | What it does NOT mean |
+| What you observe | What it means | What it does not mean |
 |---|---|---|
 | Empty folder list | This principal reaches no folders | The org has no content |
 | `not found: path` | Gated from you, or absent. Cannot distinguish. | The file does not exist |
-| Search returns nothing | Nothing matched **in what you can read** | The org has written nothing on it |
-| `denied: 12` in folder shape | 12 files are gated from you | Anything about their names, paths, or subject matter |
+| Search returns nothing | Nothing matched in what you can read | The org has written nothing on it |
+| `12 gated from you` in a folder's shape | 12 files are gated from you | Anything about their names, paths, or subject matter |
 
-The one place a count leaks through is `list_org_folders` on a folder, which reports readable versus `denied`. That is a count only. It never identifies a gated file.
+The one place a count shows through is `list_org_folders` with `location` set to a folder,
+which reports readable versus gated. That is a count only. It never identifies a gated file.
 
-Never report a thin result as evidence of absence. Say "nothing I can reach matches" and note that gated content is invisible from here.
+Report a thin result as "nothing I can reach matches", and note that gated content is
+invisible from here, rather than as evidence of absence.
 
 ## One decider, for the console as well as for content
 
-There is no second engine. Console actions resolve through the same OpenFGA ladder: anything above a small read-only floor requires approver on the **tenant root**, which is the node every folder hangs off. So "may you use this console tool" and "may you read this file" are the same kind of question asked about different objects.
+Console actions resolve through the same ladder: anything above a small read-only floor needs
+approver on the Organization's root, the node every folder hangs off. So "may you use this
+console action" and "may you read this file" are the same kind of question asked about
+different objects. An approver of the root therefore reaches every file in the Organization,
+deliberately, because that is what being an approver of the root means.
 
-A tenant-root approver therefore does reach every file in the workspace — deliberately, because that is what being an approver of the root means. This is a change: under the old model a console admin had no file access they were not separately granted.
+## Labels carry no authority
 
-## Labels carry ZERO authority
-
-Labels (tags) are organization and discovery metadata. No authorization decision reads the labels table.
+Labels (tags) are organization and discovery metadata. No authorization decision reads them.
 
 - "Unlabeled" says nothing about access.
 - A sensitive-sounding label restricts nothing.
 - Filtering by label narrows what you already reach; it never widens it.
 
-Labels inherit from a folder or directory for discovery purposes, so a folder's label surfaces everything inside it in a label-filtered listing. That is a search convenience, not an access rule.
+Labels inherit from a folder or directory for discovery, so a folder's label surfaces
+everything inside it in a label-filtered listing. That is a search convenience, not an
+access rule.
 
 ## Common misconceptions
 
-**Wrong: tag-based ABAC, where untagged content is publicly readable.**
-This design is REMOVED and repeating it is a correctness failure. There was a version where security tags formed an authorization axis and untagged content was readable by anyone in the tenant. Since the security-tag axis was removed, reach grants plus group membership are the ONLY axis. Untagged content is not public. It is ungranted, therefore invisible.
+**Untagged content is readable by everyone.** It is not. Grants and group membership are the
+only axis; untagged content is ungranted, therefore invisible.
 
-**Wrong: a separate policy engine or sidecar decides anything.**
-There is no policy service, no policy file and no sidecar. One existed until #219 — it decided console RBAC, and an older design put it on file access before that. Every decision is OpenFGA ReBAC now. If you find yourself explaining any denial in terms of a a policy file, you have the wrong model.
+**A policy file or sidecar decides some of this.** Nothing does besides the grant engine. If
+you find yourself explaining a denial in terms of a policy file, the model you are using is
+out of date.
 
-**Wrong: an empty result proves nothing exists.**
-See above. This is the failure this system is specifically built to prevent you from making.
+**An empty result proves nothing exists.** See above. This is the mistake the system is
+built to keep you from making.
 
-**Wrong: an agent can read the audit trail.**
-It cannot, by design. `audit_tail` was deliberately removed so a token holder cannot audit a whole tenant; audit is a console surface, admin-gated.
+**An agent can read the audit trail.** No agent tool reads it, by design, so a token holder
+cannot audit a whole Organization.
 
-Who reaches something, though, IS answerable: `who_can_read` on a folder or document you reach names the people and groups in the Organization (direct or inherited, with role). Nobody outside the Organization can hold access to anything in it. It names people, never their content, and for a scope you cannot reach it answers not-found.
+Who reaches something, though, is answerable: `who_can_read` on a folder or document you
+reach names the people and groups in the Organization (direct or inherited, with role). It
+names people, never their content, and for a scope you cannot reach it answers not-found.
+Nobody outside the Organization holds a grant in it; the one way content crosses is a share
+offered to another organization and accepted there as a mount (`share` with
+`action: "share_out"`), which `share` with `action: "shared"` lists.
 
-**Wrong: "the grant role that shares cannot itself read".**
-That was true, and it was the defect #219 fixed (the role was then called `owner`). The sharing role is the top of one ladder: an approver reads and writes everything beneath it. Any explanation that treats it as an orthogonal badge rather than the highest rung is describing the old model.
+**The role that shares cannot itself read.** It can. The sharing role is the top of the
+ladder: an approver reads and writes everything beneath it.
 
-**Wrong: "the owner of a folder is whoever holds the top grant on it".**
-Not any more. Many principals may hold `approver` on a node, and it inherits down the tree; a node has exactly one owner, and ownership is not access. Keep the two words apart.
+**The owner of a folder is whoever holds the top grant on it.** Many principals may hold
+`approver` on a node, and it inherits down the tree; a node has exactly one owner, and
+ownership is not access. Keep the two words apart.
 
 ## Consequences for how you work
 
-- Never assert a document does not exist. Say you could not reach one.
-- Never infer access from a name, path, or label.
-- Never name who can see something unless a tool returned it. `who_can_read` answers "who reaches this?"; for a file-by-file view of one person's access, or group membership, route to the console: the **reach lens / "View as"** on the Files tree, **Groups**, and **Access → Roles**.
-- Never call a console API endpoint from an agent context. That API takes a Clerk browser session JWT only; an OAuth or `afs_` credential gets 401 every time.
-- A write is authorized or it is refused, and there is no third state. This bullet used to describe `how="propose"` staging for review and commits landing in quarantine for operator promotion in Triage; propose, quarantine and Triage are all gone. A successful `write_org_doc` is live immediately. Who can then READ it is decided by the grants on the path, not by anything the writer sets.
-
-## Source of truth
-
-| What | Where |
-|---|---|
-| Decision logic (`canDo`, `readableSet`) | `packages/core/src/authz/decide.ts` |
-| Allow-set to SQL, fail-closed | `packages/core/src/authz/read-filter.ts` |
-| Grant rows | `reach_grants` in `packages/core/prisma/schema.prisma` |
-| The ladder itself | `openfga/model.fga` |
-| Existence-oracle parity tests | `apps/mcp-server/tests/exposure-parity.test.ts` |
-| The console ladder and the tenant root | `packages/core/src/authz/console-ladder.ts` |
-| Expected behavior matrix | `docs/permissioning-test-matrix.md` |
-| Why OpenFGA, and the addendum that replaced what came before | `docs/adr/0001-authorization-engine-cerbos-now-openfga-when-hierarchical.md` (historical record; the filename names the engine #219 removed) |
-| Why the model is folders all the way down | `docs/adr/0003-drop-the-bundle-abstraction-folders-all-the-way-down.md` |
+- Say you could not reach a document, rather than that it does not exist.
+- Infer nothing about access from a name, path, or label.
+- Name who can see something only when a tool returned it. `who_can_read` answers "which
+  people and groups reach this?", `list_org_people` with `group` answers who is in a group,
+  and `share` with `action: "can_see"` answers whether one identity, agent or person, can
+  read it. For everything one person reaches, the console's **Permission management →
+  People** page lists it.
+- When the user lacks access they need, the move is `share` with `action: "request"` and a
+  reason, which routes to someone who can grant it — not a guess at who to email.
+- Do not call a console API endpoint from an agent context. It accepts only a browser
+  session, so an OAuth or `afs_` credential gets a 401 every time.
+- A write is authorized or it is refused; there is no staging or review state in between. A
+  successful `write_org_doc` is live immediately, and who can then read it is decided by the
+  grants on the path, not by anything the writer sets.
