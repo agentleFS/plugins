@@ -1,12 +1,12 @@
 ---
 description: Answer who can see an agentleFS (afs) folder or document — the people and groups who reach it, and what you can see yourself
 argument-hint: [folder-or-path]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__who_can_read
+allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__who_can_read, mcp__plugin_agentlefs_agentlefs__list_org_people
 ---
 
 Answer "who can see `$1`". The answer has two halves: who else reaches it (a real tool answers that), and what you can see of it yourself. Keep them separate, and keep both to what a tool returned.
 
-Target: `$1`. If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, list the reachable folders, and ask which one they mean.
+Target: `$1`. If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, list the reachable folders, and ask which one they mean. If `$1` is a folder name rather than a path, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments and match it there, because `search` indexes documents, not folders. That listing stops four levels deep without saying so, so if nothing matches, call it again with `parent` set to the closest folder that did appear before concluding it is not there. If it is a document name, find its path with `mcp__plugin_agentlefs_agentlefs__search` and `how: "titles"`, so a document that only mentions the name does not win; if several titles match, say which one you took. Use either only to resolve the location, never for the counts in Part 1, which come from the listing.
 
 ## Part 1 - what you can see yourself
 
@@ -46,7 +46,7 @@ Give the user these three ideas, because a list of who reaches something is misl
 
 - **Granted-here versus inherited.** A grant made directly on this scope shows as granted-here. One arriving from an ancestor folder shows as inherited. Removing an inherited grant means finding the ancestor it was made on; there is nothing to remove here.
 - **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. `who_can_read` marks that as inherited.
-- **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. `list_org_people` with `group` walks one level at a time; a raw grant list does not resolve it.
+- **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. `mcp__plugin_agentlefs_agentlefs__list_org_people` with `group` walks one level at a time; a raw grant list does not resolve it.
 
 Also worth stating: console actions and file reads are decided by the same engine and the same ladder. Console actions above a small read-only floor need approver on the Organization's root, and an approver of the root reaches every file in the Organization, because that is what the role means there. A folder approver reaches only that folder's subtree.
 

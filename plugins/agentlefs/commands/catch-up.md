@@ -1,7 +1,7 @@
 ---
 description: Catch up on what you have been working on in agentleFS (afs), and pick the thread back up
 argument-hint: [topic]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__read_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__read_org_doc
 ---
 
 Work out where the user left off and hand it back to them in a few sentences they can act on.
