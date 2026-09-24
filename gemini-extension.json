@@ -1,6 +1,6 @@
 {
   "name": "agentlefs",
-  "version": "0.3.41",
+  "version": "0.3.42",
   "description": "Agent permissions for the files your team shares",
   "mcpServers": {
     "agentlefs": {

@@ -149,10 +149,13 @@ hash is not something anyone can click, and a document nobody opens is a documen
 that may as well not have been written.
 
 The confirmation also says whether it CREATED the document or OVERWROTE one, and
-names any directory that did not exist before. Read both back before you report:
-"overwrote" on a document you meant to create, or a directory you did not expect to
-be new, means you wrote somewhere other than where you meant to — say so rather than
-reporting a clean write.
+names the folder and any directory that did not exist before. Read both back before
+you report: "overwrote" on a document you meant to create, or a directory you did not
+expect to be new, means you wrote somewhere other than where you meant to — say so
+rather than reporting a clean write. A new top-level **folder** is the loud one: a
+first write into a workspace that does not exist now starts it rather than being
+refused, so `new folder "…"` on a sync means you have created a workspace, which is
+almost never what a sync meant to do.
 
 Name what you deliberately left out, and say who can now read it: anyone granted on
 the folder it went into. Sharing it further is a separate decision — `share_org_folder`,

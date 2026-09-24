@@ -61,8 +61,11 @@ search snippet.
    `spec`, `brand-asset`, `web-clip`, `contract`, `misc` — anything else silently becomes
    `misc`), `title`, `summary`, `tags`.
 4. Read the confirmation back. It says whether it CREATED or OVERWROTE the document and
-   names any directory it had to create; either one being a surprise means the path was
-   wrong. Hand over the console link it returns.
+   names the folder and any directory it had to create; any of those being a surprise means
+   the path was wrong. A new **folder** is the loud one: if the top-level folder does not
+   exist yet and you may create folders here, this call starts it and makes you its
+   approver, so `new folder "…"` on a path you thought existed means you have created a
+   workspace rather than written into one. Hand over the console link it returns.
 
 Where it belongs depends on what it is:
 
@@ -76,7 +79,9 @@ Where it belongs depends on what it is:
   `sync-conversation` skill.
 
 `create_org_folder` makes a folder (you become its approver), for starting a project
-before anything is in it.
+before anything is in it. `write_org_doc` starts one too when its top-level folder does not
+exist — the difference is that this one says so as the intent, instead of as a side effect
+of a document you had to invent.
 
 ## Changing a document
 
