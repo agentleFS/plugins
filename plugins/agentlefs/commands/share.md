@@ -63,7 +63,7 @@ Call `mcp__plugin_agentlefs_agentlefs__who_can_read` on the target. If the recip
 
 A token expires after ten minutes, and it is refused if the folder, the role or the address list changed since the preview; either way, preview again and ask again.
 
-**If a share tool refuses with "you cannot change who reaches content"**, nothing was shared, and the console will refuse for the same reason: granting a member directly needs approver on the Organization's root, in both places, not on the folder. Say that plainly, and name the moves that remain: the colleague can request access themselves (`share` with `action: "request"`), and a folder approver decides requests routed to them (`share` with `action: "approve"`); or an approver of the Organization shares it.
+**If a share tool refuses with "you need to be an approver of this"**, nothing was shared, and the console will refuse for the same reason: granting a member directly needs approver on what is being shared, or on a folder above it, in every place. Say that plainly, and name the moves that remain: the colleague can request access themselves (`share` with `action: "request"`), and whoever approves it decides requests routed to them (`share` with `action: "approve"`); or an approver of it shares it.
 
 **Taking a share back.** Grants can be inherited from a parent folder, so change them in the console, where you can see where each grant actually lives.
 

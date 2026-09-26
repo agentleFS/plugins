@@ -41,12 +41,12 @@ any of them and preview again.
 
 Default to `reader`, and prefer a document to a folder when that is all they need.
 
-**Who may do this.** Handing out access is authority over the organization's content, so
-`share_org_folder` needs approver on the organization root, the same as the console's share
-panel. Anyone else gets `⚠ refused: you cannot change who reaches content in this organization.` and
-nothing is shared. Being an approver of the folder is not enough for this tool; what a
-folder approver can do is approve the colleague's own access request (below), which is often
-the better route anyway.
+**Who may do this.** Handing out access needs approver on the folder or document being
+shared, or on a folder above it: whoever approves it may share it, and only within it. That is
+the same rule in the console's share panel and the SDK. Anyone else gets
+`⚠ refused: you need to be an approver of this, or of a folder above it, to share it.` and
+nothing is shared. Someone who does not approve it can still help: the colleague can request
+access themselves (below), and the request reaches whoever does approve it.
 
 ## Getting access yourself: `share` with `action: "request"`
 

@@ -94,8 +94,9 @@ unless they ask; the answer to "should this be gone" was no.
 
 ## Undoing a delete, and the one that cannot be undone
 
-A delete can be undone. `undo_delete` with the same `location` restores exactly what
-that one delete removed, at the version it had, with its sharing intact — except a folder's
+A delete can be undone, by someone who could have made it: `undo_delete` needs approver on
+everything that delete removed, the same bar as the delete itself, and is refused otherwise.
+With the same `location` it restores exactly what that one delete removed, at the version it had, with its sharing intact — except a folder's
 connector, which stays disconnected. When you undo a folder delete whose preview named a
 connector, say that the sync did not come back. Offer it straight
 away when a delete turns out to be a mistake. Undoing twice is harmless: the second call finds

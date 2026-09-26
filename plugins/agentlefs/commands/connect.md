@@ -42,7 +42,7 @@ Authentication succeeded either way; this is not a broken connection, and saying
 You are an approver of this Organization and it holds no folders. Nothing is hidden from you — an approver of the Organization reaches everything. Offer to make the first folder:
 
 1. Ask what to call it (for example the project's name).
-2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its approver, which lets you decide access requests for it; granting it to someone directly needs approver on the organization root.
+2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its approver, which lets you decide access requests for it and share it with `share_org_folder`.
 3. Offer `/agentlefs:seed` to put what this session already knows into it.
 
 ### 3b - "no folders you can reach": a credential with no grants

@@ -51,11 +51,11 @@ approver reads and writes everything at or below where its grant sits. The conso
 `approver` as **Approver**: can share and manage access, and edit.
 
 `approver` additionally carries what the ladder alone does not express — deciding access
-requests, deleting, erasing and renaming — bounded to the subtree the grant sits on. Many
-principals may hold it on the same node. Handing a member a new grant directly is the one
-exception to "bounded to the subtree": `share_org_folder` and the console's share panel both
-ask for approver on the Organization's root, so a folder approver's route is approving the
-requests that reach them (`share` with `action: "request"` and `"approve"`).
+requests, deleting, erasing, renaming and sharing — bounded to the subtree the grant sits on.
+Many principals may hold it on the same node. Handing a member a new grant directly follows the
+same rule everywhere: `share_org_folder`, the console's share panel and the SDK all ask for
+approver on what is being shared or on a folder above it, never beyond it. Someone who does not
+approve it can still ask: `share` with `action: "request"` reaches whoever does.
 
 **Owner is not a role.** Every document and folder has exactly one owner — the identity that
 created it, or whoever it was reassigned to. Ownership says whose a thing is, and it is who
