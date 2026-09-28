@@ -44,14 +44,17 @@ Default to `reader`, and prefer a document to a folder when that is all they nee
 **Who may do this.** Handing out access needs approver on the folder or document being
 shared, or on a folder above it: whoever approves it may share it, and only within it. That is
 the same rule in the console's share panel and the SDK. Anyone else gets
-`⚠ refused: you need to be an approver of this, or of a folder above it, to share it.` and
-nothing is shared. Someone who does not approve it can still help: the colleague can request
-access themselves (below), and the request reaches whoever does approve it.
+`⚠ refused: you need to be an approver of this, or of a folder above it, to share it. To ask for
+it, use share action=request role=approver with this location and a reason.` and nothing is
+shared. Someone who does not approve it can still help: they can ask to become an
+approver (`share` with `action: "request"` and `role: "approver"`, below), or the colleague can
+request access themselves, and either request reaches whoever does approve it.
 
 ## Getting access yourself: `share` with `action: "request"`
 
-`share` with `action: "request"`, the `location`, `role` (`reader` by default, or
-`writer`) and a `reason` — the reason is required, and it is what the person deciding reads.
+`share` with `action: "request"`, the `location`, `role` (`reader` by default, `writer`, or
+`approver` to share it and decide others' requests; approving gives the same role to every agent
+you work under that lacks it, so ask for the smallest role the job needs) and a `reason` — the reason is required, and it is what the person deciding reads.
 The request goes to the nearest identity that can grant it: the user's own parent, a person
 both sides share, or the data owner's person, climbing until someone has the authority.
 
@@ -63,15 +66,19 @@ both sides share, or the data owner's person, climbing until someone has the aut
   so the answer never confirms whether a path exists. If a request comes back unroutable,
   say nobody could be found to decide it, and suggest asking a person directly.
 
-A `reader` request for something you can already read is refused as pointless
-(`already_has_access`), which is worth knowing before telling the user to wait on one.
+A request for a role you already hold, or one below it (approver implies writer, writer implies
+reader), is refused as pointless (`already_has_access`), which is worth knowing before telling
+the user to wait on one.
 
 ## Deciding requests routed to the user
 
 `share` with `action: "inbox"` lists requests waiting on the user (`brief_me` shows them as
 `approvals`). Each is theirs to decide: show who is asking, for what, at what role, and their
-reason, then `action: "approve"` or `action: "decline"` with `request_id` and a `note` only
-on the user's answer.
+reason, and anyone in `alsoGains`: the agents the requester works under that approving also
+gives the role to, since an agent never holds more than those above it. Say that part plainly,
+because an approver request can make an agent that was only reading an approver too. Then
+`action: "approve"` or `action: "decline"` with `request_id` and a `note`, only on the user's
+answer.
 
 ## Who reaches something: `who_can_read`
 
