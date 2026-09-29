@@ -1,6 +1,6 @@
 ---
 name: sources
-description: Bring content from other tools into agentleFS (afs) and check that it keeps arriving. Use when the user wants a GitHub repository or a Google Drive folder synced into afs so agents can search it ("connect our Google Drive Specs folder"), asks whether a connected source is syncing or why mirrored content is missing or stale, or asks whether afs can read a tool it has no connector for, such as Notion, Confluence or Jira. Not for signing this client in to agentleFS itself, which is the connection skill.
+description: Bring content from other tools into agentleFS (afs) and check that it keeps arriving. Use when the user wants a GitHub repository or a Google Drive folder synced into afs so agents can search it ("connect our Google Drive Specs folder"), asks whether a connected source is syncing or why mirrored content is missing or stale, or asks whether afs can read a tool it has no connector for, such as Notion, Confluence or Jira. Not for documents already in an agentleFS folder, even when a task calls them "sources" (a wiki's raw/ sources, say), which are read with list_org_docs and read_org_doc, the documents skill. Not for signing this client in to agentleFS itself, which is the connection skill.
 ---
 
 # Connected sources
@@ -12,6 +12,14 @@ goes back to the repository or Drive, and a mirrored path refuses direct edits, 
 next sync would overwrite them.
 
 GitHub and Google Drive are the connectors that exist today.
+
+**A source here means a connection, not a document.** When a task says "sources" and means
+documents kept in a folder (a wiki skill's `raw/`, research notes someone saved), nothing
+needs connecting: `list_org_docs` with that folder lists them and `read_org_doc` reads each.
+`list_org_sources` lists connections only, so with none it answers
+"(nothing connected yet — connect_org_source starts a GitHub or Google Drive connection…",
+which says nothing about whether a folder can be read. Never call `connect_org_source` to reach
+a folder that is already in agentleFS.
 
 ## Connecting one
 
