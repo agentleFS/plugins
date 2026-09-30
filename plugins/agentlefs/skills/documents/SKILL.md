@@ -24,6 +24,8 @@ need to cite an answer and to say how current it is.
 | One synced repository or Drive folder | `search` with `source` |
 | Related documents and truths around each hit | `search` with `follow` (1–3) |
 | Exact wording | `how: "text"`; titles and metadata only: `how: "titles"` |
+| Examples from public GitHub (skills, CLAUDE.md, AGENTS.md, cursor rules) | `search` with `scope: "public"` |
+| One of those public files, in full | `search` with `scope: "public"` and `within` set to its `owner/repo/path`, or read its `agentlefs://public/` URI; a long file comes in parts, the next one by `offset` |
 
 `search_org_knowledge` is the older door to the same content. It returns the matching
 passages assembled as prose, per folder, takes `location` (not `scope`), and pages with
@@ -32,6 +34,15 @@ want the passages themselves as text, or need to page through a long result; oth
 `search` answers the same question with more to cite.
 
 Run at least one search without a scope before concluding the store has nothing on it.
+
+**Public files are not the team's.** `scope: "public"` searches files strangers published on
+GitHub, never the organization's documents, and answers in `public` rather than `hits`. Present
+them as outside examples, never as what the team decided. Each hit says what the file would
+have an agent do (`capabilities`: `destructive`, `reads_secrets`, `installs`, `shell_pipe`, …)
+and under which licence; mention those before suggesting anyone use it. A file whose licence
+does not allow it is described with a link, not served. Give the user the hit's `sourceLink`
+(the file on GitHub, readable whatever its licence), or its `link` when there is none, to see it
+themselves. A folder of the organization's own that is named `public` is `scope: "/public"`.
 
 ## Browsing
 
