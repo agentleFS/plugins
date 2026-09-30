@@ -45,8 +45,11 @@ Run at least one search without a scope before concluding the store has nothing 
 
 `read_org_doc` with `location` (or `node`, the id printed beside a location, which
 survives a rename). It returns the body, a console link to cite, and the commit it read
-at, printed as "(pass as expected_commit to edit safely)". Page a long document with
-`offset` and `maxBytes` rather than guessing at the rest. Cite what you opened, not a
+at, printed as "(pass as expected_commit to edit safely)". A paged read marks each part as a
+part, and the part that ends the document as the last part: either way, read every part before
+overwriting it with `write_org_doc`. A document over the read cap says so on every part, and
+`edit_org_doc` refuses it. Page a long document with `offset` and `maxBytes` rather
+than guessing at the rest. Cite what you opened, not a
 search snippet.
 
 ## Writing a new document
@@ -97,6 +100,7 @@ of a document you had to invent.
 | it is at a different commit than you expected, or was committed by someone else while the edit was in flight | Re-read and re-apply to the new text, rather than forcing yours over theirs |
 | the edit removes or breaks the frontmatter | Keep the `---` block intact |
 | the section is claimed by another agent | See below |
+| it is above the read cap | Read every part and rewrite it whole with `write_org_doc`, pinned |
 
 For a larger rewrite, or when other agents work in the same document, `claim` the section
 first so they find out before either of you edits (the `collaborating` skill). A write into
