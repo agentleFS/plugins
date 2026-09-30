@@ -25,26 +25,25 @@ If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_
 
 If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
 
-Each per-folder call returns how many files you can read, how many are gated from you, a breakdown by type, and the labels present.
+Each per-folder call returns how many files you can read, a breakdown by type, and the labels present. It counts only what you can read: nothing in it says how much is gated from you.
 
 ## Step 3 - report
 
 Lead with a table, not prose:
 
-| Folder | Readable | Gated | Types | Labels |
-|---|---|---|---|---|
+| Folder | Readable | Types | Labels |
+|---|---|---|---|
 
 Then add, in a few lines:
 
-- Total readable files across the folders you checked, and total gated.
-- Any folder where the gated count dominates the readable count. That is the most useful signal in the whole report: it means substantial content sits next to what you can see, and you would never encounter it through search.
-- Any folder that is fully readable with zero gated files.
+- Total readable files across the folders you checked.
+- Any folder you reach that holds nothing you can read. Do not read it as empty: it may hold content gated from you, and nothing here can tell the two apart.
 
 ## What to state
 
 Include this, in your own words, because a reach table is easy to misread without it:
 
-> Denied reads exactly like not-found. A gated file is invisible, not marked. Where a gated count appears it tells you how many files are gated, never which ones or what they are about. Where a listing looks thin, "gated from you" and "does not exist" cannot be distinguished from here.
+> Denied reads exactly like not-found. A gated file is invisible, not marked and not counted (except in `who_can_read`'s `N gated from you`, until #1156): a folder with hidden content reads exactly like one without. Where a listing looks thin, "gated from you" and "does not exist" cannot be distinguished from here.
 
 Also state that labels carry no authority. They organize content and nothing else. An unlabeled file is not public, and a sensitively-labeled file is not thereby restricted. Access comes only from explicit grants.
 

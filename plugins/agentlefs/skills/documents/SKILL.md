@@ -1,6 +1,6 @@
 ---
 name: documents
-description: Find, browse, read, write and edit the documents a person or team keeps in agentleFS (afs), and comment on them. Use when the user asks what they or their team have written down about something ("what do we have on deploys?"), asks to open or read a stored runbook, spec or note, asks what folders or documents they have, wants a new document saved into afs — including a written summary or write-up of a topic or of several decisions ("save a summary of what we decided on Q4 pricing") — wants a stored document changed (fix a typo, rewrite a paragraph), or wants to leave a comment on one. Also when a task's "sources" are documents in a folder (a wiki's raw/ sources), which are listed and read here, not with list_org_sources, which lists GitHub and Drive connections. Not for saving this conversation itself as a record (sync-conversation), recording one decision or fact as shared truth (shared-truths-and-lessons), files in the local repository, or questions of general knowledge.
+description: Find, browse, read, write and edit the documents a person or team keeps in agentleFS (afs), and comment on them. Use when the user asks what they or their team have written down about something ("what do we have on deploys?"), asks to open or read a stored runbook, spec or note, asks what folders or documents they have, wants a new document saved into afs — including a written summary or write-up of a topic or of several decisions ("save a summary of what we decided on Q4 pricing") — wants a stored document changed (fix a typo, rewrite a paragraph), or wants to leave a comment on one. Also when a task's "sources" are documents in a folder (a wiki's raw/ sources), which are listed and read here, not with list_org_sources, which lists GitHub and Drive connections. Not for saving this conversation itself as a record (sync-conversation-summary), recording one decision or fact as shared truth (shared-truths-and-lessons), files in the local repository, or questions of general knowledge.
 ---
 
 # Documents in agentleFS
@@ -48,7 +48,7 @@ themselves. A folder of the organization's own that is named `public` is `scope:
 
 - `list_org_folders` with no arguments: every folder you reach, as a tree.
   `parent` lists what is inside one folder; `location` reports that folder's shape
-  (files you can read, how many are gated from you, types, labels).
+  (how many files you can read, their types and labels).
 - `list_org_docs` with `location`: the documents in a folder, optionally narrowed by
   `type` or `label`. Label filters match labels inherited from the folder as well.
 
@@ -58,8 +58,8 @@ themselves. A folder of the organization's own that is named `public` is `scope:
 survives a rename). It returns the body, a console link to cite, and the commit it read
 at, printed as "(pass as expected_commit to edit safely)". A paged read marks each part as a
 part, and the part that ends the document as the last part: either way, read every part before
-overwriting it with `write_org_doc`. A document over the read cap says so on every part, and
-`edit_org_doc` refuses it. Page a long document with `offset` and `maxBytes` rather
+overwriting it with `write_org_doc`. `edit_org_doc` reads the whole document whatever its
+size, so a part's pin is enough for it. Page a long document with `offset` and `maxBytes` rather
 than guessing at the rest. Cite what you opened, not a
 search snippet.
 
@@ -90,7 +90,7 @@ Where it belongs depends on what it is:
   `shared-truths-and-lessons` skill, and both are findable and contestable in ways a
   paragraph is not. A summary that records a decision can offer that as well.
 - **This conversation itself**, saved as a record of the session, is the
-  `sync-conversation` skill.
+  `sync-conversation-summary` skill.
 
 `create_org_folder` makes a folder (you become its approver), for starting a project
 before anything is in it. `write_org_doc` starts one too when its top-level folder does not
@@ -111,7 +111,6 @@ of a document you had to invent.
 | it is at a different commit than you expected, or was committed by someone else while the edit was in flight | Re-read and re-apply to the new text, rather than forcing yours over theirs |
 | the edit removes or breaks the frontmatter | Keep the `---` block intact |
 | the section is claimed by another agent | See below |
-| it is above the read cap | Read every part and rewrite it whole with `write_org_doc`, pinned |
 
 For a larger rewrite, or when other agents work in the same document, `claim` the section
 first so they find out before either of you edits (the `collaborating` skill). A write into

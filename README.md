@@ -100,11 +100,10 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `shared-truths-and-lessons` | You want a decision or fact recorded with its evidence, want to push back on one, want a lesson or dead end kept so nobody repeats it, or want a skill from the public registry |
 | `sharing` | You share something, need access you lack, have requests to approve, ask who (or which agent) can see something, or offer a folder to another organization |
 | `sources` | You want a GitHub repo or Drive folder synced in, a sync checked, or a vote cast for a connector that does not exist yet |
-| `sync-conversation` | You want this session written back to the store as a durable document |
+| `sync-conversation-summary` | You want a compact summary of this session saved to the store as a durable document |
 | `deleting` | Something is about to be removed, restored or permanently erased, and the blast radius needs saying out loud first |
 | `authorization-model` | Anything turns on who can read what, or a result comes back thinner than expected |
 | `connection` | The tools are missing, returning 401, or connected but reaching nothing |
-| `slack` | You ask your AI to tell someone in Slack about a doc, or for the latest on something split between docs and Slack — it checks the person can open the doc before sending. Needs Slack's own MCP connected in your client |
 
 Plus two agents: `context-researcher` for grounded retrieve-and-cite work, and
 `access-reviewer` for read-only access review — read-only by tool allowlist rather than

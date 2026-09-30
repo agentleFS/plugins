@@ -15,12 +15,11 @@ Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` set to 
 Report:
 
 - How many files in this folder you can read.
-- How many are gated from you.
 - The type and label breakdown.
 
 This is a fact about your own principal, established by a real call. Present it as such.
 
-The gated count is the interesting number. It tells you how many files sit in this folder that you cannot see, and nothing else. Not their names, not their paths, not their subject matter. Do not speculate about them.
+Nothing in this answer counts what you cannot see, by design: a folder with content gated from you reads exactly like one without it. Say that your count is your view, and do not speculate about what else may be there.
 
 ## Part 2 - who else can see it
 

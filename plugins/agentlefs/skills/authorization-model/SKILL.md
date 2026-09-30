@@ -103,10 +103,17 @@ This is the idea the rest depends on: there is no existence oracle.
 | Empty folder list | This principal reaches no folders | The org has no content |
 | `not found: path` | Gated from you, or absent. Cannot distinguish. | The file does not exist |
 | Search returns nothing | Nothing matched in what you can read | The org has written nothing on it |
-| `12 gated from you` in a folder's shape | 12 files are gated from you | Anything about their names, paths, or subject matter |
+| `you can read 3 file(s)` in a folder's shape | You can read 3 files there | That the folder holds only 3 |
 
-The one place a count shows through is `list_org_folders` with `location` set to a folder,
-which reports readable versus gated. That is a count only. It never identifies a gated file.
+A folder's shape (`list_org_folders` with `location`) counts only what you can read. Content
+gated from you leaves no trace in it: no count, no name, no comment, no change in its head
+commit. A folder with hidden content reads exactly like one without, within two bounds: a
+folder whose newest 250 documents are all hidden from you shows no head commit, and the
+`nearby` trailer is a bounded window (30 days, 100 documents asked about, widening to 1000
+only while nothing readable has turned up, 1000 commits), so its counts always read `at least N`:
+floors, not totals, in every folder. Past that window a readable child can lose its row, and a
+folder whose newest 1000 recent documents are all hidden from you shows no trailer. The one exception, until
+#1156 (who_can_read's gated count) moves it: `who_can_read` still prints `N gated from you`.
 
 Report a thin result as "nothing I can reach matches", and note that gated content is
 invisible from here, rather than as evidence of absence.

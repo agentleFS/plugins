@@ -60,7 +60,7 @@ Report concretely:
 
 - Which endpoint is in use.
 - How many folders this credential reaches, and name a few.
-- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with `location` set to one folder to show its shape: how many files are readable, how many are gated, types and labels.
+- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with `location` set to one folder to show its shape: how many files are readable, their types and labels.
 
 Then point onward, without re-explaining them:
 

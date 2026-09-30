@@ -1,6 +1,6 @@
 ---
-name: sync-conversation
-description: Save the current conversation into agentleFS (afs) as one durable summary document. Use when the thing the user wants saved is this conversation, session or chat itself ("save this session to afs", "sync this chat", "write up what we did here"). Not for a summary document about a topic or a set of decisions (the documents skill), recording a single decision or fact (the truth tool, in shared-truths-and-lessons), or a lesson or dead end (knowledge). Asks where it should land rather than picking a folder.
+name: sync-conversation-summary
+description: Save a compact summary of the current conversation into agentleFS (afs) as one durable document. Use when the thing the user wants saved is this conversation, session or chat itself ("save this session to afs", "sync this chat", "write up what we did here"). Not for a summary document about a topic or a set of decisions (the documents skill), recording a single decision or fact (the truth tool, in shared-truths-and-lessons), or a lesson or dead end (knowledge). Saves where this user's last sync went, and asks only when there is no previous one.
 ---
 
 # Sync this conversation to agentleFS
@@ -10,11 +10,14 @@ document the next agent — or the next person — inherits.
 
 Two rules govern the whole thing:
 
-1. **A summary, not a transcript.** Nobody re-reads a chat log. Write what was
-   established and why.
-2. **Ask where before writing.** You are about to put the user's words into a
-   permissioned store. The destination decides who can read them, so it is the
-   user's call each time.
+1. **A compact summary, never a transcript.** Nobody re-reads a chat log. Write what
+   was established and why, in 500 words at most.
+2. **Save where it went last time; ask only when there is no last time.** The
+   destination decides who can read the summary, so a new place is the user's call.
+
+No agentleFS tool reads, fetches or reconstructs chat history. The summary is written
+from what is already in your context, and the only thing sent to agentleFS is that
+summary, through `write_org_doc`.
 
 ## Step 1 — orient
 
@@ -27,32 +30,27 @@ made from, and it is also the connection check.
 | Empty list | Stop. This credential reaches nothing to write into. Send them to `/agentlefs:connect`. An empty list is not evidence the organization has no content — see the `authorization-model` skill. |
 | Error / tools missing | Stop and diagnose with the `connection` skill. Do not paraphrase a 401 as "agentleFS is down". |
 
-## Step 2 — ask where it goes
+## Step 2 — pick where it goes
 
-**There is no default destination.** Ask. agentleFS does not give each member a
-private folder of their own, so there is no location that is safe to assume — every
-folder in the Step 1 listing is one somebody else may be granted on.
+Take the first of these that has an answer:
 
-That matters more for a conversation than for most documents: a session contains
-half-formed reasoning, dead ends and things said in passing. Landing it somewhere few
-people can read and sharing it outward later is a decision the user can still make.
-Landing it in a team folder is a decision already made for them. So put the question
-to them, and let them weigh it.
+1. **The user named a place** in this request. Use it.
+2. **This conversation was synced before** (earlier in this session, or a document for
+   it already exists). Write to the same path, so a re-sync updates it rather than
+   minting `notes-2.md`.
+3. **This user has synced before.** Call `search` with the query `conversation-sync`
+   and no `how` (the default matches labels). Open the hits with `read_org_doc` and keep
+   only those whose frontmatter `synced_by` is this user, as `brief_me` names them. A
+   teammate's sync is not a precedent: their folder is theirs to choose. Of the ones
+   left, take the folder of the one with the latest `date`. Save there.
+4. **None of the above.** Ask. agentleFS gives no member a private folder of their
+   own, so there is no safe place to assume. Name the reachable folders from Step 1
+   that fit, say that anyone granted on a folder can read what lands in it, and let
+   them name another location if none fits.
 
-Offer:
-
-- **A folder from Step 1** — name the specific reachable folders that plausibly fit,
-  and say plainly that anyone granted on that folder will be able to read the
-  conversation. If one of them is a folder only they can reach (for example one under
-  `users/` bearing their name), say so, but do not pre-select it — only
-  `/agentlefs:who-can-see` can tell you who else reaches it.
-- **Somewhere else** — let them name the full location.
-
-Write only to a folder you have seen listed or the user named. If nothing in the
-listing fits, say so and ask.
-
-Confirm the exact location (folder and file name) back to them before writing. A path is cheap to
-get right now and expensive to move later: moving a file re-permissions it.
+Write only to a folder you have seen listed, found in case 3, or the user named. In
+cases 1–3, do not ask; say where it went in the report (Step 6), so the user can move
+it if they meant somewhere else.
 
 ## Step 3 — read the neighbors
 
@@ -102,6 +100,10 @@ is the honest choice when it is not.
 
 `tags` are free-form, so put the specifics there.
 
+Always include the tag `conversation-sync`, `synced_by` (the user, as `brief_me` names
+them) and `date` (today, ISO). Together they are how the next sync by the same user finds
+this one's folder (Step 2, case 3).
+
 ## Step 4 — compose the document
 
 One conversation, one document. Frontmatter matching the neighbors, then a body
@@ -115,7 +117,8 @@ along these lines:
 - **What changed** — files, commands, migrations, config, if any.
 - **Open threads** — what is unresolved, and what the next step would be.
 
-Keep it readable in two minutes.
+Keep it compact: readable in two minutes, 500 words at most. If a conversation needs
+more, it held more than one outcome. Offer to split it rather than writing it long.
 
 **Strip before writing:**
 
@@ -163,8 +166,9 @@ through `/agentlefs:share` or the `sharing` skill — and the user's to make.
 
 ## Do not
 
-- Do not pick the destination silently. Even when the answer is obvious, ask.
-- Do not write a verbatim transcript, and do not paste whole files into the document.
+- Do not guess a destination. Use the user's place, the last sync's place, or ask.
+- Do not write a verbatim transcript, quote long stretches of the chat, or paste whole
+  files into the document.
 - Do not write secrets, even ones the user pasted themselves.
 - Do not invent a folder that did not appear in `list_org_folders`.
 - Do not create a second document for a conversation that already has one.
