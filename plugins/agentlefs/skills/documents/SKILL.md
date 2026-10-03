@@ -112,6 +112,13 @@ of a document you had to invent.
 | the edit removes or breaks the frontmatter | Keep the `---` block intact |
 | the section is claimed by another agent | See below |
 
+To ADD a line or an entry at the end (a log line, a decision, a finding), do not replace the
+last entry with itself plus yours: pass `append` with the text, and `section` with a heading's
+text ("Log" for `## Log`) to add it at the end of that section rather than of the document.
+It needs no `old_string` and no `expected_commit`: it lands after whatever is there when it
+commits, so several agents appending at once all land, in order. The answer names the commit
+and the byte range it added. A `section` no heading has, or that two headings have, is refused.
+
 For a larger rewrite, or when other agents work in the same document, `claim` the section
 first so they find out before either of you edits (the `collaborating` skill). A write into
 a section someone else has claimed is refused and names the holder. `override_claim` writes
