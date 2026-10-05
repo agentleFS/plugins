@@ -78,7 +78,7 @@ search snippet.
    names the folder and any directory it had to create; any of those being a surprise means
    the path was wrong. A new **folder** is the loud one: if the top-level folder does not
    exist yet and you may create folders here, this call starts it and makes you its
-   approver, so `new folder "…"` on a path you thought existed means you have created a
+   manager, so `new folder "…"` on a path you thought existed means you have created a
    workspace rather than written into one. Hand over the console link it returns.
 
 Where it belongs depends on what it is:
@@ -92,7 +92,7 @@ Where it belongs depends on what it is:
 - **This conversation itself**, saved as a record of the session, is the
   `sync-conversation-summary` skill.
 
-`create_org_folder` makes a folder (you become its approver), for starting a project
+`create_org_folder` makes a folder (you become its manager), for starting a project
 before anything is in it. `write_org_doc` starts one too when its top-level folder does not
 exist — the difference is that this one says so as the intent, instead of as a side effect
 of a document you had to invent.

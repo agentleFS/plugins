@@ -14,7 +14,7 @@ Interpret the outcome:
 | Outcome | Meaning | Go to |
 |---|---|---|
 | A list of folders comes back | Already connected and granted. Done. | Phase 4 |
-| "(nothing stored yet — this Organization has no folders…)" | Connected, and you are an approver of an Organization with nothing in it yet | Phase 3a |
+| "(nothing stored yet — this Organization has no folders…)" | Connected, and you are a manager of an Organization with nothing in it yet | Phase 3a |
 | "(no folders you can reach — …)" | Connected, but this credential holds no grants | Phase 3b |
 | Auth error, 401, or the tool is not available at all | Not signed in yet, or the server is not configured | Phase 2 |
 
@@ -31,7 +31,7 @@ Explain these points, briefly:
 
 After they report signing in, re-run Phase 1. Do not claim success on the strength of the browser flow alone; only a successful tool call proves it.
 
-If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` returns `{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"paths":{"/mcp":"all"},"oauth":true}` when healthy.
+If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` returns `{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"oauth":true}` when healthy.
 
 ## Phase 3 - signed in, but seeing nothing
 
@@ -39,10 +39,10 @@ Authentication succeeded either way; this is not a broken connection, and saying
 
 ### 3a - "nothing stored yet": an empty Organization you approve
 
-You are an approver of this Organization and it holds no folders. Nothing is hidden from you — an approver of the Organization reaches everything. Offer to make the first folder:
+You are a manager of this Organization and it holds no folders. Nothing is hidden from you — a manager of the Organization reaches everything. Offer to make the first folder:
 
 1. Ask what to call it (for example the project's name).
-2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its approver, which lets you decide access requests for it and share it with `share_org_folder`.
+2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its manager, which lets you decide access requests for it and share it with `share_org_folder`.
 3. Offer `/agentlefs:seed` to put what this session already knows into it.
 
 ### 3b - "no folders you can reach": a credential with no grants
@@ -50,7 +50,7 @@ You are an approver of this Organization and it holds no folders. Nothing is hid
 Every person has at least one Organization, so this is never "no membership". It means this credential holds no grants on anything in it yet: content access comes only from explicit grants, and nothing is readable by default. Most often this is an **agent** token that has not been granted a folder, or a member nobody has shared anything with.
 
 - If the user knows which folder they need, request it: `share` with `action: "request"`, that folder's `location`, and a `reason` in their words. The request routes itself to someone who can grant it, and with `wait: true` and a `deadline` the answer comes back to this identity. The `sharing` skill has the details.
-- Otherwise ask an approver of the Organization to share a folder with them (`/agentlefs:share` from their session, or **Manage access** on the folder at `https://agentlefs.com`).
+- Otherwise ask a manager of the Organization to share a folder with them (`/agentlefs:share` from their session, or **Manage access** on the folder at `https://agentlefs.com`).
 
 State clearly: this listing is never proof that the Organization has no content. Denied is byte-identical to not-found, so it may simply mean everything is gated from this credential.
 

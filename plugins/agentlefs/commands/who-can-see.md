@@ -47,7 +47,7 @@ Give the user these three ideas, because a list of who reaches something is misl
 - **Cascade.** Grants flow down the folder tree. Someone with a grant three levels up reaches this file without ever appearing to have been given it directly. `who_can_read` marks that as inherited.
 - **Group nesting.** A grant to a group reaches its members, and groups nest, so a person can reach a file through a group inside a group. `mcp__plugin_agentlefs_agentlefs__list_org_people` with `group` walks one level at a time; a raw grant list does not resolve it.
 
-Also worth stating: console actions and file reads are decided by the same engine and the same ladder. Console actions above a small read-only floor need approver on the Organization's root, and an approver of the root reaches every file in the Organization, because that is what the role means there. A folder approver reaches only that folder's subtree.
+Also worth stating: console actions and file reads are decided by the same engine and the same ladder. Console actions above a small read-only floor need manager on the Organization's root, and a manager of the root reaches every file in the Organization, because that is what the role means there. A folder manager reaches only that folder's subtree.
 
 ## Do not
 

@@ -16,7 +16,7 @@ An empty list is two different facts, and the listing says which:
 
 | What it prints | What is true | Do this |
 |---|---|---|
-| "(nothing stored yet …)" | You are an approver of the Organization and it holds nothing | Say so — it is correct here, and only here. Send them to `/agentlefs:connect`. |
+| "(nothing stored yet …)" | You are a manager of the Organization and it holds nothing | Say so — it is correct here, and only here. Send them to `/agentlefs:connect`. |
 | "(no folders you can reach …)" | This credential holds no grants | Say the credential reaches nothing. It is not evidence that the organization has no content, because denied reads exactly like not-found. Send them to `/agentlefs:connect`. |
 
 ## Step 2 - per-folder shape

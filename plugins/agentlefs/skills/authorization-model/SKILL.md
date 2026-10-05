@@ -25,11 +25,11 @@ A grant says "subject holds `role` on scope".
 | Field | Values |
 |---|---|
 | subject | a person (or other principal) or a group |
-| role | `reader`, `writer`, `approver` |
+| role | `viewer`, `editor`, `manager` |
 | scope | the Organization root, a folder, or a document |
 
-Breadth comes from where a grant sits, not from a second vocabulary. An approver of the
-Organization's root reaches the whole Organization; a folder approver reaches that subtree.
+Breadth comes from where a grant sits, not from a second vocabulary. A manager of the
+Organization's root reaches the whole Organization; a folder manager reaches that subtree.
 There is no separate `admin` role.
 
 Nothing is readable by default. Ungranted is ungranted: there is no ambient read, no public
@@ -46,21 +46,21 @@ tier, no fallback that opens content up.
 
 ### Roles
 
-One ladder: `reader` < `writer` < `approver`. Each rung contains the one below it, so an
-approver reads and writes everything at or below where its grant sits. The console shows
-`approver` as **Approver**: can share and manage access, and edit.
+One ladder: `viewer` < `editor` < `manager`. Each rung contains the one below it, so an
+manager reads and writes everything at or below where its grant sits. The console shows
+`manager` as **Manager**: can share and manage access, and edit.
 
-`approver` additionally carries what the ladder alone does not express — deciding access
+`manager` additionally carries what the ladder alone does not express — deciding access
 requests, deleting, erasing, renaming and sharing — bounded to the subtree the grant sits on.
 Many principals may hold it on the same node. Handing a member a new grant directly follows the
 same rule everywhere: `share_org_folder`, the console's share panel and the SDK all ask for
-approver on what is being shared or on a folder above it, never beyond it. Someone who does not
+manager on what is being shared or on a folder above it, never beyond it. Someone who does not
 approve it can still ask: `share` with `action: "request"` reaches whoever does.
 
 **Owner is not a role.** Every document and folder has exactly one owner — the identity that
 created it, or whoever it was reassigned to. Ownership says whose a thing is, and it is who
 decides a debate or a proposal about it; it grants no access on its own and is not a rung of
-the ladder. If you see `owner` used as a grant role, it is an old name for `approver`. (A
+the ladder. If you see `owner` used as a grant role, it is an old name for `manager`. (A
 group also has an owner — who manages its membership — which is a third, unrelated thing.)
 
 There are three roles and no others.
@@ -121,10 +121,10 @@ invisible from here, rather than as evidence of absence.
 ## One decider, for the console as well as for content
 
 Console actions resolve through the same ladder: anything above a small read-only floor needs
-approver on the Organization's root, the node every folder hangs off. So "may you use this
+manager on the Organization's root, the node every folder hangs off. So "may you use this
 console action" and "may you read this file" are the same kind of question asked about
-different objects. An approver of the root therefore reaches every file in the Organization,
-deliberately, because that is what being an approver of the root means.
+different objects. A manager of the root therefore reaches every file in the Organization,
+deliberately, because that is what being a manager of the root means.
 
 ## Labels carry no authority
 
@@ -161,10 +161,10 @@ offered to another organization and accepted there as a mount (`share` with
 `action: "share_out"`), which `share` with `action: "shared"` lists.
 
 **The role that shares cannot itself read.** It can. The sharing role is the top of the
-ladder: an approver reads and writes everything beneath it.
+ladder: a manager reads and writes everything beneath it.
 
 **The owner of a folder is whoever holds the top grant on it.** Many principals may hold
-`approver` on a node, and it inherits down the tree; a node has exactly one owner, and
+`manager` on a node, and it inherits down the tree; a node has exactly one owner, and
 ownership is not access. Keep the two words apart.
 
 ## Consequences for how you work

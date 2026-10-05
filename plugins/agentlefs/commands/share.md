@@ -29,18 +29,18 @@ One caveat to state honestly: the counts you can see are your counts. If the fol
 
 ## Step 2 - choose the role
 
-Three roles are offered. The console labels them Reader / Editor / Approver.
+Three roles are offered. The console labels them Viewer / Editor / Manager, as Google Drive does.
 
 | Console label | Role | Grants | Use when |
 |---|---|---|---|
-| Reader | `reader` | read and search the content | the default; the recipient needs to know, not change |
-| Editor | `writer` | read plus write and edit documents | the recipient maintains the content |
-| Approver | `approver` | can share and manage access at and below the scope, and edit | the recipient decides who else gets in |
+| Viewer | `viewer` | read and search the content | the default; the recipient needs to know, not change |
+| Editor | `editor` | read plus write and edit documents | the recipient maintains the content |
+| Manager | `manager` | can share and manage access at and below the scope, and edit | the recipient decides who else gets in |
 
 Guidance to give:
 
-- Default to Reader. Escalate only on a stated need.
-- One ladder: `reader` < `writer` < `approver`. Each rung contains the one below it, so an approver reads and writes everything at or below where the grant sits, and additionally grants, revokes, deletes and erases there. Treat Approver as "decides who else gets in, and can change it".
+- Default to Viewer. Escalate only on a stated need.
+- One ladder: `viewer` < `editor` < `manager`. Each rung contains the one below it, so a manager reads and writes everything at or below where the grant sits, and additionally grants, revokes, deletes and erases there. Treat Manager as "decides who else gets in, and can change it".
 - "Owner" is a different thing: every document and folder has exactly one owner, the identity that created it (or whoever it was reassigned to). Ownership says whose it is; it is not a role you can share and grants no access on its own.
 - The console and MCP ask the same engine, so they cannot give different answers about what a role allows.
 - There are three roles and no others.
@@ -53,7 +53,7 @@ Call `mcp__plugin_agentlefs_agentlefs__who_can_read` on the target. If the recip
 
 ## Step 4 - preview, ask, then share
 
-**`share_org_folder` takes two calls.** Pass `location`, `emails` and `role` (`reader` / `writer` / `approver`; add `scope_type: "document"` for one file). The first call previews and shares nothing; only a second call carrying its `confirm_token` shares. Each address that belongs to a member of this Organization gets an ordinary grant; any other address is refused with "not a member of this organization", and nothing is shared with it. It sends no email.
+**`share_org_folder` takes two calls.** Pass `location`, `emails` and `role` (`viewer` / `editor` / `manager`; add `scope_type: "document"` for one file). The first call previews and shares nothing; only a second call carrying its `confirm_token` shares. Each address that belongs to a member of this Organization gets an ordinary grant; any other address is refused with "not a member of this organization", and nothing is shared with it. It sends no email.
 
 1. Make the preview call now, without asking first. It shares nothing, and its reply is the preview you are about to show — asking before it means asking the user to approve something they have not seen.
 2. Show the user the preview in plain words: who, what role, how many files it reaches (from Step 1), and that it cascades.
@@ -63,13 +63,13 @@ Call `mcp__plugin_agentlefs_agentlefs__who_can_read` on the target. If the recip
 
 A token expires after ten minutes, and it is refused if the folder, the role or the address list changed since the preview; either way, preview again and ask again.
 
-**If a share tool refuses with "you need to be an approver of this"**, nothing was shared, and the console will refuse for the same reason: granting a member directly needs approver on what is being shared, or on a folder above it, in every place. Say that plainly, and name the moves that remain: the colleague can request access themselves (`share` with `action: "request"`), and whoever approves it decides requests routed to them (`share` with `action: "approve"`); or an approver of it shares it.
+**If a share tool refuses with "sharing this needs manager"**, nothing was shared, and the console will refuse for the same reason: granting a member directly needs manager on what is being shared, or on a folder above it, or editor there (for viewer or editor) while its owner lets editors share, in every place. Say that plainly, and name the moves that remain: the colleague can request access themselves (`share` with `action: "request"`), and whoever approves it decides requests routed to them (`share` with `action: "approve"`); or a manager of it shares it.
 
 **Taking a share back.** Grants can be inherited from a parent folder, so change them in the console, where you can see where each grant actually lives.
 
 **Groups and the console.** To grant a whole group, use **Manage access** on the folder or file at `https://agentlefs.com`. To see everything one person reaches, open them under **Permission management → People**: their Access section lists each scope, direct or through a group.
 
-Then give a one-line summary, for example: "Shared `engineering/runbooks` with dana@example.com as reader. 41 files, cascades to everything added later."
+Then give a one-line summary, for example: "Shared `engineering/runbooks` with dana@example.com as viewer. 41 files, cascades to everything added later."
 
 ## What to state
 

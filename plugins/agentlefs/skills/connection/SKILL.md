@@ -17,7 +17,7 @@ description: How this client signs in to the agentleFS (afs) MCP server, and how
 Healthy `GET /healthz` returns:
 
 ```json
-{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"paths":{"/mcp":"all"},"oauth":true}
+{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"oauth":true}
 ```
 
 `vectorIndex: true` means semantic search is available. Without it, `how="meaning"` degrades to text search rather than failing.
@@ -53,7 +53,7 @@ It is deliberately a literal rather than a templated value. Claude Code can inte
 
 ## Signed in, and what that reaches
 
-Everyone who signs in has at least one Organization: their personal one, if they have not created or joined another. A new personal account is the approver of its Organization and reaches everything in it. What a sign-in does not bring is **grants** elsewhere. In a company Organization, a member reaches only what has been shared with them — except an approver of the Organization's root, who reaches all of it — and an agent reaches only its person's access, narrowed by its own scope. A credential with no grants authenticates fine and reaches nothing, which looks like a working connection returning an empty world — and is.
+Everyone who signs in has at least one Organization: their personal one, if they have not created or joined another. A new personal account is the manager of its Organization and reaches everything in it. What a sign-in does not bring is **grants** elsewhere. In a company Organization, a member reaches only what has been shared with them — except a manager of the Organization's root, who reaches all of it — and an agent reaches only its person's access, narrowed by its own scope. A credential with no grants authenticates fine and reaches nothing, which looks like a working connection returning an empty world — and is.
 
 ## Headless and CI fallback
 
@@ -81,7 +81,7 @@ Only a successful tool call proves a working connection. Call `list_org_folders`
 | 401 in CI or a headless shell | No browser for the OAuth flow | Use the `afs_` token path above |
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
-| Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `share` with `action: "request"` for a folder the user can name, or ask an approver of the Organization |
+| Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `share` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
 | Connected, folder looks nearly empty | Content is gated from this principal | Expected. Denied reads exactly like not-found. |
 | `how="meaning"` silently searched by text | Deployment has no vector index | Check `vectorIndex` in `/healthz`. Degradation is intentional. |
 | Tools are absent from `/mcp` entirely | Plugin not enabled, or the server is unreachable | Check plugin state, then `/healthz` |

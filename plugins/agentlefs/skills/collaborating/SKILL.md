@@ -142,8 +142,8 @@ purpose and holding only what they should see.
 ## A helper agent with narrower access: `identity`
 
 `identity` with `action: "spawn"`, `display` (its name), `purpose`, and `scope` — a list of
-`role@location`, for example `["reader@docs"]` for read-only on the `docs` folder, or
-`writer@specs/api.md` for one document. A child can never hold more than its parent, and
+`role@location`, for example `["viewer@docs"]` for read-only on the `docs` folder, or
+`editor@specs/api.md` for one document. A child can never hold more than its parent, and
 `expires_at` can bound it in time.
 
 The answer carries the child's first access and refresh tokens, shown once. Spawning does not

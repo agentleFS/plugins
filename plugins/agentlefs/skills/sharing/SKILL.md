@@ -27,8 +27,8 @@ something that does not exist, so a not-found is never evidence either way.
    do not invent one — a guessed address shares with the wrong person, or with nobody.
 2. `who_can_read` on the target, to see whether they already reach it — then sharing
    changes nothing, or only the role.
-3. Call `share_org_folder` with `location`, `emails`, `role` (`reader`, `writer` or
-   `approver`) and, for a single file, `scope_type: "document"`. This first call shares
+3. Call `share_org_folder` with `location`, `emails`, `role` (`viewer`, `editor` or
+   `manager`) and, for a single file, `scope_type: "document"`. This first call shares
    nothing: it returns exactly who would get what, and a `confirm_token`.
 4. Show the user that preview — who, which role, and that a folder share reaches
    everything beneath it, including files added later — and wait for their yes to it.
@@ -39,21 +39,21 @@ something that does not exist, so a not-found is never evidence either way.
 A token lasts ten minutes and is bound to that exact folder, role and address list; change
 any of them and preview again.
 
-Default to `reader`, and prefer a document to a folder when that is all they need.
+Default to `viewer`, and prefer a document to a folder when that is all they need.
 
-**Who may do this.** Handing out access needs approver on the folder or document being
-shared, or on a folder above it: whoever approves it may share it, and only within it. That is
-the same rule in the console's share panel and the SDK. Anyone else gets
-`⚠ refused: you need to be an approver of this, or of a folder above it, to share it. To ask for
-it, use share action=request role=approver with this location and a reason.` and nothing is
-shared. Someone who does not approve it can still help: they can ask to become an
-approver (`share` with `action: "request"` and `role: "approver"`, below), or the colleague can
+**Who may do this.** As in Google Drive: a manager of the folder or document, or of a folder
+above it, may share it as anything; an editor there may share it as `viewer` or `editor`, unless
+its owner or a manager turned off "Editors can change permissions and share" (`share` with
+`action: "settings"` says whether it is on). Only a manager can make someone a manager. That is the
+same rule in the console's share panel and the SDK. Anyone else gets
+`⚠ refused: sharing this needs manager on it or a folder above it, …` and nothing is shared. Someone who does not approve it can still help: they can ask to become an
+manager (`share` with `action: "request"` and `role: "manager"`, below), or the colleague can
 request access themselves, and either request reaches whoever does approve it.
 
 ## Getting access yourself: `share` with `action: "request"`
 
-`share` with `action: "request"`, the `location`, `role` (`reader` by default, `writer`, or
-`approver` to share it and decide others' requests; approving gives the same role to every agent
+`share` with `action: "request"`, the `location`, `role` (`viewer` by default, `editor`, or
+`manager` to share it and decide others' requests; approving gives the same role to every agent
 you work under that lacks it, so ask for the smallest role the job needs) and a `reason` — the reason is required, and it is what the person deciding reads.
 The request goes to the nearest identity that can grant it: the user's own parent, a person
 both sides share, or the data owner's person, climbing until someone has the authority.
@@ -66,8 +66,8 @@ both sides share, or the data owner's person, climbing until someone has the aut
   so the answer never confirms whether a path exists. If a request comes back unroutable,
   say nobody could be found to decide it, and suggest asking a person directly.
 
-A request for a role you already hold, or one below it (approver implies writer, writer implies
-reader), is refused as pointless (`already_has_access`), which is worth knowing before telling
+A request for a role you already hold, or one below it (manager implies editor, editor implies
+viewer), is refused as pointless (`already_has_access`), which is worth knowing before telling
 the user to wait on one.
 
 ## Deciding requests routed to the user
@@ -76,7 +76,7 @@ the user to wait on one.
 `approvals`). Each is theirs to decide: show who is asking, for what, at what role, and their
 reason, and anyone in `alsoGains`: the agents the requester works under that approving also
 gives the role to, since an agent never holds more than those above it. Say that part plainly,
-because an approver request can make an agent that was only reading an approver too. Then
+because a manager request can make an agent that was only reading a manager too. Then
 `action: "approve"` or `action: "decline"` with `request_id` and a `note`, only on the user's
 answer.
 
@@ -101,8 +101,8 @@ only answers about something you can read yourself.
 Sharing with a colleague stays inside this organization. To give a person in another
 organization a folder or document:
 
-1. `share` with `action: "share_out"`, `location`, `to` (their email) and `role` (`reader`
-   or `writer`). They need to have signed up with that address; otherwise the answer says so
+1. `share` with `action: "share_out"`, `location`, `to` (their email) and `role` (`viewer`
+   or `editor`). They need to have signed up with that address; otherwise the answer says so
    and nothing is shared.
 2. A person with authority over the data offers it directly. An agent's offer is a proposal
    that the data's owner decides: `action: "proposals"` lists them, and

@@ -46,7 +46,7 @@ Nothing tells you how much is gated from you, by design: a folder with hidden co
 
 Labels carry no authority. No authorization decision reads them. An unlabeled file is not public; a sensitively-labeled file is not thereby restricted. Access comes only from explicit reach grants.
 
-Console permissions and file access are decided by the same engine and the same ladder: anything in the console above a small read-only floor needs approver on the Organization's root. So an approver of the root reaches every file in the Organization — that is what the role means there — while a folder approver reaches only that folder's subtree.
+Console permissions and file access are decided by the same engine and the same ladder: anything in the console above a small read-only floor needs manager on the Organization's root. So a manager of the root reaches every file in the Organization — that is what the role means there — while a folder manager reaches only that folder's subtree.
 
 If a call errors rather than returning a shorter list, surface the error. The read path is fail-closed: a truncated allow-set throws rather than filtering on a subset. An error is the system refusing to under-report, so report it as an error rather than as a partial summary.
 
@@ -62,7 +62,7 @@ If a call errors rather than returning a shorter list, surface the error. The re
 
 Explain, when relevant, that grants **cascade** down the folder tree, that groups **nest** so reach can arrive through several hops, and that an **inherited** grant must be removed at the ancestor it was made on because there is nothing to remove at this level.
 
-Role vocabulary: `reader` / `writer` / `approver`, surfaced as Reader / Editor / Approver. One ladder, each rung containing the one below it — `approver` ⟹ `writer` ⟹ `reader`. An approver reads and writes everything at or below where the grant sits, and additionally grants and revokes there. There are three rungs and no others. "Owner" is a different thing: each document and folder has exactly one owner, the identity that created it or was given it, and ownership is not access and not a rung.
+Role vocabulary: `viewer` / `editor` / `manager`, surfaced as Viewer / Editor / Manager, as in Google Drive (`reader` / `writer` / `approver` are accepted as deprecated aliases). One ladder, each rung containing the one below it — `manager` ⟹ `editor` ⟹ `viewer`. A manager reads and writes everything at or below where the grant sits, and additionally grants and revokes there. There are three rungs and no others. "Owner" is a different thing: each document and folder has exactly one owner, the identity that created it or was given it, and ownership is not access and not a rung.
 
 ## Output
 

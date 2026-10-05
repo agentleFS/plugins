@@ -62,8 +62,8 @@ unless they ask; the answer to "should this be gone" was no.
 ## Read the preview properly
 
 - **The file count is the true number.** The permission check counts every file at
-  the target, including any you cannot read, and it passes only if you are an approver
-  of all of them. Approver includes read, so a preview only ever comes back for a set
+  the target, including any you cannot read, and it passes only if you are a manager
+  of all of them. Manager includes read, so a preview only ever comes back for a set
   you can read in full; anything gated from you makes the call refuse instead (below).
 - **The "not listed" number is not an alarm.** The preview names a short sample, and
   "not listed" is everything past it. Read it as "more than the sample", not "hidden
@@ -87,7 +87,7 @@ unless they ask; the answer to "should this be gone" was no.
 
 | What you see | What it means | What to do |
 |---|---|---|
-| `⛔ not permitted: you can't delete everything here — <paths>` | Deleting needs **approver** on every item it would remove, including items you cannot read. You are not an approver of all of them. Deletion is all-or-nothing on purpose — a partial delete is the worst outcome available. | Stop and report which items blocked it. The paths named are the blockers you can read. Anything you cannot read is neither named nor counted, so the list may be empty and there is no way to find out what else blocked it. An approver of all of it can delete it. Look for no other route: the refusal is the answer. |
+| `⛔ not permitted: you can't delete everything here — <paths>` | Deleting needs **manager** on every item it would remove, including items you cannot read. You are not a manager of all of them. Deletion is all-or-nothing on purpose — a partial delete is the worst outcome available. | Stop and report which items blocked it. The paths named are the blockers you can read. Anything you cannot read is neither named nor counted, so the list may be empty and there is no way to find out what else blocked it. A manager of all of it can delete it. Look for no other route: the refusal is the answer. |
 | `not found: <path>` | Gated from you, or absent. A delete of something you can read none of answers exactly as a path with nothing at it. Cannot distinguish (see the authorization-model skill). | Do not conclude the file does not exist. Tell the person you could not delete it and that you cannot see it. |
 | `deleting the whole folder needs confirm_delete_folder set to exactly "…"` | A bare folder name was passed without the confirmation field. | Pass `confirm_delete_folder` with that exact name if a whole-folder delete is what the person wants; otherwise name the file or directory inside it. |
 | `this folder changed since that confirmation was issued` | Someone wrote to the folder between your preview and your confirm, so the numbers the person approved are stale. | Re-preview, show the person what changed, ask again. Do not re-confirm on the old answer. |
@@ -95,7 +95,7 @@ unless they ask; the answer to "should this be gone" was no.
 
 ## Undoing a delete, and the one that cannot be undone
 
-A delete can be undone, by someone who could have made it: `undo_delete` needs approver on
+A delete can be undone, by someone who could have made it: `undo_delete` needs manager on
 everything that delete removed, the same bar as the delete itself, and is refused otherwise.
 With the same `location` it restores exactly what that one delete removed, at the version it had, with its sharing intact — except a folder's
 connector, which stays disconnected. When you undo a folder delete whose preview named a
@@ -117,7 +117,7 @@ It takes the same two calls, for a stronger reason:
 
 1. `erase_org_doc` with `location` (or `node`) and no `confirm_token`. Nothing is erased.
    The answer lists what would stop existing — how many nodes, how many of them documents —
-   and, under LEFT BEHIND, anything you are not an approver of. Erasing needs approver, and
+   and, under LEFT BEHIND, anything you are not a manager of. Erasing needs manager, and
    unlike a delete it does not refuse the whole set: what you approve is erased and the rest
    is left and reported, so a folder can come back partly done.
 2. Show the person that list and say plainly what the erase does and does not do:
