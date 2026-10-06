@@ -40,7 +40,7 @@ tier, no fallback that opens content up.
 - Grants cascade down the folder tree. A grant on a folder reaches every descendant,
   including files created later.
 - A grant is **granted-here** (made directly on this scope) or **inherited** (arriving from
-  an ancestor). `who_can_read` marks which.
+  an ancestor). `access_read` with `action: "who_can_read"` marks which.
 - Groups nest. A grant to a group reaches its members, and a group can contain groups, so a
   principal may reach a file through several hops. Resolution is live, not snapshotted.
 
@@ -53,9 +53,10 @@ manager reads and writes everything at or below where its grant sits. The consol
 `manager` additionally carries what the ladder alone does not express — deciding access
 requests, deleting, erasing, renaming and sharing — bounded to the subtree the grant sits on.
 Many principals may hold it on the same node. Handing a member a new grant directly follows the
-same rule everywhere: `share_org_folder`, the console's share panel and the SDK all ask for
-manager on what is being shared or on a folder above it, never beyond it. Someone who does not
-approve it can still ask: `share` with `action: "request"` reaches whoever does.
+same rule everywhere: `access_grant` with `action: "share"`, the console's share panel and the
+SDK all ask for manager on what is being shared or on a folder above it, never beyond it.
+Someone who does not approve it can still ask: `access_grant` with `action: "request"`
+reaches whoever does.
 
 **Owner is not a role.** Every document and folder has exactly one owner — the identity that
 created it, or whoever it was reassigned to. Ownership says whose a thing is, and it is who
@@ -68,11 +69,12 @@ There are three roles and no others.
 ## Agents carry a scope, not a grant
 
 An agent's access is computed, never copied: its root person's grants, cut down to the scope
-of every link in its delegation chain (`identity` with `action: "spawn"` sets a child's
-scope as `role@location`, never wider than its parent's). So an agent can reach much less
-than its person, and a grant listing cannot show that. `who_can_read` lists the people and
-groups whose grants reach something; whether one particular agent can read it is `share`
-with `action: "can_see"`, which applies the whole chain.
+of every link in its delegation chain (`identity_write` with `action: "spawn"` sets a
+child's scope as `role@location`, never wider than its parent's). So an agent can reach much
+less than its person, and a grant listing cannot show that. `access_read` with
+`action: "who_can_read"` lists the people and groups whose grants reach something; whether
+one particular agent can read it is `access_read` with `action: "can_see"`, which applies the
+whole chain.
 
 Two more things narrow what an identity reads: a **room** is decided by membership rather
 than grants, and a document mirrored from a connected source is capped by that source's own
@@ -91,7 +93,7 @@ summary.
 This is the idea the rest depends on: there is no existence oracle.
 
 - A path you cannot read returns not-found, worded identically to a path that does not exist.
-- A folder you do not reach is simply absent from `list_org_folders`. No count, no marker,
+- A folder you do not reach is simply absent from the folder listing. No count, no marker,
   no placeholder.
 - An empty search says it cannot settle the question, not that nothing exists.
 - The empty-listing text is deliberately the same for "nothing here" and "nothing for you".
@@ -105,7 +107,7 @@ This is the idea the rest depends on: there is no existence oracle.
 | Search returns nothing | Nothing matched in what you can read | The org has written nothing on it |
 | `you can read 3 file(s)` in a folder's shape | You can read 3 files there | That the folder holds only 3 |
 
-A folder's shape (`list_org_folders` with `location`) counts only what you can read. Content
+A folder's shape (`browse` `action: "folders"` with `location`) counts only what you can read. Content
 gated from you leaves no trace in it: no count, no name, no comment, no change in its head
 commit. A folder with hidden content reads exactly like one without, within two bounds: a
 folder whose newest 250 documents are all hidden from you shows no head commit, and the
@@ -113,7 +115,7 @@ folder whose newest 250 documents are all hidden from you shows no head commit, 
 only while nothing readable has turned up, 1000 commits), so its counts always read `at least N`:
 floors, not totals, in every folder. Past that window a readable child can lose its row, and a
 folder whose newest 1000 recent documents are all hidden from you shows no trailer. The one exception, until
-#1156 (who_can_read's gated count) moves it: `who_can_read` still prints `N gated from you`.
+#1156 (the who-can-read listing's gated count) moves it: `who_can_read` still prints `N gated from you`.
 
 Report a thin result as "nothing I can reach matches", and note that gated content is
 invisible from here, rather than as evidence of absence.
@@ -153,12 +155,12 @@ built to keep you from making.
 **An agent can read the audit trail.** No agent tool reads it, by design, so a token holder
 cannot audit a whole Organization.
 
-Who reaches something, though, is answerable: `who_can_read` on a folder or document you
+Who reaches something, though, is answerable: `access_read` `action: "who_can_read"` on a folder or document you
 reach names the people and groups in the Organization (direct or inherited, with role). It
 names people, never their content, and for a scope you cannot reach it answers not-found.
 Nobody outside the Organization holds a grant in it; the one way content crosses is a share
-offered to another organization and accepted there as a mount (`share` with
-`action: "share_out"`), which `share` with `action: "shared"` lists.
+offered to another organization and accepted there as a mount (`access_grant` with
+`action: "share_out"`), which `access_read` with `action: "shared"` lists.
 
 **The role that shares cannot itself read.** It can. The sharing role is the top of the
 ladder: a manager reads and writes everything beneath it.
@@ -171,15 +173,16 @@ ownership is not access. Keep the two words apart.
 
 - Say you could not reach a document, rather than that it does not exist.
 - Infer nothing about access from a name, path, or label.
-- Name who can see something only when a tool returned it. `who_can_read` answers "which
-  people and groups reach this?", `list_org_people` with `group` answers who is in a group,
-  and `share` with `action: "can_see"` answers whether one identity, agent or person, can
+- Name who can see something only when a tool returned it. `access_read` `action: "who_can_read"`
+  answers "which people and groups reach this?", `browse` `action: "people"` with `group`
+  answers who is in a group, and `access_read` `action: "can_see"` answers whether one
+  identity, agent or person, can
   read it. For everything one person reaches, the console's **Permission management →
   People** page lists it.
-- When the user lacks access they need, the move is `share` with `action: "request"` and a
+- When the user lacks access they need, the move is `access_grant` with `action: "request"` and a
   reason, which routes to someone who can grant it — not a guess at who to email.
 - Do not call a console API endpoint from an agent context. It accepts only a browser
   session, so an OAuth or `afs_` credential gets a 401 every time.
 - A write is authorized or it is refused; there is no staging or review state in between. A
-  successful `write_org_doc` is live immediately, and who can then read it is decided by the
+  successful `doc_create` is live immediately, and who can then read it is decided by the
   grants on the path, not by anything the writer sets.

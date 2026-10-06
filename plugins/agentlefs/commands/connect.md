@@ -1,13 +1,13 @@
 ---
 description: Sign this client in to agentleFS (afs) and verify the connection with a real call — not for syncing GitHub or Google Drive content into afs
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__create_org_folder
+allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__doc_create
 ---
 
 Get the user from zero to a verified agentleFS connection. Work through the phases in order and stop as soon as the connection is proven working.
 
 ## Phase 1 - probe, do not lecture
 
-Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments. That single call answers almost everything, so make it first rather than asking the user about their setup.
+Call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` and nothing else. That single call answers almost everything, so make it first rather than asking the user about their setup.
 
 Interpret the outcome:
 
@@ -42,14 +42,14 @@ Authentication succeeded either way; this is not a broken connection, and saying
 You are a manager of this Organization and it holds no folders. Nothing is hidden from you — a manager of the Organization reaches everything. Offer to make the first folder:
 
 1. Ask what to call it (for example the project's name).
-2. Call `mcp__plugin_agentlefs_agentlefs__create_org_folder` with `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its manager, which lets you decide access requests for it and share it with `share_org_folder`.
+2. Call `mcp__plugin_agentlefs_agentlefs__doc_create` with `action: "folder"` and `folder_path` set to a one-item list holding that name (for example `["acme-platform"]`). You become its manager, which lets you decide access requests for it and share it (`access_grant` with `action: "share"`).
 3. Offer `/agentlefs:seed` to put what this session already knows into it.
 
 ### 3b - "no folders you can reach": a credential with no grants
 
 Every person has at least one Organization, so this is never "no membership". It means this credential holds no grants on anything in it yet: content access comes only from explicit grants, and nothing is readable by default. Most often this is an **agent** token that has not been granted a folder, or a member nobody has shared anything with.
 
-- If the user knows which folder they need, request it: `share` with `action: "request"`, that folder's `location`, and a `reason` in their words. The request routes itself to someone who can grant it, and with `wait: true` and a `deadline` the answer comes back to this identity. The `sharing` skill has the details.
+- If the user knows which folder they need, request it: `access_grant` with `action: "request"`, that folder's `location`, and a one-line `reason`. The request routes itself to someone who can grant it, and with `wait: true` and a `deadline` the answer comes back to this identity. The `sharing` skill has the details.
 - Otherwise ask a manager of the Organization to share a folder with them (`/agentlefs:share` from their session, or **Manage access** on the folder at `https://agentlefs.com`).
 
 State clearly: this listing is never proof that the Organization has no content. Denied is byte-identical to not-found, so it may simply mean everything is gated from this credential.
@@ -60,7 +60,7 @@ Report concretely:
 
 - Which endpoint is in use.
 - How many folders this credential reaches, and name a few.
-- Optionally, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` once more with `location` set to one folder to show its shape: how many files are readable, their types and labels.
+- Optionally, call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` once more with `location` set to one folder to show its shape: how many files are readable, their types and labels.
 
 Then point onward, without re-explaining them:
 
@@ -71,10 +71,10 @@ Then point onward, without re-explaining them:
 **If the store is reachable but nearly empty, you can offer to seed it.** A connected store with nothing in it gives the next search nothing to find, and the fix is one paste. Show them this, verbatim, in a code block so it is copyable:
 
 ```
-Use agentleFS as our team's long-term memory. Call list_org_folders to see what
-I reach. Then take everything you've learned about this project - architecture
-decisions, gotchas, conventions, anything a new teammate would need - and write
-each as its own doc with write_org_doc. Match the frontmatter (type + tags) of
+Use agentleFS as our team's long-term memory. Call browse with action folders to
+see what I reach. Then take everything you've learned about this project -
+architecture decisions, gotchas, conventions, anything a new teammate would need -
+and write each as its own doc with doc_create. Match the frontmatter (type + tags) of
 neighboring files so they're findable. If you've genuinely learned nothing yet,
 write one short doc capturing what this repo is and how to run it, so the store
 isn't empty. Tell me what you wrote and where.

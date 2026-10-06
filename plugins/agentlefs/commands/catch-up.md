@@ -1,7 +1,7 @@
 ---
 description: Catch up on what you have been working on in agentleFS (afs), and pick the thread back up
 argument-hint: [topic]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__search_org_knowledge, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__read_org_doc
+allowed-tools: mcp__plugin_agentlefs_agentlefs__brief_me, mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__read
 ---
 
 Work out where the user left off and hand it back to them in a few sentences they can act on.
@@ -40,7 +40,7 @@ So use it to **interpret** ("the pricing doc" means the one in their folder), to
 
 ## Step 3 - open two or three documents, then stop
 
-Call `mcp__plugin_agentlefs_agentlefs__read_org_doc` on the ones that match what they asked, not the ones that merely changed most recently. If nothing looks right, say what you found and ask — that is faster for them than watching you open six files that turn out to be wrong.
+Call `mcp__plugin_agentlefs_agentlefs__read` with `action: "document"` on the ones that match what they asked, not the ones that merely changed most recently. If nothing looks right, say what you found and ask — that is faster for them than watching you open six files that turn out to be wrong.
 
 ## Step 4 - report
 
@@ -54,6 +54,6 @@ Lead with anything in `waiting`, `approvals`, `resolvedWaits` or `contested`: th
 
 - Do not describe their role, seniority, or team from where they work. Read locations as places, not as a person.
 - Do not pass a folder filter to search based only on the brief.
-- Do not call `mcp__plugin_agentlefs_agentlefs__brief_me` repeatedly hunting for a better answer. The one further call worth making is the acknowledgement — `ack_through` set to `cursor.head` — and only once the user has picked the work back up: it moves their cursor, so the next session starts after what you summarized.
+- Do not call `mcp__plugin_agentlefs_agentlefs__brief_me` repeatedly hunting for a better answer. Moving their cursor past what you summarized is a separate write (`coordination_write` with `action: "ack_brief"` and `through` set to `cursor.head`), not part of this command: offer it once the user has picked the work back up, and their client will ask before it runs.
 - Do not report a thin or empty result as though the organization has written nothing.
 - Do not narrate your tool calls. They want to know where things stand.

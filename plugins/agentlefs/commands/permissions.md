@@ -1,7 +1,7 @@
 ---
 description: Summarize what this credential can actually reach in agentleFS (afs)
 argument-hint: [folder]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders
+allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__access_read
 ---
 
 Report what this credential effectively reaches in agentleFS, and nothing more. This is a self-audit of the current principal's reach, not a report on anyone else's access.
@@ -10,7 +10,7 @@ Argument: `$ARGUMENTS` (optional folder to focus on).
 
 ## Step 1 - the reachable set
 
-Call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments. What comes back is the complete set of folders this principal reaches. A folder absent from that list is either not granted to this principal or does not exist, and the two are indistinguishable by design.
+Call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` and nothing else. What comes back is the complete set of folders this principal reaches. A folder absent from that list is either not granted to this principal or does not exist, and the two are indistinguishable by design.
 
 An empty list is two different facts, and the listing says which:
 
@@ -21,9 +21,9 @@ An empty list is two different facts, and the listing says which:
 
 ## Step 2 - per-folder shape
 
-If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` set to that folder and report only it. (`location` returns the folder's shape; `parent` would list its subfolders instead.)
+If `$ARGUMENTS` names a folder, call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` and `location` set to that folder and report only it. (`location` returns the folder's shape; `parent` would list its subfolders instead.)
 
-If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
+If `$ARGUMENTS` is empty, orient across everything: call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` and `location` once per reachable folder to collect each folder's shape. Cap this at roughly the first 10 folders when there are many, and say plainly that you capped it and which folders you skipped.
 
 Each per-folder call returns how many files you can read, a breakdown by type, and the labels present. It counts only what you can read: nothing in it says how much is gated from you.
 
@@ -43,13 +43,13 @@ Then add, in a few lines:
 
 Include this, in your own words, because a reach table is easy to misread without it:
 
-> Denied reads exactly like not-found. A gated file is invisible, not marked and not counted (except in `who_can_read`'s `N gated from you`, until #1156): a folder with hidden content reads exactly like one without. Where a listing looks thin, "gated from you" and "does not exist" cannot be distinguished from here.
+> Denied reads exactly like not-found. A gated file is invisible, not marked and not counted (except in the who-can-read listing's `N gated from you`, until #1156, which removes that count): a folder with hidden content reads exactly like one without. Where a listing looks thin, "gated from you" and "does not exist" cannot be distinguished from here.
 
 Also state that labels carry no authority. They organize content and nothing else. An unlabeled file is not public, and a sensitively-labeled file is not thereby restricted. Access comes only from explicit grants.
 
 ## Keep to this credential
 
-- This command is about this credential's reach. For "who else can see this", route to `/agentlefs:who-can-see`, which calls `who_can_read`, rather than guessing at anyone else's access.
+- This command is about this credential's reach. For "who else can see this", route to `/agentlefs:who-can-see`, which calls `mcp__plugin_agentlefs_agentlefs__access_read` with `action: "who_can_read"`, rather than guessing at anyone else's access.
 - Do not call a console API endpoint. It accepts only a browser session, so this credential would get a 401.
 - Do not infer a grant from a label, a filename, or a folder name.
 - Do not describe a thin result as evidence that content does not exist.

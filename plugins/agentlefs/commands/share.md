@@ -1,25 +1,25 @@
 ---
 description: Share an agentleFS (afs) folder or document with members of your Organization by email — shows exactly who gets what, and shares only after you say yes
 argument-hint: [folder-or-path]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__list_org_folders, mcp__plugin_agentlefs_agentlefs__list_org_docs, mcp__plugin_agentlefs_agentlefs__who_can_read, mcp__plugin_agentlefs_agentlefs__list_org_people
+allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__access_read
 ---
 
 Help the user share `$1` with someone in their Organization. Your job is to get the decision right, show its blast radius, and share only after they say yes to the exact preview.
 
-This command shares with **members of this Organization**: an address that does not belong to a member is refused and nothing is shared with it. Someone outside the Organization is a different route with different consequences — `share` with `action: "share_out"` offers the folder to their own organization, where they accept it (the `sharing` skill). If that is what the user wants, say so and use it rather than stretching this one; inviting them into this Organization, in the console, is the other option.
+This command shares with **members of this Organization**: an address that does not belong to a member is refused and nothing is shared with it. Someone outside the Organization is a different route with different consequences — `access_grant` with `action: "share_out"` offers the folder to their own organization, where they accept it (the `sharing` skill). If that is what the user wants, say so and use it rather than stretching this one; inviting them into this Organization, in the console, is the other option.
 
-The share tool is deliberately left out of this command's pre-approved tools, so Claude Code also asks the user before each share call. That prompt is a second guard, not a substitute for asking them yourself.
+`access_grant` is deliberately left out of this command's pre-approved tools, and is marked destructive, so the user's client also asks before each share call. That prompt is a second guard, not a substitute for asking them yourself.
 
-Target: `$1` (a `location` — a full path from the workspace root, naming either a folder like `product` or a single document like `product/runbooks/deploy.md`). If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with no arguments, show the reachable folders, and ask which one they mean.
+Target: `$1` (a `location` — a full path from the workspace root, naming either a folder like `product` or a single document like `product/runbooks/deploy.md`). If `$ARGUMENTS` is empty, call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` and nothing else, show the reachable folders, and ask which one they mean.
 
 ## Step 1 - orient on what the recipient would get
 
 Do this first. Sharing decisions go wrong because the sharer does not know how much is under the thing they are sharing.
 
-- For a folder: call `mcp__plugin_agentlefs_agentlefs__list_org_folders` with `location` set to that folder (not `parent`, which lists what is inside it instead). Report how many files are there, the type breakdown, and the labels.
-- For a single document: call `mcp__plugin_agentlefs_agentlefs__list_org_docs` with `location` set to the folder that holds it (for `product/runbooks/deploy.md`, that is `product/runbooks`) and check the document is in the listing. `list_org_docs` lists a folder; given a document's own path it finds nothing.
+- For a folder: call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "folders"` and `location` set to that folder (not `parent`, which lists what is inside it instead). Report how many files are there, the type breakdown, and the labels.
+- For a single document: call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "documents"` and `location` set to the folder that holds it (for `product/runbooks/deploy.md`, that is `product/runbooks`) and check the document is in the listing. It lists a folder; given a document's own path it finds nothing.
 
-If the user named a team rather than people, call `mcp__plugin_agentlefs_agentlefs__list_org_people` (with `group` for one group) so the share goes to actual addresses, not a guess.
+If the user named a team rather than people, call `mcp__plugin_agentlefs_agentlefs__browse` with `action: "people"` (with `group` for one group) so the share goes to actual addresses, not a guess.
 
 Then state the blast radius explicitly: grants cascade down the folder tree. A grant on a folder reaches every descendant of that folder, including subdirectories and files added later. A grant scoped to one document reaches only that document.
 
@@ -49,21 +49,21 @@ Pick the narrowest scope that does the job. A document-scoped grant is almost al
 
 ## Step 3 - see who already reaches it
 
-Call `mcp__plugin_agentlefs_agentlefs__who_can_read` on the target. If the recipient already reaches it (directly, inherited, or through a group), say so: sharing again changes nothing, or changes only the role.
+Call `mcp__plugin_agentlefs_agentlefs__access_read` with `action: "who_can_read"` on the target. If the recipient already reaches it (directly, inherited, or through a group), say so: sharing again changes nothing, or changes only the role.
 
 ## Step 4 - preview, ask, then share
 
-**`share_org_folder` takes two calls.** Pass `location`, `emails` and `role` (`viewer` / `editor` / `manager`; add `scope_type: "document"` for one file). The first call previews and shares nothing; only a second call carrying its `confirm_token` shares. Each address that belongs to a member of this Organization gets an ordinary grant; any other address is refused with "not a member of this organization", and nothing is shared with it. It sends no email.
+**`access_grant` with `action: "share"` takes two calls.** Pass `location`, `emails` and `role` (`viewer` / `editor` / `manager`; add `scope_type: "document"` for one file). The first call previews and shares nothing; only a second call carrying its `confirm_token` shares. Each address that belongs to a member of this Organization gets an ordinary grant; any other address is refused with "not a member of this organization", and nothing is shared with it. It sends no email.
 
 1. Make the preview call now, without asking first. It shares nothing, and its reply is the preview you are about to show — asking before it means asking the user to approve something they have not seen.
 2. Show the user the preview in plain words: who, what role, how many files it reaches (from Step 1), and that it cascades.
 3. **Ask, and wait for an explicit yes to that preview.** "Share it" said before the preview is not a yes to the preview, because they had not yet seen who gets what.
 4. On yes, call again with the `confirm_token`. On anything else, stop — nothing was shared.
-5. Report what the tool returned, per address — including any address it refused as not a member — and confirm with `mcp__plugin_agentlefs_agentlefs__who_can_read`.
+5. Report what the tool returned, per address — including any address it refused as not a member — and confirm with `mcp__plugin_agentlefs_agentlefs__access_read` and `action: "who_can_read"`.
 
 A token expires after ten minutes, and it is refused if the folder, the role or the address list changed since the preview; either way, preview again and ask again.
 
-**If a share tool refuses with "sharing this needs manager"**, nothing was shared, and the console will refuse for the same reason: granting a member directly needs manager on what is being shared, or on a folder above it, or editor there (for viewer or editor) while its owner lets editors share, in every place. Say that plainly, and name the moves that remain: the colleague can request access themselves (`share` with `action: "request"`), and whoever approves it decides requests routed to them (`share` with `action: "approve"`); or a manager of it shares it.
+**If a share tool refuses with "sharing this needs manager"**, nothing was shared, and the console will refuse for the same reason: granting a member directly needs manager on what is being shared, or on a folder above it, or editor there (for viewer or editor) while its owner lets editors share, in every place. Say that plainly, and name the moves that remain: the colleague can request access themselves (`access_grant` with `action: "request"`), and whoever approves it decides requests routed to them (`access_grant` with `action: "approve"`); or a manager of it shares it.
 
 **Taking a share back.** Grants can be inherited from a parent folder, so change them in the console, where you can see where each grant actually lives.
 

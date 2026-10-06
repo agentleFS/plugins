@@ -63,10 +63,10 @@ New store with nothing in it? Semantic search works, but it has nothing to searc
 this to seed it from what your agent already learned about your project:
 
 ```
-Use agentleFS as our team's long-term memory. Call list_org_folders to see what
-I reach. Then take everything you've learned about this project - architecture
-decisions, gotchas, conventions, anything a new teammate would need - and write
-each as its own doc with write_org_doc. Match the frontmatter (type + tags) of
+Use agentleFS as our team's long-term memory. Call browse with action folders to
+see what I reach. Then take everything you've learned about this project -
+architecture decisions, gotchas, conventions, anything a new teammate would need -
+and write each as its own doc with doc_create. Match the frontmatter (type + tags) of
 neighboring files so they're findable. If you've genuinely learned nothing yet,
 write one short doc capturing what this repo is and how to run it, so the store
 isn't empty. Tell me what you wrote and where.
@@ -76,7 +76,7 @@ isn't empty. Tell me what you wrote and where.
 
 ```
 From now on, check agentleFS before answering anything about how *we* do things,
-and write durable conclusions back with write_org_doc so the next session inherits
+and write durable conclusions back with doc_create so the next session inherits
 them. If a search comes back thin, say it may be a permission boundary rather than
 telling me nothing exists.
 ```
@@ -145,13 +145,31 @@ plugin-provided server is launched by the plugin rather than configured as an
 **The ChatGPT web and mobile apps are a different path.** They install from the
 universal public plugin directory, which is a submission-and-review process rather
 than a repository you can add, so a marketplace does not reach them. Until agentleFS is
-listed there, use the MCP server URL directly in developer mode.
+listed there, add the server URL yourself: at chatgpt.com/plugins choose "+", then
+"Create custom MCP server". Your workspace's plan and admin settings decide whether that
+option is offered.
+
+## Gemini CLI
+
+The same repository is a Gemini CLI extension: `gemini-extension.json` at its root points
+Gemini at the hosted server.
+
+```
+gemini extensions install https://github.com/agentleFS/plugins
+```
+
+Start `gemini`; the first call to the server gets a 401, and Gemini discovers the sign-in,
+registers itself and opens a browser. If it does not, run `/mcp auth agentlefs`. Sign-in needs
+a browser on the same machine, so it does not work in a headless session; use a bearer token
+there (below). Gemini loads the MCP server only: the skills, commands and agents above are
+Claude Code and Codex artifacts.
 
 ## Other agents
 
 agentleFS is a plain MCP server, so any MCP-capable client can connect to
 `https://mcp.agentlefs.com/mcp` today - OAuth for humans, or a `afs_` bearer
-token for headless and CI use. Cursor, Gemini CLI, VS Code and Cline take that URL;
+token for headless and CI use. Cursor, VS Code and Cline take that URL; ChatGPT takes
+it as a custom MCP server; Meta's Muse connects when you ask for it in a chat on muse.ai.
 Cursor's own plugin format needs a manual review before listing, and is its own job.
 
 **If your client doesn't do OAuth, you need a bearer token.** Many desktop clients

@@ -1,13 +1,14 @@
 ---
 name: deleting
-description: How to delete, restore and permanently erase things in agentleFS (afs) without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest; when the user wants something deleted by mistake brought back or undone; when they ask to permanently erase or purge data, for example for a GDPR or other erasure request; and before calling delete_org_doc or erase_org_doc for any reason. Also use to explain why a delete or erase was refused, or why each needs two calls.
+description: How to delete, restore and permanently erase things in agentleFS (afs) without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest; when the user wants something deleted by mistake brought back or undone; when they ask to permanently erase or purge data, for example for a GDPR or other erasure request; and before calling doc_delete for any reason. Also use to explain why a delete or erase was refused, or why each needs two calls.
 ---
 
 # Deleting from agentleFS
 
-A delete is reversible: `undo_delete` puts back exactly what one delete removed, sharing
-included, from this session or a later one. `erase_org_doc` is the one that is not — it
-destroys content and every past version, and nothing brings it back. Reversible still does
+A delete is reversible: `doc_update` with `action: "restore"` puts back exactly what one
+delete removed, sharing included, from this session or a later one. `doc_delete` with
+`action: "erase"` is the one that is not — it destroys content and every past version, and
+nothing brings it back. Reversible still does
 not mean harmless: a folder delete takes everything under it, and every person and agent that
 relied on it loses it until someone notices.
 
@@ -16,7 +17,7 @@ person decides, and only then do you delete.
 
 ## The tool makes you do it in two calls
 
-`delete_org_doc` will not delete on a first call. Call it without
+`doc_delete` with `action: "delete"` will not delete on a first call. Call it without
 `confirm_token` and it deletes nothing — it returns what *would* go, plus a token:
 
 ```
@@ -28,7 +29,7 @@ Files removed: 240
   …and 237 more not listed here (beyond this sample, or approved by you without a read grant)
 Connector: syncs from the GitHub repository acme/platform into engineering — deleting the folder stops that sync.
 
-Reach grants survive a delete, and undo_delete restores the documents and their sharing — it is recoverable, not shredded. A connector is the one thing an undo does NOT bring back: reconnecting it is a decision, not a restoration.
+Reach grants survive a delete, and doc_update action=restore restores the documents and their sharing — it is recoverable, not shredded. A connector is the one thing an undo does NOT bring back: reconnecting it is a decision, not a restoration.
 ```
 
 `location` decides the shape: a path with a `/` in it names a file or a directory, and a
@@ -76,10 +77,10 @@ unless they ask; the answer to "should this be gone" was no.
   a Drive folder, deleting it here stops that sync. The upstream content survives;
   the organization's access to it through agentleFS does not. Say this plainly —
   people delete folders thinking they are tidying a copy. An undo does not reconnect
-  it: `undo_delete` brings back the documents and their sharing, and the sync stays
+  it: a restore brings back the documents and their sharing, and the sync stays
   stopped until someone connects the source again.
 - **Everyone who could reach it loses it until it is undone.** The grants themselves survive
-  the delete, which is why `undo_delete` brings the folder back shared as it was. Do
+  the delete, which is why a restore brings the folder back shared as it was. Do
   not re-share after an undo: the access never went away, and a second share mints grants
   nobody asked for.
 
@@ -95,7 +96,8 @@ unless they ask; the answer to "should this be gone" was no.
 
 ## Undoing a delete, and the one that cannot be undone
 
-A delete can be undone, by someone who could have made it: `undo_delete` needs manager on
+A delete can be undone, by someone who could have made it: `doc_update` with
+`action: "restore"` needs manager on
 everything that delete removed, the same bar as the delete itself, and is refused otherwise.
 With the same `location` it restores exactly what that one delete removed, at the version it had, with its sharing intact — except a folder's
 connector, which stays disconnected. When you undo a folder delete whose preview named a
@@ -109,13 +111,14 @@ answer. That is what makes a later undo easy to aim.
 
 ## Erasing, for an erasure request
 
-`erase_org_doc` is different: it destroys content, every past version, comments and the name,
-and nothing brings it back, `undo_delete` included. Use it only for a genuine erasure
-request — someone asking that their data be removed — and prefer `delete_org_doc` for tidying.
+`doc_delete` with `action: "erase"` is different: it destroys content, every past version,
+comments and the name, and nothing brings it back, a restore included. Use it only for a
+genuine erasure request — someone asking that their data be removed — and prefer
+`action: "delete"` for tidying.
 
 It takes the same two calls, for a stronger reason:
 
-1. `erase_org_doc` with `location` (or `node`) and no `confirm_token`. Nothing is erased.
+1. `doc_delete` with `action: "erase"`, `location` (or `node`) and no `confirm_token`. Nothing is erased.
    The answer lists what would stop existing — how many nodes, how many of them documents —
    and, under LEFT BEHIND, anything you are not a manager of. Erasing needs manager, and
    unlike a delete it does not refuse the whole set: what you approve is erased and the rest

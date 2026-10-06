@@ -1,6 +1,6 @@
 ---
 name: sync-conversation-summary
-description: Save a compact summary of the current conversation into agentleFS (afs) as one durable document. Use when the thing the user wants saved is this conversation, session or chat itself ("save this session to afs", "sync this chat", "write up what we did here"). Not for a summary document about a topic or a set of decisions (the documents skill), recording a single decision or fact (the truth tool, in shared-truths-and-lessons), or a lesson or dead end (knowledge). Saves where this user's last sync went, and asks only when there is no previous one.
+description: Save a compact summary of the current conversation into agentleFS (afs) as one durable document. Use when the thing the user wants saved is this conversation, session or chat itself ("save this session to afs", "sync this chat", "write up what we did here"). Not for a summary document about a topic or a set of decisions (the documents skill), recording a single decision or fact (a truth, in shared-truths-and-lessons), or a lesson or dead end (knowledge). Saves where this user's last sync went, and asks only when there is no previous one.
 ---
 
 # Sync this conversation to agentleFS
@@ -17,11 +17,11 @@ Two rules govern the whole thing:
 
 No agentleFS tool reads, fetches or reconstructs chat history. The summary is written
 from what is already in your context, and the only thing sent to agentleFS is that
-summary, through `write_org_doc`.
+summary, through `doc_create` (or `doc_update` when the summary already exists).
 
 ## Step 1 — orient
 
-Call `list_org_folders` with no arguments. This is what the destination choice is
+Call `browse` with `action: "folders"` and nothing else. This is what the destination choice is
 made from, and it is also the connection check.
 
 | Outcome | Do this |
@@ -39,7 +39,7 @@ Take the first of these that has an answer:
    it already exists). Write to the same path, so a re-sync updates it rather than
    minting `notes-2.md`.
 3. **This user has synced before.** Call `search` with the query `conversation-sync`
-   and no `how` (the default matches labels). Open the hits with `read_org_doc` and keep
+   and no `how` (the default matches labels). Open the hits with `read` and keep
    only those whose frontmatter `synced_by` is this user, as `brief_me` names them. A
    teammate's sync is not a precedent: their folder is theirs to choose. Of the ones
    left, take the folder of the one with the latest `date`. Save there.
@@ -54,7 +54,7 @@ it if they meant somewhere else.
 
 ## Step 3 — read the neighbors
 
-Call `list_org_docs` on the chosen folder. Two things come from this:
+Call `browse` with `action: "documents"` on the chosen folder. Two things come from this:
 
 - The `type` convention already in use, to match.
 - Whether a document for this conversation already exists. If the user is re-syncing
@@ -68,10 +68,10 @@ either invent unrelated tags or quietly skip the matching it was asked to do, wi
 nothing signalling that the data was never there.
 
 Tags come from opening a neighbor. Pick one or two of the most representative files
-from the listing and call `read_org_doc` on them: it reattaches the document's own
+from the listing and `read` them: it reattaches the document's own
 frontmatter, so the tags you see are the ones somebody authored on that file.
 
-Copy those, and not the folder's label list from `list_org_folders` with `location` —
+Copy those, and not the folder's label list from `browse` `action: "folders"` with `location` —
 that set is *resolved*, meaning it includes labels inherited from the folder and the
 directories above it. Restating an inherited label in your own frontmatter converts it
 into an authored one, which then survives being removed from the folder. Inherited
@@ -134,11 +134,15 @@ If in doubt about a passage, leave it out and say you did.
 
 ## Step 5 — write
 
-Call `write_org_doc` with the confirmed destination split the way the tool takes it:
-`folder_path` (the folder names, outermost first, e.g. `["product", "notes"]`), `name`
-(the document's file name, ending in `.md`, with no `/` in it) and `content` (the
-frontmatter and body from Step 4). A path written as one string — `product/notes/x.md` —
-is the location you confirmed with the user, not an argument this tool accepts.
+A new summary: `doc_create` with `action: "document"` and the confirmed destination split
+the way it takes it: `folder_path` (the folder names, outermost first, e.g.
+`["product", "notes"]`), `name` (the document's file name, ending in `.md`, with no `/` in
+it) and `content` (the frontmatter and body from Step 4). A path written as one string —
+`product/notes/x.md` — is the location you confirmed with the user, not an argument it takes.
+
+A re-sync of a summary that already exists: `doc_update` with `action: "replace"`, its
+`location` and the new `content`. `doc_create` refuses a document that is already there, so
+it never overwrites one by accident.
 
 It commits if their grant allows it and is refused if it does not — there is no
 staging option and no review queue, so a successful write is live immediately. If it
@@ -151,17 +155,15 @@ the confirmation ends with `— cite: <url>`, and that is the openable half. A c
 hash is not something anyone can click, and a document nobody opens is a document
 that may as well not have been written.
 
-The confirmation also says whether it CREATED the document or OVERWROTE one, and
-names the folder and any directory that did not exist before. Read both back before
-you report: "overwrote" on a document you meant to create, or a directory you did not
-expect to be new, means you wrote somewhere other than where you meant to — say so
-rather than reporting a clean write. A new top-level **folder** is the loud one: a
+The confirmation also names the folder and any directory that did not exist before.
+Read it back before you report: a directory you did not expect to be new means you wrote
+somewhere other than where you meant to — say so rather than reporting a clean write. A new top-level **folder** is the loud one: a
 first write into a workspace that does not exist now starts it rather than being
 refused, so `new folder "…"` on a sync means you have created a workspace, which is
 almost never what a sync meant to do.
 
 Name what you deliberately left out, and say who can now read it: anyone granted on
-the folder it went into. Sharing it further is a separate decision — `share_org_folder`,
+the folder it went into. Sharing it further is a separate decision — `access_grant`,
 through `/agentlefs:share` or the `sharing` skill — and the user's to make.
 
 ## Do not
@@ -170,11 +172,11 @@ through `/agentlefs:share` or the `sharing` skill — and the user's to make.
 - Do not write a verbatim transcript, quote long stretches of the chat, or paste whole
   files into the document.
 - Do not write secrets, even ones the user pasted themselves.
-- Do not invent a folder that did not appear in `list_org_folders`.
+- Do not invent a folder that did not appear in the folder listing.
 - Do not create a second document for a conversation that already has one.
 - Do not report a refused write as though it had landed.
 - Do not claim you shared it with anyone. Writing is not sharing: it reaches only who
   already reaches the folder, and widening that is a share the user decides on.
 - Do not use this for a single decision or a dead end. If the conversation settled one,
-  offer to record it as well with `truth` or `knowledge` (the `shared-truths-and-lessons`
+  offer to record it as well as a truth or as knowledge (the `shared-truths-and-lessons`
   skill), where others can find and contest it.

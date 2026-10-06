@@ -23,7 +23,7 @@ brief_me                   ← once
    ↓ read claims, waiting, approvals, changed, contested
 search                     ← aimed, but not fenced in
    ↓
-read_org_doc               ← two or three, then stop and talk
+read                       ← two or three, then stop and talk
 ```
 
 Four to six calls, then a reply. If you are on your seventh call you have stopped
@@ -95,24 +95,24 @@ actual work. Pick by what the user asked, not by what changed most recently.
 Lead with `waiting`, `approvals`, `contested` and `resolvedWaits` when they are
 non-empty: they are the parts of the brief that are somebody else asking for
 something, an answer the user was waiting for, or about to collide with this
-person's work. Deciding an access request is `share` with `action: "approve"` or
-`"decline"` and its `request_id`; the `sharing` skill has the rest. Each waiting item is a message and carries its id. `message`
-with `action: "thread"` and its `thread_id` reads the conversation; `action: "send"`
-with `reply_to` answers it, and `action: "decline"` with `message_id` and a `reason`
-says no. Do not
+person's work. Deciding an access request is `access_grant` with `action: "approve"`
+or `"decline"` and its `request_id`; the `sharing` skill has the rest. Each waiting item
+is a message and carries its id. `read` with `action: "thread"` and its `thread_id` reads
+the conversation; `message_write` with `action: "send"` and `reply_to` answers it, and
+`action: "decline"` with `message_id` and a `note` says no. Do not
 answer or decline one on the user's behalf without asking — it is addressed to
 them, not to you.
 
 What the user asked of others and is still open is the brief's `asked`, and
 answers that came back since the last acknowledged session are `answered`. Only
-the sender closes a message (`action: "close"`), so close one of the user's own
+the sender closes a message (`message_write` `action: "close"`), so close one of the user's own
 asks once it is settled.
 
 ## Acknowledging
 
-When the work is picked up and `changed` has been taken in, call `brief_me` again
-with `ack_through` set to `cursor.head`, so the next session starts after it. Not
-before: a cursor moved past something nobody read means the next session skips it,
+When the work is picked up and `changed` has been taken in, `coordination_write`
+with `action: "ack_brief"` and `through` set to `cursor.head` moves the cursor, so the
+next session starts after it. Not before: a cursor moved past something nobody read means the next session skips it,
 and re-reading is the cheaper failure.
 
 ## What the output is not
@@ -144,7 +144,7 @@ on the brief to pick a folder, say so in passing ("looks like this lives in your
 ## Do not
 
 - Do not call `brief_me` repeatedly hunting for a better answer. One call, then
-  move on (plus the one acknowledgement above).
+  move on (plus the one acknowledgement above, which is a separate write).
 - Do not pass a folder filter to search based only on the brief.
 - Do not describe the user's role, seniority, or team from where they work.
 - Do not report a thin or empty result as though the organization has written

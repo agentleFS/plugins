@@ -1,7 +1,7 @@
 {
   "name": "agentlefs",
   "displayName": "agentleFS",
-  "version": "0.3.59",
+  "version": "0.4.62",
   "description": "Agent permissions for the files your team shares",
   "author": {
     "name": "agentleFS",
@@ -11,6 +11,11 @@
   "homepage": "https://agentlefs.com",
   "repository": "https://github.com/agentleFS/plugins",
   "license": "MIT",
+  "icon": "./assets/icon.png",
+  "documentationUrl": "https://agentlefs.com/docs/connect?ref=claude-plugin-directory",
+  "supportUrl": "https://agentlefs.com/support",
+  "privacyPolicyUrl": "https://agentlefs.com/privacy",
+  "termsOfServiceUrl": "https://agentlefs.com/terms",
   "keywords": [
     "mcp",
     "afs",

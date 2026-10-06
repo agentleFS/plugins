@@ -57,7 +57,7 @@ Everyone who signs in has at least one Organization: their personal one, if they
 
 ## Headless and CI fallback
 
-For a headless agent that should be its own identity, with narrower access than the person running it, the person's session can create one with `identity` and `action: "spawn"`, passing `bootstrap_key: true` for a long-lived key bound to that child (the `collaborating` skill). It is shown once, and it stops working when the child is retired.
+For a headless agent that should be its own identity, with narrower access than the person running it, the person's session can create one with `identity_write` and `action: "spawn"`, passing `bootstrap_key: true` for a long-lived key bound to that child (the `collaborating` skill). It is shown once, and it stops working when the child is retired.
 
 Otherwise, for non-interactive contexts where no browser exists, there is a legacy agent-token path:
 
@@ -70,7 +70,7 @@ Use this only when genuinely headless. The plugin's committed configuration ship
 
 ## Verifying a connection
 
-Only a successful tool call proves a working connection. Call `list_org_folders` with no arguments. Completing the browser flow is not proof, and neither is a green status in `/mcp`.
+Only a successful tool call proves a working connection. Call `browse` with `action: "folders"` and nothing else. Completing the browser flow is not proof, and neither is a green status in `/mcp`.
 
 ## Symptom to cause
 
@@ -81,7 +81,7 @@ Only a successful tool call proves a working connection. Call `list_org_folders`
 | 401 in CI or a headless shell | No browser for the OAuth flow | Use the `afs_` token path above |
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
-| Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `share` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
+| Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `access_grant` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
 | Connected, folder looks nearly empty | Content is gated from this principal | Expected. Denied reads exactly like not-found. |
 | `how="meaning"` silently searched by text | Deployment has no vector index | Check `vectorIndex` in `/healthz`. Degradation is intentional. |
 | Tools are absent from `/mcp` entirely | Plugin not enabled, or the server is unreachable | Check plugin state, then `/healthz` |

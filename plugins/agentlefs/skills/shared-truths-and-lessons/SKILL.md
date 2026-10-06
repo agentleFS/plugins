@@ -13,10 +13,13 @@ contestable in ways a paragraph in a document is not, which is why a single deci
 dead end belongs here rather than in a new file. A summary or write-up of several things is
 a document (the `documents` skill); write both when the user wants both.
 
-## Recording a decision, fact or assumption: `truth`
+Proposing, accepting, contesting and superseding are `coordination_write` actions;
+reading truths is `browse` (`action: "truths"`) and `read` (`action: "truth"`).
+
+## Recording a decision, fact or assumption
 
 1. Find the document it is about — the ADR, the spec, the contract. `search` finds it.
-2. `truth` with `action: "propose"`, `location` of that document, `kind` (`decision`,
+2. `coordination_write` with `action: "propose"`, `location` of that document, `kind` (`decision`,
    `fact` or `assumption`), `statement` (one plain sentence), and `evidence` (a list: the
    document's path, commits, URLs, message ids).
 3. The answer gives the truth's id, with status `proposed`. Its owner is whoever proposed
@@ -31,9 +34,10 @@ recorded check is what search reports as `verified_truth`.
 
 ## Disagreeing with one
 
-1. Find its id: `truth` with `action: "list"` and the document's `location`, or the
-   `truths` beside a hit from `search`. `action: "show"` with `id` gives it with any debate.
-2. `truth` with `action: "contest"`, `id`, `statement` (what you hold instead), `argument`
+1. Find its id: `browse` with `action: "truths"` and the document's `location`, or the
+   `truths` beside a hit from `search`. `read` with `action: "truth"` and `id` gives it with
+   any debate.
+2. `coordination_write` with `action: "contest"`, `id`, `statement` (what you hold instead), `argument`
    (why), and `evidence`. Evidence is required — "the contract says 99.5%" needs the
    contract's path or link, so find and cite it first.
 3. The other side answers with `action: "argue"`. After three rounds the debate closes and
@@ -42,9 +46,9 @@ recorded check is what search reports as `verified_truth`.
 
 A truth this identity proposed and owns cannot be contested by it — the answer says to
 supersede it instead: `action: "supersede"` with `id` and the new `statement`. Spans that cite a superseded truth are marked
-stale (`action: "spans"` lists a document's blocks and which are stale).
+stale (`browse` with `action: "spans"` lists a document's blocks and which are stale).
 
-## Writing down a lesson or dead end: `knowledge`
+## Writing down a lesson or dead end: `knowledge_write`
 
 | `kind` | For |
 |---|---|
@@ -55,36 +59,37 @@ stale (`action: "spans"` lists a document's blocks and which are stale).
 
 A draft is private to its author, so "so nobody retries it" means it has to be published:
 
-1. `knowledge` with `action: "draft"`, `kind`, `title`, `body` (plus `tried` and
+1. `knowledge_write` with `action: "draft"`, `kind`, `title`, `body` (plus `tried` and
    `failed_because` for a dead end). Show the user what it says.
-2. `knowledge` with `action: "publish"`, `from_draft` (the draft's id) and `scope` — the
+2. `knowledge_write` with `action: "publish"`, `from_draft` (the draft's id) and `scope` — the
    folder or document it applies to. That scope decides who can find it, and you need write
    access there. Ask the user if the right scope is not obvious.
 
 When the content is already agreed, `publish` can take it directly (`kind`, `title`, `body`,
 `scope`) and skip the draft. A new version of an item is `publish` with `supersedes`.
 
-Before writing one, `knowledge` with `action: "search"` and a `query`: someone may have
-recorded it already, and rating theirs (`action: "rate"`, `id`, `rating` 1–5, `purpose`) or
-marking it (`action: "validate"`, `id`, and `validation` set to `validated` or `refuted`)
-helps more than a duplicate.
+Before writing one, `browse` with `action: "lessons"` and a `query` (or `search`, which
+returns published lessons beside documents): someone may have recorded it already, and rating
+theirs (`knowledge_write` `action: "rate"`, `id`, `rating` 1–5, `purpose`) or marking it
+(`action: "validate"`, `id`, and `validation` set to `validated` or `refuted`) helps more than
+a duplicate. `read` with `action: "lesson"` opens one.
 
 An identity being retired has a window to publish its drafts before they are purged:
 `action: "distill"` with `from_drafts` publishes several at once.
 
-## The public registry: `registry`
+## The public registry
 
 The registry holds lessons, dead ends, workflows, skills and documents that agents in every
 organization have shared with the world.
 
-- `action: "search"` with `query`, then `action: "show"` with the `slug` to read the package
-  and its public comments before relying on it.
-- `action: "pull"` with `slug` and `scope` (a folder you can write) copies it into the
-  organization, keeping where it came from. Ask which folder.
-- `action: "comment"` and `action: "rate"` are public. A comment from a session that has
-  read this organization's documents is refused (`would_disclose`), because it could carry
-  them; `identity` with `action: "new_session"` starts a clean one.
-- `action: "propose"` with a `slug` (lowercase letters, digits and hyphens), `summary`, and
+- `browse` with `action: "packages"` and `query`, then `read` with `action: "package"` and the
+  `slug` to read the package and its public comments before relying on it.
+- `registry_write` with `action: "pull"`, `slug` and `scope` (a folder you can write) copies it
+  into the organization, keeping where it came from. Ask which folder.
+- `registry_write` `action: "comment"` and `action: "rate"` are public. A comment from a
+  session that has read this organization's documents is refused (`would_disclose`), because
+  it could carry them; `identity_write` with `action: "new_session"` starts a clean one.
+- `registry_write` with `action: "propose"`, a `slug` (lowercase letters, digits and hyphens), `summary`, and
   `from_knowledge` or `from_document` asks to publish something of the user's. It returns a
   link for the user, who reviews the diff and approves or declines. Nothing becomes public
   until they do, and an agent cannot approve it, so hand over the link and say that.
