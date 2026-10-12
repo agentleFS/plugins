@@ -91,12 +91,12 @@ Say plainly that semantic search is already on server-side (`vectorIndex: true`)
 | 401 loop, sign-in never sticks | Browser flow was abandoned or cookies blocked | Re-run `/mcp`, complete the flow in a normal browser window |
 | 404 on every call | Endpoint points at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |
 | Connects, zero folders | An empty Organization you approve, or a credential with no grants | Phase 3 |
-| "startup failed" in a non-Claude client | That client sends only configured headers and never walks the OAuth discovery chain, so it gets the initial 401 | Set `Authorization: Bearer afs_…` as a static header. See the headless note below |
-| Works locally, fails in CI | No browser available for OAuth | See the headless note below |
+| "startup failed" in a non-Claude client | That client sends only configured headers and never walks the OAuth discovery chain, so it gets the initial 401 | Set `Authorization: Bearer afs_…` as a static header. See "Agent tokens" below |
+| Works locally, fails in CI | No browser available for OAuth | See "Agent tokens" below |
 
-## Headless fallback
+## Agent tokens (headless, CI, routines)
 
-For CI and other non-interactive contexts there is a legacy agent-token path: `Authorization: Bearer afs_…` over HTTP, or `AGENTLEFS_TOKEN` in the environment for stdio. Mention it only when the user is genuinely headless. The plugin's committed configuration ships no token. Keep it that way: a token written into a file is a credential anyone with the file can use.
+For CI, cloud routines and other contexts with no browser, use an `afs_` agent token, the current agent credential: `Authorization: Bearer afs_…` over HTTP, or `AGENTLEFS_TOKEN` in the environment for stdio. A person mints one for an agent in the console under Permissions → Agents, or gets one as a bootstrap key when spawning a headless child (the connection skill). Prefer OAuth wherever a browser exists. Only `cht_` tokens, minted before the agentleFS rename, are legacy. The plugin's committed configuration ships no token. Keep it that way: a token written into a file is a credential anyone with the file can use.
 
 ## Do not
 

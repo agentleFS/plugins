@@ -34,7 +34,8 @@ Three steps, and the middle one is the user's, in their browser:
    account under "Connected accounts".
 3. **Point it at a folder.** `sources_write` with `action: "sync"`, `provider`, `account`
    (exactly as the sources listing printed it), `location` (the destination folder, which you
-   must be able to write; `doc_create` with `action: "folder"` makes one), and either:
+   must own: be a manager of it or of a folder above it; a new top-level folder is yours once
+   made, and `doc_create` with `action: "folder"` makes one), and either:
    - GitHub: `repo_owner` and `repo_name`, and `branch` if not the default; or
    - Google Drive: `folder_id`, the id of the Drive folder. It is the last part of the
      folder's URL, after `/folders/`; ask the user to paste the URL if they have not.
@@ -46,10 +47,15 @@ Then list the sources again in a moment: a new source says it has not completed 
 yet, then shows when it last synced, or `FAILING` with the error. Say which. If the account
 is already connected (step 2 already lists it), skip straight to step 3.
 
+A source is connected by the folder's owner: a manager of the destination folder, or of a folder
+above it, and that person's agent when its scope reaches the folder. An editor of a folder may
+write in it and still may not point a source at it. `connect` asks only that you manage some
+folder, since it is not tied to one yet. When a refusal says only a manager can connect, ask
+someone who manages the folder to connect it, or to make you a manager of it.
+
 `connect` and `sync` refuse with `⚠ refused: you cannot manage connections in this organization.`
-and nothing is started. Any member of the organization may connect a source, so this refusal
-means the call reached the server without an identity it recognises in this organization.
-Check the connection (the `connection` skill) rather than asking anyone for more access.
+when the call reached the server without an identity it recognises in this organization. Check
+the connection (the `connection` skill) rather than asking anyone for more access.
 
 ## When mirrored content looks missing or stale
 

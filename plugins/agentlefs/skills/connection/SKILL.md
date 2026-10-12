@@ -55,18 +55,18 @@ It is deliberately a literal rather than a templated value. Claude Code can inte
 
 Everyone who signs in has at least one Organization: their personal one, if they have not created or joined another. A new personal account is the manager of its Organization and reaches everything in it. What a sign-in does not bring is **grants** elsewhere. In a company Organization, a member reaches only what has been shared with them — except a manager of the Organization's root, who reaches all of it — and an agent reaches only its person's access, narrowed by its own scope. A credential with no grants authenticates fine and reaches nothing, which looks like a working connection returning an empty world — and is.
 
-## Headless and CI fallback
+## Agent tokens (headless, CI, routines)
 
 For a headless agent that should be its own identity, with narrower access than the person running it, the person's session can create one with `identity_write` and `action: "spawn"`, passing `bootstrap_key: true` for a long-lived key bound to that child (the `collaborating` skill). It is shown once, and it stops working when the child is retired.
 
-Otherwise, for non-interactive contexts where no browser exists, there is a legacy agent-token path:
+An `afs_` token is the current agent credential, for any context with no browser: cloud routines, CI, scheduled jobs. The bootstrap key above is one; a person can also mint one for an agent in the console under Permissions → Agents. Send it as:
 
 | Transport | How |
 |---|---|
 | HTTP | `Authorization: Bearer afs_…` |
 | stdio | `AGENTLEFS_TOKEN` environment variable |
 
-Use this only when genuinely headless. The plugin's committed configuration ships no token. Keep an `afs_` token out of committed files and treat it as a secret supplied by the environment: anyone holding it acts as that agent.
+Prefer OAuth wherever a browser exists. `cht_` tokens, minted before the agentleFS rename, are the only legacy prefix: still accepted until the last one expires. A token carries its agent's whole reach; narrowing one to a folder is #686, not yet built. The plugin's committed configuration ships no token. Keep an `afs_` token out of committed files and treat it as a secret supplied by the environment: anyone holding it acts as that agent.
 
 ## Verifying a connection
 
