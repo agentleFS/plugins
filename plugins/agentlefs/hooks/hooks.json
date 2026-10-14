@@ -1,0 +1,77 @@
+{
+  "description": "Remember session events and recall relevant agentleFS context.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

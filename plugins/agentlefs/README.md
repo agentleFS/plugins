@@ -41,6 +41,64 @@ Claude pick these when need.
 | `sources` | Connect GitHub, Google Drive. |
 | `connection` | Fix sign-in trouble. |
 | `authorization-model` | Why agent see what it see. |
+| `memory` | Set up automatic recall and session capture, check pending saves, or disable it. |
+
+## Automatic memory
+
+Claude Code and local Codex sessions can run the bundled lifecycle hooks. After
+you configure a save folder and hook credential, the plugin recalls relevant
+memory before each prompt and captures prompts, tool traces, and assistant
+responses automatically. Python 3.9 or newer is required; no Python packages are
+installed. Hosts without command hooks can continue using the MCP tools and skills.
+
+```sh
+# AGENTLEFS_TOKEN is an agent credential supplied by your environment.
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" configure --folder "engineering/memory"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" status
+```
+
+Use the installed plugin's absolute path if your shell has no `CLAUDE_PLUGIN_ROOT`.
+On Codex, review and trust the hooks through the host's hook controls; plugin
+installation alone does not trust them. The `memory` skill walks through setup.
+
+| Event | Behavior |
+|---|---|
+| `SessionStart` | Restore the local checkpoint and retry pending saves. |
+| `UserPromptSubmit` | Stage the prompt locally and retrieve relevant memory with citations. |
+| `PostToolUse` | Stage a bounded tool trace and attempt delivery. |
+| `Stop` | Capture the assistant response and attempt delivery. |
+| `PreCompact` | Persist a checkpoint for restoration after compaction. |
+| `SessionEnd` | Persist the final checkpoint and start a detached delivery attempt. |
+
+Capture starts only after setup. Hooks use the same `AGENTLEFS_URL` and
+`AGENTLEFS_TOKEN` conventions as the CLI, with the hosted MCP endpoint as the
+default URL. They cannot read the host's OAuth credential store. A token supplied
+with `configure --token-stdin` is stored locally with restrictive permissions;
+never put a credential in a command argument or a committed file.
+
+Captures are stored as individual documents in the chosen folder. That folder's
+existing permissions determine who can read them. The plugin bounds captured
+text and redacts common credential formats; this is not a guarantee that every
+secret embedded in arbitrary prose can be recognized. Choose a destination whose
+audience is appropriate for your conversations.
+
+Pending captures are written locally before network delivery. Failed or refused
+saves stay pending, and later hooks or `flush` retry them. Each capture has a
+stable document name and idempotency key. A local checkpoint is not a remote-save
+acknowledgement, and a detached worker is not guaranteed to survive host shutdown.
+Use `status` to check the queue and `flush` to retry it. `disable` stops capture,
+recall, and delivery; it does not delete existing local or remote records.
+Idle local checkpoints for fully acknowledged sessions expire after 30 days;
+pending captures are never removed by that cleanup. Records are isolated by
+credential, endpoint, folder, working directory, and host session. After changing
+the credential, endpoint, or folder, `status` reports older captures separately
+as `pending_other`; restore their original configuration to retry them.
+
+The lifecycle follows [Cognee's plugin](https://github.com/topoteretes/cognee-integrations/blob/main/integrations/claude-code/hooks/hooks.json),
+with an AgentleFS implementation using the existing MCP tools. No Cognee service
+or additional model provider is required. These executable hooks are intended for
+local plugin installations; OpenAI's public plugin directory currently excludes
+packages with hooks, and cloud orchestration does not run these command hooks.
 
 ## Agents
 
@@ -106,15 +164,16 @@ Old tool name gone. New name, same work.
 
 ## What go where
 
-Plugin is text and one server. Here all it run, send, fetch.
+The plugin connects to one server and includes skills, commands, and optional memory hooks.
 
-- **Run:** nothing. No hook. No script. No binary. Skills and commands are text Claude read.
+- **Skills and commands:** instructions the agent reads to use the connected server.
+- **Run:** Python lifecycle hooks when the host supports and trusts them. Memory capture and recall require setup.
 - **Connect:** one server, `https://mcp.agentlefs.com/mcp`. Sign in by OAuth in browser. No token in file.
-- **Send to agentleFS:** what each tool call carry. Search words. Docs you save. Messages, comments. Who you share with (email). One-line `reason` on some writes.
+- **Send to agentleFS:** tool-call arguments, including configured automatic memory captures and recall queries. Docs you save. Messages, comments. Who you share with (email). One-line `reason` on some writes.
 - **agentleFS keep:** docs, messages, comments, until deleted. Audit log keep who did what, when, where. Search words: only hash, never words. `reason`: one line, max 200 chars, kept with event.
 - **Fetch from agentleFS:** only what your grants let you read.
 - **Leave agentleFS:** only when you ask. `access_grant` share out email person in other org. `identity_write` webhook post to URL you give. `registry_write` post public comment, rating, report. `sources_write` connect GitHub or Google.
-- **Never:** plugin never read chat history, memory, or files on your machine. No tool ask for chat log.
+- **Local memory:** configured hooks keep pending captures and checkpoints on your machine and may read the host-provided transcript to recover an assistant response. Ordinary MCP tools do not fetch your local chat history.
 - **`sync-conversation-summary`:** run only when you ask to save this chat. Claude write short summary, 500 words max, never transcript. Only that summary sent, as one doc, to folder you pick (or folder last summary went).
 - **No Slack skill.** Removed. Plugin never call other connector you did not name.
 

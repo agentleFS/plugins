@@ -26,7 +26,7 @@ Healthy `GET /healthz` returns:
 
 ## The auth flow: OAuth with Dynamic Client Registration
 
-There is **no token to mint, paste, or store**. The user signs in in a browser and the client registers itself.
+For the normal MCP connection, there is **no token to mint, paste, or store**. The user signs in in a browser and the client registers itself. Optional local memory hooks use a separate agent credential because command hooks cannot access the host's OAuth credential store; the `memory` skill covers that setup.
 
 Discovery chain:
 
