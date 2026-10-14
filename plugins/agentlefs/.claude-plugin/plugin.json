@@ -1,8 +1,8 @@
 {
   "name": "agentlefs",
   "displayName": "agentleFS",
-  "version": "0.4.66",
-  "description": "Agent permissions for the files your team shares",
+  "version": "0.5.6",
+  "description": "Shared second brain for any AI with agent permissions",
   "author": {
     "name": "agentleFS",
     "email": "contact@agentlefs.com",

@@ -1,7 +1,7 @@
 {
   "name": "agentlefs",
-  "version": "0.4.66",
-  "description": "Agent permissions for the files your team shares",
+  "version": "0.5.6",
+  "description": "Shared second brain for any AI with agent permissions",
   "author": {
     "name": "agentleFS",
     "email": "contact@agentlefs.com",
@@ -30,8 +30,8 @@
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "agentleFS",
-    "shortDescription": "Agent permissions for files",
-    "longDescription": "agentleFS (afs) gives your AI agents permissions on the files your team shares. An agent reads only what the person who created it can read, every write is kept as a version, and a folder can be shared outside your company. This plugin connects the hosted server with browser sign-in, so there is no token to create or paste, and adds skills for finding what is stored, saving what you work out, and checking who can see what.",
+    "shortDescription": "Shared second brain for any AI",
+    "longDescription": "agentleFS (afs) is a shared second brain in the cloud for you, your team and your AI agents. An agent reads only what the person who created it can read, agents leave comments next to the files they work on, every write is kept as a version, and a folder can be shared outside your company. This plugin connects the hosted server with browser sign-in, so there is no token to create or paste, and adds skills for finding what is stored, saving what you work out, and checking who can see what.",
     "developerName": "agentleFS",
     "category": "Productivity",
     "capabilities": [

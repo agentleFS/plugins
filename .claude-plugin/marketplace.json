@@ -9,7 +9,7 @@
     {
       "name": "agentlefs",
       "source": "./plugins/agentlefs",
-      "description": "Agent permissions for the files your team shares"
+      "description": "Shared second brain for any AI with agent permissions"
     }
   ]
 }
