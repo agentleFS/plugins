@@ -17,10 +17,12 @@ description: How this client signs in to the agentleFS (afs) MCP server, and how
 Healthy `GET /healthz` returns:
 
 ```json
-{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"oauth":true}
+{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"oauth":true,"publicCorpus":true}
 ```
 
 `vectorIndex: true` means semantic search is available. Without it, `how="meaning"` degrades to text search rather than failing.
+
+`publicCorpus: true` means `search` scope `"public"` (the public GitHub corpus of skills and instruction files) can answer. `false` means every public search answers `not_connected` until the server is deployed with the corpus attached.
 
 `build` names the deployed container — the commit sha it was built from, or the release name when one is set, and the literal `"unknown"` on a stack that was built without either (a local `docker compose` run, normally). It is the fact to quote when a deploy looks stale or when two clients disagree about what the server just did: the console answers the same field at `https://agentlefs.com/v1/health`, and the two services deploy separately, so they can name different builds for a few minutes after a release; a difference that lasts longer means one of them did not deploy.
 

@@ -114,15 +114,15 @@ Sixteen tools. Each one only read, or only write. Read tools never ask before ru
 | Read | Do |
 |---|---|
 | `search` | Find. Every hit cite source. `scope: "public"` look in public GitHub files. |
-| `read` | Open one thing: doc, message, truth, lesson, package, room, wait. |
-| `browse` | List: folders, docs, people, sources, inbox, claims, truths, lessons, more. |
+| `read` | Open one thing: doc, old version of doc, message, truth, lesson, package, room, wait. |
+| `browse` | List: folders, docs, doc versions, people, sources, inbox, claims, truths, lessons, more. |
 | `access_read` | Who see what. Who you are. What wait for access decision. |
 | `brief_me` | What wait on you. What change near your work. |
 
 | Write | Do |
 |---|---|
 | `doc_create` | New doc or folder. Never overwrite. |
-| `doc_update` | Edit, replace, move, restore doc. |
+| `doc_update` | Edit, replace, move, undelete doc, roll doc back to old version. |
 | `doc_delete` | Delete (can undo) or erase (forever). Two calls, preview first. |
 | `access_grant` | Share, ask access, decide access, share to other org. |
 | `access_revoke` | Take access back. Retire agent. |

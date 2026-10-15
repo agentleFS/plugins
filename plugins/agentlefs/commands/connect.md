@@ -31,7 +31,7 @@ Explain these points, briefly:
 
 After they report signing in, re-run Phase 1. Do not claim success on the strength of the browser flow alone; only a successful tool call proves it.
 
-If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` returns `{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"oauth":true}` when healthy.
+If the server itself looks unreachable, `https://mcp.agentlefs.com/healthz` returns `{"ok":true,"build":"<40-char commit sha>","vectorIndex":true,"oauth":true,"publicCorpus":true}` when healthy.
 
 ## Phase 3 - signed in, but seeing nothing
 
