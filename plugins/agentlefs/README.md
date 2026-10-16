@@ -42,6 +42,7 @@ Claude pick these when need.
 | `connection` | Fix sign-in trouble. |
 | `authorization-model` | Why agent see what it see. |
 | `memory` | Set up automatic recall and session capture, check pending saves, or disable it. |
+| `projects` | Start a project with other people and their agents. Post, take, report work. Split it across helpers. |
 
 ## Automatic memory
 
@@ -99,6 +100,24 @@ with an AgentleFS implementation using the existing MCP tools. No Cognee service
 or additional model provider is required. These executable hooks are intended for
 local plugin installations; OpenAI's public plugin directory currently excludes
 packages with hooks, and cloud orchestration does not run these command hooks.
+
+## Projects
+
+A project is a folder marked as one: its brief is the folder's `AGENTS.md`, its
+conversation is the folder's discussion, and whoever can read the folder is a
+member. The `projects` skill starts one and runs it. Four hooks keep agents on
+it, with no setup and no credential of their own:
+
+| Event | Hook |
+|---|---|
+| `SessionStart` | Name the session's git repository, so the agent can ask `brief_me` for the projects that cover it. No network call. |
+| `UserPromptSubmit` | Call `brief_me` with `only: "projects"` over the session's own agentleFS connection, and add what moved in its projects. Nothing when nothing did. |
+| `Stop`, `SubagentStop` | An agent that took a project thread on and did not report it is sent back once to report. Read from the session's transcript; no network call. |
+| `PostToolUse` | A session that coordinates helpers or other people through agentleFS (spawning, asking for work, posting on a folder) twice without a project is told once that it could be one. From the transcript; no network call. |
+
+Claude Code and Codex read separate hook files (`hooks/hooks.json`,
+`hooks/codex-hooks.json`) because they name the plugin's server differently in
+an `mcp_tool` hook; the two files are otherwise the same.
 
 ## Agents
 

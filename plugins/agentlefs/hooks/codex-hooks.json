@@ -1,0 +1,133 @@
+{
+  "description": "Remember session events and recall relevant agentleFS context; brief agents on their agentleFS projects.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/project_hooks.py\" session-start",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/project_hooks.py\" session-start",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "agentlefs",
+            "tool": "brief_me",
+            "input": {
+              "only": "projects"
+            },
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": ".*(message_write|identity_write)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/project_hooks.py\" nudge",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/project_hooks.py\" nudge",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/project_hooks.py\" stop",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/project_hooks.py\" stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/memory_hooks.py\" hook",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/project_hooks.py\" stop",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/project_hooks.py\" stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
