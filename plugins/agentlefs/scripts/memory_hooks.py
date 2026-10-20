@@ -34,6 +34,9 @@ ASSIGNMENT = re.compile(r'''((?:password|secret|token|api[_-]?key|authorization|
 JSON_SECRET = re.compile(r'("[^"\n]*(?:password|passwd|secret|token|api[_-]?key|authorization|cookie|credential|private[_-]?key)[^"\n]*"\s*:\s*)"(?:\\.|[^"\\])*"', re.I)
 PRIVATE_KEY = re.compile(r"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----.*?-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----", re.S)
 ACK_RETENTION_SECONDS = 30 * 24 * 60 * 60
+# A capture that gives up on the queue lock is lost, not retained, so it waits longer than the
+# 0.5s other paths use, and still inside the shortest capturing hook's limit (SessionEnd, 3s).
+CAPTURE_LOCK_SECONDS = 2.5
 
 
 class MemoryError(Exception):
@@ -248,7 +251,7 @@ def enqueue(config, key, event, value, delivery_id=None):
     text = bounded(value)
     if not text.strip():
         return
-    with locked(home() / "queue.lock"):
+    with locked(home() / "queue.lock", timeout=CAPTURE_LOCK_SECONDS):
         event_id = digest(key + "\0" + event + "\0" + str(delivery_id) + "\0" + text)[:32] if delivery_id else uuid.uuid4().hex
         delivered = read_json(directory / "delivered.json", {})
         if event_id in delivered or list((directory / "pending").glob("*-" + event_id + ".json")):

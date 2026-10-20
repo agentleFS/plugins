@@ -1,7 +1,8 @@
 {
   "name": "agentlefs",
-  "version": "0.5.12",
+  "version": "0.6.1",
   "description": "Shared second brain for any AI with agent permissions",
+  "contextFileName": "AGENTS.md",
   "mcpServers": {
     "agentlefs": {
       "httpUrl": "https://mcp.agentlefs.com/mcp?ref=gemini-extensions"

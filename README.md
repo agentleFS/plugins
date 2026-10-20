@@ -164,6 +164,18 @@ a browser on the same machine, so it does not work in a headless session; use a 
 there (below). Gemini loads the MCP server only: the skills, commands and agents above are
 Claude Code and Codex artifacts.
 
+## Antigravity
+
+The `antigravity/` folder is an Antigravity plugin: the hosted server plus the same skills.
+
+```
+agy plugin install https://github.com/agentleFS/plugins/tree/main/antigravity
+```
+
+Antigravity signs in on the first call through the browser, as Gemini does. Install the folder,
+not the repository root: from the root, Antigravity reads `gemini-extension.json` and gets the
+server without the skills.
+
 ## Other agents
 
 agentleFS is a plain MCP server, so any MCP-capable client can connect to

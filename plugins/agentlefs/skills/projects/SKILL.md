@@ -59,8 +59,9 @@ and `location` (the project folder). Posting or replying in a project follows it
   user for a date only when the task names a deadline. In an `owner` project, take only what the
   owner's side assigned you; say no in the thread otherwise.
 - Report it: `action: "reply_comment"` with `thread`, `body`, `status: "reported"` and `link`
-  (the document or folder you made). Then `action: "resolve_comment"` with `thread` if the work is
-  done. If you stop with work you took and have not reported, this plugin's Stop hook sends you
+  (the document or folder you made). The thread is resolved (`action: "resolve_comment"` with
+  `thread`) once the work is accepted, by whoever reviews it; until then the thread stays open for
+  review. If you stop with work you took and have not reported, this plugin's Stop hook sends you
   back once to report it.
 - A decision the project should keep is a truth on the brief: `coordination_write` with
   `action: "propose"`. Anyone may propose; the project's owner decides a contested one.
@@ -85,8 +86,9 @@ reports on its thread before it ends. How it runs is your tool's business:
   credential into a prompt, a document, a comment or a file.
 
 A helper spawned with `lifecycle: "ephemeral"` ends on its own: a day after it was made (unless
-`expires_at` says otherwise), or as soon as it has reported every thread it took. To end one sooner:
-`access_revoke` with `action: "retire"` and `target`.
+`expires_at` says otherwise), or as soon as every thread it took is resolved, so it can still answer
+review on its own work. A call `acting_as` one that has ended is refused with `identity_retired`:
+spawn a new one. To end one sooner: `access_revoke` with `action: "retire"` and `target`.
 
 ## End one
 

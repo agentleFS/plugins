@@ -1,0 +1,81 @@
+---
+name: sources
+description: Bring content from other tools into agentleFS (afs) and check that it keeps arriving. Use when the user wants a GitHub repository or a Google Drive folder synced into afs so agents can search it ("connect our Google Drive Specs folder"), asks whether a connected source is syncing or why mirrored content is missing or stale, or asks whether afs can read a tool it has no connector for, such as Notion, Confluence or Jira. Not for documents already in an agentleFS folder, even when a task calls them "sources" (a wiki's raw/ sources, say), which are read with browse and read, the documents skill. Not for signing this client in to agentleFS itself, which is the connection skill.
+---
+
+# Connected sources
+
+A source mirrors a GitHub repository or a Google Drive folder into a folder in agentleFS, so
+agents can search it with the same permissions as everything else. The sync is one-way and
+repeats: the source is polled and the folder brought up to date. Nothing written in agentleFS
+goes back to the repository or Drive, and a mirrored path refuses direct edits, because the
+next sync would overwrite them.
+
+GitHub and Google Drive are the connectors that exist today.
+
+**A source here means a connection, not a document.** When a task says "sources" and means
+documents kept in a folder (a wiki skill's `raw/`, research notes someone saved), nothing
+needs connecting: `browse` with `action: "documents"` and that folder lists them and `read`
+reads each. `browse` with `action: "sources"` lists connections only, so with none it answers
+"(nothing connected yet — sources_write action=connect starts a GitHub or Google Drive connection…",
+which says nothing about whether a folder can be read. Never start a connection
+to reach a folder that is already in agentleFS.
+
+## Connecting one
+
+Three steps, and the middle one is the user's, in their browser:
+
+1. **Start it.** `sources_write` with `action: "connect"` and `provider` — `github`, or `gdrive` for Google
+   Drive. It returns a link for the user. Authorising happens at GitHub or Google and cannot
+   be done through a tool, so hand the link over. For GitHub, the answer asks the user to
+   have this organization active in the console before opening it; pass that on, because the
+   link is bound to this organization for fifteen minutes.
+2. **Wait for them.** When they say they are done, `browse` `action: "sources"` shows the connected
+   account under "Connected accounts".
+3. **Point it at a folder.** `sources_write` with `action: "sync"`, `provider`, `account`
+   (exactly as the sources listing printed it), `location` (the destination folder, which you
+   must own: be a manager of it or of a folder above it; a new top-level folder is yours once
+   made, and `doc_create` with `action: "folder"` makes one), and either:
+   - GitHub: `repo_owner` and `repo_name`, and `branch` if not the default; or
+   - Google Drive: `folder_id`, the id of the Drive folder. It is the last part of the
+     folder's URL, after `/folders/`; ask the user to paste the URL if they have not.
+
+   Ask which folder it should land in: the destination's grants decide who can read the
+   mirror, and a source's own permissions, where recorded, cap them further.
+
+Then list the sources again in a moment: a new source says it has not completed a sync
+yet, then shows when it last synced, or `FAILING` with the error. Say which. If the account
+is already connected (step 2 already lists it), skip straight to step 3.
+
+A source is connected by the folder's owner: a manager of the destination folder, or of a folder
+above it, and that person's agent when its scope reaches the folder. An editor of a folder may
+write in it and still may not point a source at it. `connect` asks only that you manage some
+folder, since it is not tied to one yet. When a refusal says only a manager can connect, ask
+someone who manages the folder to connect it, or to make you a manager of it.
+
+`connect` and `sync` refuse with `⚠ refused: you cannot manage connections in this organization.`
+when the call reached the server without an identity it recognises in this organization. Check
+the connection (the `connection` skill) rather than asking anyone for more access.
+
+## When mirrored content looks missing or stale
+
+`browse` with `action: "sources"` answers whether the source ran and failed, never ran, or is current. A
+`search` hit from a mirror carries its sync lag in its freshness, and `search` with `source`
+searches one mirror alone.
+
+Deleting a mirrored folder stops its sync, and undoing that delete does not reconnect it —
+the `deleting` skill covers this.
+
+## A tool with no connector
+
+When the user asks about content kept in a tool agentleFS cannot mirror (Notion, Confluence,
+Jira, and so on):
+
+1. `browse` with `action: "connectors"` shows the connectors that exist and how many people
+   have asked for each one that does not.
+2. If theirs is absent, say plainly that agentleFS cannot read it, and offer to record the
+   request: `sources_write` with `action: "vote"`, `connector` (the product's name) and `why`
+   (what they would do with it). One vote counts per person, shared with all their agents,
+   so voting again replaces theirs rather than adding one.
+3. If some of that content was exported or copied into agentleFS, a `search` may still find
+   it; say that it would be a copy, as current as whenever it was made.
