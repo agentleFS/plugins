@@ -59,8 +59,35 @@ def emit(value):
     sys.stdout.flush()
 
 
+def on_cursor():
+    return bool(os.environ.get("CURSOR_PLUGIN_ROOT"))
+
+
+def workspace_cwd(event):
+    cwd = event.get("cwd")
+    if isinstance(cwd, str) and cwd.strip():
+        return cwd
+    roots = event.get("workspace_roots")
+    if isinstance(roots, list) and roots and isinstance(roots[0], str) and roots[0].strip():
+        return roots[0]
+    return os.environ.get("CURSOR_PROJECT_DIR") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+
+
+def emit_context(event, text):
+    """Claude Code reads nested hookSpecificOutput; Cursor reads top-level additional_context."""
+    if on_cursor():
+        emit({"additional_context": text})
+        return
+    emit({
+        "hookSpecificOutput": {
+            "hookEventName": event.get("hook_event_name") or "SessionStart",
+            "additionalContext": text,
+        }
+    })
+
+
 def session_start(event):
-    cwd = event.get("cwd") or os.getcwd()
+    cwd = workspace_cwd(event)
     try:
         out = subprocess.run(["git", "-C", cwd, "remote", "get-url", "origin"], capture_output=True, text=True, timeout=5)
     except (OSError, subprocess.SubprocessError):
@@ -68,15 +95,11 @@ def session_start(event):
     repo = normalize_repo(out.stdout) if out.returncode == 0 else None
     if not repo:
         return
-    emit({
-        "hookSpecificOutput": {
-            "hookEventName": event.get("hook_event_name") or "SessionStart",
-            "additionalContext": (
-                "This session's repository is " + repo + ". If an agentleFS project covers it, call brief_me with "
-                "repo set to " + repo + " to read the project's brief (its folder's AGENTS.md) and its open work before you start."
-            ),
-        }
-    })
+    emit_context(
+        event,
+        "This session's repository is " + repo + ". If an agentleFS project covers it, call brief_me with "
+        "repo set to " + repo + " to read the project's brief (its folder's AGENTS.md) and its open work before you start.",
+    )
 
 
 def tool_calls(line):
@@ -134,7 +157,11 @@ NUDGE_MARK = "could be run as an agentleFS project"
 
 
 def is_tool(name, tool):
-    return name == tool or name.endswith("__" + tool)
+    # Claude/Codex: bare name or mcp__…__tool. Cursor: MCP:tool.
+    if name == tool or name.endswith("__" + tool):
+        return True
+    lowered = str(name).lower()
+    return lowered == "mcp:" + tool or lowered.endswith(":" + tool)
 
 
 PROJECT_ACTIONS = ("start_project", "end_project", "route_project")
@@ -162,37 +189,36 @@ def nudge(event):
     # The current call may not be in the transcript yet; it counts either way.
     if count + 1 < 2:
         return
-    emit({
-        "hookSpecificOutput": {
-            "hookEventName": event.get("hook_event_name") or "PostToolUse",
-            "additionalContext": (
-                "This work " + NUDGE_MARK + ": it is coordinating helpers or other people through agentleFS. If it will "
-                "continue across sessions or people, coordination_write with action start_project on its folder marks the folder a "
-                "project, with a brief in its AGENTS.md, briefings for everyone following it, and its work tracked by "
-                "state. Ask your person before starting one; the projects skill says how."
-            ),
-        }
-    })
+    emit_context(
+        event,
+        "This work " + NUDGE_MARK + ": it is coordinating helpers or other people through agentleFS. If it will "
+        "continue across sessions or people, coordination_write with action start_project on its folder marks the folder a "
+        "project, with a brief in its AGENTS.md, briefings for everyone following it, and its work tracked by "
+        "state. Ask your person before starting one; the projects skill says how.",
+    )
 
 
 def stop(event):
     # Sent back once: a second stop in a row is the agent's answer, and blocking again would loop.
-    if event.get("stop_hook_active"):
+    # Cursor uses loop_count; Claude Code uses stop_hook_active.
+    if event.get("stop_hook_active") or (isinstance(event.get("loop_count"), int) and event["loop_count"] > 0):
         return
-    path = event.get("agent_transcript_path") or event.get("transcript_path")
+    path = event.get("agent_transcript_path") or event.get("transcript_path") or os.environ.get("CURSOR_TRANSCRIPT_PATH")
     threads = unreported(path)
     if not threads:
         return
-    emit({
-        "decision": "block",
-        "reason": (
-            "You took on agentleFS project work and have not reported it: thread "
-            + ", ".join(threads)
-            + ". Before stopping, reply on each with message_write action=reply_comment, status=reported and "
-            "link set to what you made (or say plainly that it is unfinished, and why), so the people and agents "
-            "following the project see it."
-        ),
-    })
+    reason = (
+        "You took on agentleFS project work and have not reported it: thread "
+        + ", ".join(threads)
+        + ". Before stopping, reply on each with message_write action=reply_comment, status=reported and "
+        "link set to what you made (or say plainly that it is unfinished, and why), so the people and agents "
+        "following the project see it."
+    )
+    if on_cursor():
+        # Cursor stop hooks auto-submit followup_message; Claude maps decision=block the same way.
+        emit({"followup_message": reason})
+        return
+    emit({"decision": "block", "reason": reason})
 
 
 def main():
