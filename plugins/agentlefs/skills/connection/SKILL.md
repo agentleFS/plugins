@@ -47,8 +47,6 @@ That first 401 is the normal trigger for browser sign-in. It is the mechanism, n
 
 Use the `/mcp` command in Claude Code to inspect status and authenticate. Select `agentlefs` and choose the authenticate option to launch the browser flow. The same command shows whether the server is connected and which tools it exposes.
 
-In **Cursor**, open Customize → MCP (or the installed plugin's MCP entry) and sign in when the host prompts after the normal HTTP 401. Prefer installing the Cursor plugin (`.cursor-plugin` manifests in this repo) so skills and desktop hooks ship with the server; a bare `~/.cursor/mcp.json` URL entry is MCP-only.
-
 ## Self-hosted deployments
 
 The endpoint is a literal `url` in the plugin's `.mcp.json`. Self-hosted deployments edit that one line, keeping the `/mcp` path. Nothing else needs changing; discovery is relative to whatever host is configured, so a self-hosted deployment advertises its own authorization server through its own `/.well-known/oauth-protected-resource`.

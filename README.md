@@ -177,65 +177,13 @@ Antigravity signs in on the first call through the browser, as Gemini does. Inst
 not the repository root: from the root, Antigravity reads `gemini-extension.json` and gets the
 server without the skills.
 
-## Cursor
-
-Same package: MCP server, skills, agents, commands, and — on the desktop app —
-optional lifecycle hooks. This repo ships a Cursor marketplace manifest at
-`.cursor-plugin/marketplace.json` and a per-plugin manifest at
-`plugins/agentlefs/.cursor-plugin/plugin.json`.
-
-**1. Install the plugin**
-
-- **Team marketplace:** Dashboard → Plugins & MCPs → Add Marketplace → import
-  `https://github.com/agentleFS/plugins`. Install **agentlefs** from Customize.
-- **Local (dev):** copy or symlink `plugins/agentlefs` to
-  `~/.cursor/plugins/local/agentlefs`, then reload Cursor.
-- **Official marketplace:** when listed at [cursor.com/marketplace](https://cursor.com/marketplace),
-  install from Customize like any other plugin.
-
-**2. Sign in.** Open Customize → MCP (or the plugin's MCP entry). The first call
-gets HTTP 401 and Cursor opens the browser — that 401 is the OAuth trigger, not a
-failure. There is no token to paste for interactive use.
-
-**3. Verify.** Ask the agent to call `browse` with `action: "folders"`. An empty
-list on a new account is expected; a persistent 401 after sign-in is not.
-
-### What Cursor gets vs Claude Code / Codex
-
-| Capability | Claude Code | Codex (local) | Cursor desktop | Cursor Cloud Agents |
-|---|---|---|---|---|
-| MCP server + OAuth | Yes | Yes | Yes | Yes (when the plugin or MCP URL is available to the agent) |
-| Skills | Yes | Yes | Yes | Yes |
-| Slash commands / agents | Yes | Not loaded | Yes | Skills/agents as the host loads them |
-| Automatic memory hooks | Yes (after configure) | Yes (after trust + configure) | Yes after configure; needs Python 3.9+ and a hook credential | Not supported as a plugin path — use MCP + skills |
-| Project command hooks | Yes | Yes | Yes (session/repo brief, stop/nudge) | Limited; prefer skills + `brief_me` |
-| `mcp_tool` project brief on each prompt | Yes | Yes | No (Cursor has no `mcp_tool` hook type) | No |
-
-Automatic memory and project hooks use `hooks/cursor-hooks.json` with Cursor's
-event names (`sessionStart`, `beforeSubmitPrompt`, …) and `${CURSOR_PLUGIN_ROOT}`.
-They are the same Python scripts as Claude/Codex. Cloud Agents do not run
-`sessionStart` / `sessionEnd`, and plugin-installed hooks are a desktop concern —
-so Cloud Agent sessions should keep using MCP tools and skills, not assume
-automatic capture. Prompt-time recall injection on Cursor is best-effort: Cursor's
-documented `beforeSubmitPrompt` outputs are `continue` / `user_message`; session
-start context injection and local capture still apply when configured. See the
-`memory` skill.
-
-**Fallback without the plugin:** add the server URL under `mcpServers` in
-`~/.cursor/mcp.json` (keep any servers already there):
-
-```json
-{ "mcpServers": { "agentlefs": { "url": "https://mcp.agentlefs.com/mcp" } } }
-```
-
-That path is MCP-only (no bundled skills/hooks). Prefer the plugin when you can.
-
 ## Other agents
 
 agentleFS is a plain MCP server, so any MCP-capable client can connect to
 `https://mcp.agentlefs.com/mcp` today - OAuth for humans, or a `afs_` bearer
-token for headless and CI use. VS Code and Cline take that URL; ChatGPT takes
+token for headless and CI use. Cursor, VS Code and Cline take that URL; ChatGPT takes
 it as a custom MCP server; Meta's Muse connects when you ask for it in a chat on muse.ai.
+Cursor's own plugin format needs a manual review before listing, and is its own job.
 
 **If your client doesn't do OAuth, you need a bearer token.** Many desktop clients
 send only the headers you configure and never walk the discovery chain, so they get
