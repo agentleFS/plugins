@@ -28,6 +28,15 @@ MAX_DISK = 32 * 1024 * 1024
 MAX_PENDING = 256
 END_DOCUMENT = "\n\n──── end of document ────"
 EVENTS = {"SessionStart", "UserPromptSubmit", "PostToolUse", "Stop", "PreCompact", "SessionEnd"}
+# Cursor plugin hooks use camelCase event names; map them to the Claude/Codex names the rest of this script uses.
+CURSOR_EVENTS = {
+    "sessionStart": "SessionStart",
+    "beforeSubmitPrompt": "UserPromptSubmit",
+    "postToolUse": "PostToolUse",
+    "stop": "Stop",
+    "preCompact": "PreCompact",
+    "sessionEnd": "SessionEnd",
+}
 SECRET_KEY = re.compile(r"(?:password|passwd|secret|token|api[_-]?key|authorization|cookie|credential|private[_-]?key)", re.I)
 SECRET = re.compile(r"\b(?:afs_|cht_|sk-|ghp_|github_pat_|xox[baprs]-)[A-Za-z0-9_.-]+|\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", re.I)
 ASSIGNMENT = re.compile(r'''((?:password|secret|token|api[_-]?key|authorization|cookie)\s*[=:]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;]+)''', re.I)
@@ -165,6 +174,74 @@ def bounded(value, limit=MAX_TEXT):
     text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
     clean = redact(text)
     return clean[:limit] + ("\n[truncated]" if len(clean) > limit else "")
+
+
+def on_cursor():
+    """True when this process was started as a Cursor plugin hook."""
+    return bool(os.environ.get("CURSOR_PLUGIN_ROOT"))
+
+
+def normalize_event(name):
+    if not isinstance(name, str):
+        return ""
+    return CURSOR_EVENTS.get(name, name)
+
+
+def normalize_payload(payload):
+    """Accept Cursor field names alongside Claude/Codex ones without rewriting the rest of the hook."""
+    if not isinstance(payload, dict):
+        return {}
+    out = dict(payload)
+    if not out.get("session_id"):
+        session = out.get("conversation_id")
+        if isinstance(session, str) and session.strip():
+            out["session_id"] = session
+    if not out.get("cwd"):
+        roots = out.get("workspace_roots")
+        if isinstance(roots, list) and roots and isinstance(roots[0], str) and roots[0].strip():
+            out["cwd"] = roots[0]
+        else:
+            project = os.environ.get("CURSOR_PROJECT_DIR") or os.environ.get("CLAUDE_PROJECT_DIR")
+            if isinstance(project, str) and project.strip():
+                out["cwd"] = project
+    if "tool_response" not in out and "tool_output" in out:
+        out["tool_response"] = out.get("tool_output")
+    if not out.get("transcript_path"):
+        transcript = os.environ.get("CURSOR_TRANSCRIPT_PATH")
+        if isinstance(transcript, str) and transcript.strip():
+            out["transcript_path"] = transcript
+    if not out.get("last_assistant_message"):
+        text = out.get("text")
+        if isinstance(text, str) and normalize_event(out.get("hook_event_name", "")) == "Stop":
+            out["last_assistant_message"] = text
+    return out
+
+
+def context_output(event, context):
+    """Claude Code reads nested hookSpecificOutput; Cursor reads top-level additional_context."""
+    joined = "\n\n".join(context)
+    if on_cursor():
+        return {"additional_context": joined}
+    return {"hookSpecificOutput": {"hookEventName": event, "additionalContext": joined}}
+
+
+AFS_MCP_TOOLS = {
+    "search", "read", "browse", "brief_me", "access_read", "doc_create", "doc_update",
+    "doc_delete", "access_grant", "access_revoke", "identity_write", "message_write",
+    "coordination_write", "knowledge_write", "registry_write", "sources_write",
+}
+
+
+def is_afs_tool(tool):
+    """Skip agentleFS MCP traffic so recall/search results are not re-captured as memory."""
+    lowered = str(tool).lower()
+    if "agentlefs" in lowered or "mcp__afs__" in lowered:
+        return True
+    if lowered.startswith("mcp:"):
+        name = lowered.split(":", 1)[1]
+        bare = name.rsplit("__", 1)[-1] if "__" in name else name
+        return bare in AFS_MCP_TOOLS or "agentlefs" in name
+    return False
 
 
 def session_key(config, payload):
@@ -452,6 +529,8 @@ def detached_flush(key):
 def hook(event, payload):
     output = {}
     context = []
+    event = normalize_event(event)
+    payload = normalize_payload(payload)
     try:
         config = settings()
         if not config:
@@ -459,7 +538,7 @@ def hook(event, payload):
         if event not in EVENTS:
             raise MemoryError("unsupported memory lifecycle event")
         key = session_key(config, payload)
-        delivery_id = payload.get("tool_use_id") or payload.get("event_id") or payload.get("turn_id")
+        delivery_id = payload.get("tool_use_id") or payload.get("event_id") or payload.get("turn_id") or payload.get("generation_id")
         if event == "SessionStart":
             sweep_acknowledged(exclude={key})
             context.append("AgentleFS lifecycle memory is enabled for /" + "/".join(config["folder"]) + ". Captured session events are saved through your configured identity and folder permissions.")
@@ -486,7 +565,7 @@ def hook(event, payload):
         elif event == "PostToolUse":
             tool = str(payload.get("tool_name", ""))
             # Retrieval itself must not become a new memory copy or feedback loop.
-            if "agentlefs" not in tool.lower() and "mcp__afs__" not in tool.lower() and "memory_hooks" not in str(payload.get("tool_input", "")):
+            if not is_afs_tool(tool) and "memory_hooks" not in str(payload.get("tool_input", "")):
                 enqueue(config, key, event, redact({"tool": tool, "input": payload.get("tool_input"), "response": payload.get("tool_response")}), delivery_id)
                 flush_session(config, key, 2.0)
         elif event == "Stop":
@@ -506,7 +585,7 @@ def hook(event, payload):
     except Exception:
         output["systemMessage"] = "AgentleFS memory: local hook failed; queued events are retained"
     if context and event in {"SessionStart", "UserPromptSubmit"}:
-        output["hookSpecificOutput"] = {"hookEventName": event, "additionalContext": "\n\n".join(context)}
+        output.update(context_output(event, context))
     return output
 
 
@@ -522,7 +601,7 @@ def main(argv=None):
     worker = commands.add_parser("_flush-session")
     worker.add_argument("session")
     hooks = commands.add_parser("hook")
-    hooks.add_argument("event", nargs="?", choices=sorted(EVENTS))
+    hooks.add_argument("event", nargs="?", choices=sorted(EVENTS | set(CURSOR_EVENTS)))
     args = parser.parse_args(argv)
     try:
         if args.command == "configure":
@@ -550,7 +629,7 @@ def main(argv=None):
             payload = json.loads(raw)
             if not isinstance(payload, dict):
                 raise MemoryError("hook input must be a JSON object")
-            print(json.dumps(hook(args.event or payload.get("hook_event_name", ""), payload), ensure_ascii=False))
+            print(json.dumps(hook(args.event or payload.get("hook_event_name", ""), normalize_payload(payload)), ensure_ascii=False))
         else:
             config = settings()
             if args.command == "status":

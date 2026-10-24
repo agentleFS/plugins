@@ -6,6 +6,8 @@ One store. People and agents same folders. Each agent see only what its human le
 
 ## Get
 
+**Claude Code**
+
 ```
 /plugin marketplace add agentleFS/plugins
 /plugin install agentlefs@agentlefs
@@ -13,6 +15,14 @@ One store. People and agents same folders. Each agent see only what its human le
 ```
 
 Browser open. Sign in. Done.
+
+**Cursor**
+
+Install from a team marketplace import of `agentleFS/plugins`, from
+`~/.cursor/plugins/local/agentlefs`, or from the Cursor Marketplace when listed.
+Sign in from Customize → MCP (first 401 opens the browser). Verify with
+`browse` action `folders`. Details and host limits: repository root `README.md`
+(Cursor section).
 
 ## Commands
 
@@ -47,11 +57,13 @@ Claude pick these when need.
 
 ## Automatic memory
 
-Claude Code and local Codex sessions can run the bundled lifecycle hooks. After
-you configure a save folder and hook credential, the plugin recalls relevant
-memory before each prompt and captures prompts, tool traces, and assistant
-responses automatically. Python 3.9 or newer is required; no Python packages are
-installed. Hosts without command hooks can continue using the MCP tools and skills.
+Claude Code, local Codex, and **Cursor desktop** sessions can run the bundled
+lifecycle hooks. After you configure a save folder and hook credential, the
+plugin recalls relevant memory before each prompt (where the host injects hook
+context) and captures prompts, tool traces, and assistant responses
+automatically. Python 3.9 or newer is required; no Python packages are
+installed. Hosts without command hooks — including Cursor Cloud Agents — keep
+using the MCP tools and skills; do not claim automatic capture there.
 
 ```sh
 # AGENTLEFS_TOKEN is an agent credential supplied by your environment.
@@ -59,7 +71,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" configure --folder "engi
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" status
 ```
 
-Use the installed plugin's absolute path if your shell has no `CLAUDE_PLUGIN_ROOT`.
+On Cursor, the same script runs with `CURSOR_PLUGIN_ROOT` set by the host; use
+that variable or the installed plugin's absolute path if your shell has neither.
 On Codex, review and trust the hooks through the host's hook controls; plugin
 installation alone does not trust them. The `memory` skill walks through setup.
 
@@ -118,7 +131,12 @@ it, with no setup and no credential of their own:
 
 Claude Code and Codex read separate hook files (`hooks/hooks.json`,
 `hooks/codex-hooks.json`) because they name the plugin's server differently in
-an `mcp_tool` hook; the two files are otherwise the same.
+an `mcp_tool` hook; the two files are otherwise the same. Cursor reads
+`hooks/cursor-hooks.json` (camelCase events, flat `command` entries,
+`${CURSOR_PLUGIN_ROOT}`). Cursor has no `mcp_tool` hook type, so the per-prompt
+`brief_me` project brief is skill/MCP-driven there; command hooks still cover
+session repo naming, stop/report nudges, and coordination nudges. Keep the three
+hook files in sync with `scripts/validate_plugin_packaging.py`.
 
 ## Agents
 

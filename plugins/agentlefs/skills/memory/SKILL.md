@@ -1,6 +1,6 @@
 ---
 name: memory
-description: Configure automatic agentleFS (afs) memory in Claude Code or local Codex sessions, inspect pending captures, retry delivery, or disable lifecycle recall and capture. Use when the user asks to remember automatically, enable memory hooks, check whether a session was saved, or stop automatic memory. Requires local command hooks and Python 3.9+; ordinary document searches use the documents skill.
+description: Configure automatic agentleFS (afs) memory in Claude Code, local Codex, or Cursor desktop sessions, inspect pending captures, retry delivery, or disable lifecycle recall and capture. Use when the user asks to remember automatically, enable memory hooks, check whether a session was saved, or stop automatic memory. Requires local command hooks and Python 3.9+; Cursor Cloud Agents and hosts without command hooks should use MCP tools and skills instead. Ordinary document searches use the documents skill.
 ---
 
 # Automatic session memory
@@ -9,11 +9,17 @@ The plugin's hooks retrieve relevant memory before prompts and capture prompts,
 bounded tool traces, assistant responses, and compaction checkpoints. They use
 the normal AgentleFS MCP tools and permissions. They start only after setup.
 
+Supported hosts for automatic hooks: **Claude Code**, **local Codex**, and
+**Cursor desktop** (plugin hooks with Python 3.9+). **Cursor Cloud Agents** and
+other hosts without trusted command hooks do not run this path — use MCP search /
+`doc_create` / the sync-conversation-summary skill instead, and say so plainly.
+
 ## Set up
 
 1. Locate the installed plugin's `scripts/memory_hooks.py`. Prefer
-   `CLAUDE_PLUGIN_ROOT` or `PLUGIN_ROOT` when the host supplies one; otherwise use
-   the verified installed plugin path. Do not edit an installed cache.
+   `CLAUDE_PLUGIN_ROOT`, `CURSOR_PLUGIN_ROOT`, or `PLUGIN_ROOT` when the host
+   supplies one; otherwise use the verified installed plugin path. Do not edit an
+   installed cache.
 2. Establish the destination. Use a folder the user named; otherwise list reachable
    folders with `browse` and ask which one should hold automatic captures. Explain
    that the captures are documents and the folder's readers can see them. Do not
@@ -34,11 +40,15 @@ the normal AgentleFS MCP tools and permissions. They start only after setup.
    If storing a supplied credential locally, add `--token-stdin` and pass the
    value through stdin. Use the same URL as the normal connection. Self-hosted
    hooks read `AGENTLEFS_URL`; HTTPS is required except for loopback development.
-5. In Codex, review and trust the plugin's hooks using the host controls, then
-   start or resume a local session. Other surfaces may not support command hooks.
-   Do not change global trust settings or bypass hook review.
+5. Trust hooks where the host requires it. In Codex, review and trust the plugin's
+   hooks using the host controls, then start or resume a local session. In Cursor,
+   plugin command hooks load from `hooks/cursor-hooks.json` after install; Cloud
+   Agent sessions still should not rely on them. Do not change global trust
+   settings or bypass hook review.
 6. Run `status` and report whether memory is enabled and whether any captures
    remain pending. A configured credential is not evidence that a save succeeded.
+   On Cursor, treat prompt-time recall injection as best-effort (session-start
+   context and local capture are the reliable parts).
 
 ## Check, retry, or stop
 
