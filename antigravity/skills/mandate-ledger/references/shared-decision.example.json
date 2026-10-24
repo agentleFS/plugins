@@ -1,0 +1,13 @@
+{
+  "schema": "mandate-decision/v1",
+  "id": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+  "title": "Choose the pilot rollout",
+  "context": "The team must choose the pilot scope before implementation.",
+  "options": [
+    {"id": "internal", "summary": "Start with the internal team", "tradeoffs": "Lower risk and narrower feedback"},
+    {"id": "customer", "summary": "Start with one customer", "tradeoffs": "Earlier external feedback and more coordination"}
+  ],
+  "preference": "internal",
+  "idempotencyKey": "pilot-rollout-example-v1",
+  "supersedes": null
+}

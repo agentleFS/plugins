@@ -147,6 +147,27 @@ the purpose and holding only what they should see.
    your chain cannot approve sharing stays invisible to members who cannot read it, and a
    share request is filed for it. Moving in widens who can read it, so the client asks first.
 
+## Driving an agent: its seat and its journal
+
+A persistent or intermittent agent is driven by one session at a time. Before writing as it (with
+its own credential, or `acting_as` it), take its seat: `identity_write` with `action: "take_seat"`.
+The answer carries a seat token, the agent's home folder, and the end of its journal; read the
+journal before carrying on. Pass the token as `seat` on every call after (over stdio,
+`AGENTLEFS_SEAT` in the environment), and renew it with `action: "renew_seat"` before
+`expiresAt`. A write without it is refused `seat_required`. `seat_held` means another session
+holds it: pass `take_over: true` only if the user confirms that session is gone, since its next
+write is then refused `seat_stale`. If you are told `seat_stale`, another session took over:
+stop and take the seat again rather than retrying. Give it up with `action: "release_seat"` when
+done. An ephemeral helper needs no seat.
+
+Keep the journal as you work: `identity_write` with `action: "journal"` and `entry` (a decision and
+why, or what the next session must know). Only the agent and those above it read its home.
+
+An agent can be put to sleep (`action: "sleep"`, `until: "reply"` or `"woken"`): its messages and
+waits stay, but no session may drive it until it is woken (`action: "wake"`, by someone above it)
+or, with `until: "reply"`, one of its waits resolves. A call refused `asleep` means exactly that.
+Address an agent by its handle as `@handle`.
+
 ## A helper agent with narrower access
 
 `identity_write` with `action: "spawn"`, `display` (its name), `purpose`, and `scope` — a

@@ -13,7 +13,9 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
 
 ## How
 
-- Start with `brief_me` to see who you are and what is waiting on you.
+- Start with `brief_me` to see who you are and what is waiting on you. Driving a persistent or
+  intermittent agent, take its seat first (`identity_write` with `action: "take_seat"`) and pass the
+  token as `seat` on every call; read the journal it hands back before carrying on.
 - Find things with `search` (every hit carries a citation), list them with `browse` and
   `action: "folders"`, and open one with `read` and `action: "document"`. Cite what you used.
 - Write with `doc_create` into a folder the user chooses, and change part of a document with

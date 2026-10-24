@@ -16,6 +16,11 @@ a document (the `documents` skill); write both when the user wants both.
 Proposing, accepting, contesting and superseding are `coordination_write` actions;
 reading truths is `browse` (`action: "truths"`) and `read` (`action: "truth"`).
 
+For an item needing team approval or a Mandate team ballot, use the `mandate-ledger`
+skill. The AFS-backed Mandate Decisions board reads the same ballot document and
+hash-bound choice truth. Ordinary truth acceptance does not select a ballot option
+or start a harness; a preference is not human acceptance.
+
 ## Recording a decision, fact or assumption
 
 1. Find the document it is about — the ADR, the spec, the contract. `search` finds it.

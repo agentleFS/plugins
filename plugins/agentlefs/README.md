@@ -36,6 +36,7 @@ Claude pick these when need.
 | `sharing` | Give access. Ask for access. |
 | `deleting` | Delete. Undo. Erase for good. |
 | `shared-truths-and-lessons` | Team facts. Lessons. Dead ends. |
+| `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `collaborating` | Agents message, claim work, wait. |
 | `catch-up` | What changed. What wait on you. |
 | `sources` | Connect GitHub, Google Drive. |
