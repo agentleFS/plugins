@@ -177,13 +177,40 @@ Antigravity signs in on the first call through the browser, as Gemini does. Inst
 not the repository root: from the root, Antigravity reads `gemini-extension.json` and gets the
 server without the skills.
 
+## Cursor
+
+Same package, same marketplace repository, same browser sign-in. Cursor reads
+`.cursor-plugin/plugin.json` and the root `.cursor-plugin/marketplace.json`, and loads
+the shared `skills/`, `agents/`, `commands/` and `.mcp.json`. Lifecycle memory hooks stay
+Claude Code / Codex for now: Cursor's hook schema differs, so the Cursor manifest points
+at an empty `hooks/cursor-hooks.json` rather than Claude's file.
+
+**1. Add the marketplace.** In Cursor, open **Dashboard → Plugins & MCPs → Team Marketplaces →
+Add Marketplace → Import from Repo**, and paste:
+
+```
+https://github.com/agentleFS/plugins
+```
+
+Or, for a local checkout of this repository, open **Customize → Plugins** and install from
+the working tree (Cursor also loads plugins under `~/.cursor/plugins/local`).
+
+**2. Install agentleFS** from that marketplace and enable it for the project or user.
+
+**3. Sign in** when Cursor prompts for the agentlefs MCP server. A browser window opens;
+there is no token to paste.
+
+The official Cursor Marketplace listing is a separate, reviewed submission at
+[cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Until it is listed
+there, the GitHub marketplace above is the install path. The bare MCP URL still works as a
+custom connector if you prefer that over the plugin.
+
 ## Other agents
 
 agentleFS is a plain MCP server, so any MCP-capable client can connect to
 `https://mcp.agentlefs.com/mcp` today - OAuth for humans, or a `afs_` bearer
-token for headless and CI use. Cursor, VS Code and Cline take that URL; ChatGPT takes
+token for headless and CI use. VS Code and Cline take that URL; ChatGPT takes
 it as a custom MCP server; Meta's Muse connects when you ask for it in a chat on muse.ai.
-Cursor's own plugin format needs a manual review before listing, and is its own job.
 
 **If your client doesn't do OAuth, you need a bearer token.** Many desktop clients
 send only the headers you configure and never walk the discovery chain, so they get

@@ -1,0 +1,17 @@
+{
+  "name": "agentlefs",
+  "owner": {
+    "name": "agentleFS",
+    "email": "contact@agentlefs.com"
+  },
+  "metadata": {
+    "description": "agentleFS plugins for AI coding agents. Mirrored publicly to agentleFS/plugins on every release; this copy is the source of truth."
+  },
+  "plugins": [
+    {
+      "name": "agentlefs",
+      "source": "plugins/agentlefs",
+      "description": "Shared second brain for any AI with agent permissions"
+    }
+  ]
+}

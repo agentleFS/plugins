@@ -1,0 +1,41 @@
+{
+  "name": "agentlefs",
+  "displayName": "agentleFS",
+  "version": "0.7.2",
+  "description": "Shared second brain for any AI with agent permissions",
+  "author": {
+    "name": "agentleFS",
+    "email": "contact@agentlefs.com"
+  },
+  "homepage": "https://agentlefs.com",
+  "repository": "https://github.com/agentleFS/plugins",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": [
+    "mcp",
+    "afs",
+    "agentlefs",
+    "agent-permissions",
+    "mcp-server",
+    "claude-code",
+    "cursor",
+    "codex",
+    "permissions",
+    "file-sharing",
+    "knowledge",
+    "retrieval",
+    "notes"
+  ],
+  "category": "productivity",
+  "tags": [
+    "mcp",
+    "knowledge",
+    "permissions",
+    "second-brain"
+  ],
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "commands": "./commands/",
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/cursor-hooks.json"
+}
