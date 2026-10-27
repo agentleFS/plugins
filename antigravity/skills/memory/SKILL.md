@@ -12,8 +12,9 @@ the normal AgentleFS MCP tools and permissions. They start only after setup.
 ## Set up
 
 1. Locate the installed plugin's `scripts/memory_hooks.py`. Prefer
-   `CLAUDE_PLUGIN_ROOT` or `PLUGIN_ROOT` when the host supplies one; otherwise use
-   the verified installed plugin path. Do not edit an installed cache.
+   `CLAUDE_PLUGIN_ROOT`, `CURSOR_PLUGIN_ROOT`, or `PLUGIN_ROOT` when the host
+   supplies one; otherwise use the verified installed plugin path. Do not edit an
+   installed cache.
 2. Establish the destination. Use a folder the user named; otherwise list reachable
    folders with `browse` and ask which one should hold automatic captures. Explain
    that the captures are documents and the folder's readers can see them. Do not
@@ -35,8 +36,11 @@ the normal AgentleFS MCP tools and permissions. They start only after setup.
    value through stdin. Use the same URL as the normal connection. Self-hosted
    hooks read `AGENTLEFS_URL`; HTTPS is required except for loopback development.
 5. In Codex, review and trust the plugin's hooks using the host controls, then
-   start or resume a local session. Other surfaces may not support command hooks.
-   Do not change global trust settings or bypass hook review.
+   start or resume a local session. Cursor loads `hooks/cursor-hooks.json` from the
+   plugin (command hooks only). Cursor's `beforeSubmitPrompt` can capture a prompt
+   but cannot inject recalled memory into the turn — use Claude Code or Codex when
+   automatic recall-before-prompt matters. Do not change global trust settings or
+   bypass hook review.
 6. Run `status` and report whether memory is enabled and whether any captures
    remain pending. A configured credential is not evidence that a save succeeded.
 

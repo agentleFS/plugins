@@ -13,6 +13,10 @@ next sync would overwrite them.
 
 GitHub and Google Drive are the connectors that exist today.
 
+**Issue ↔ folder/doc (not a file mirror):** to bind a GitHub issue to an AFS node and post only a
+safe pointer on the issue, use the `github-issue-bridge` skill (`sources_write` `bind_issue`). That
+is identity/state linkage, not repo sync.
+
 **A source here means a connection, not a document.** When a task says "sources" and means
 documents kept in a folder (a wiki skill's `raw/`, research notes someone saved), nothing
 needs connecting: `browse` with `action: "documents"` and that folder lists them and `read`

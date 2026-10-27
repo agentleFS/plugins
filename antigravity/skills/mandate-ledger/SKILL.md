@@ -37,9 +37,11 @@ legacy read-only record; it is not an actionable ballot.
    do not repair it by guessing what the human meant.
 
 Listings cover only this session's reach. A thin or empty result does not establish
-that the team has no decisions. `brief_me` access approvals are access requests,
-not this team's ballot inbox. A truth is a decision record, not proof of quorum or
-an execution gate. AFS unavailability must not be described as an empty board.
+that the team has no decisions. `brief_me` lists reachable pending decision truths under
+`pendingDecisions` (and in its prose after directed asks) — that is the ballot discoverability
+path when no one sent a directed ask. Access approvals on the brief remain access requests,
+not ballots. A truth is a decision record, not proof of quorum or an execution gate. AFS
+unavailability must not be described as an empty board.
 
 ## Flag a new item for team approval
 

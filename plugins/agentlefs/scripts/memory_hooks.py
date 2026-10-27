@@ -28,6 +28,27 @@ MAX_DISK = 32 * 1024 * 1024
 MAX_PENDING = 256
 END_DOCUMENT = "\n\n──── end of document ────"
 EVENTS = {"SessionStart", "UserPromptSubmit", "PostToolUse", "Stop", "PreCompact", "SessionEnd"}
+# Cursor's native hook names (cursor.com/docs/hooks) map onto the Claude lifecycle events above.
+# afterAgentResponse carries the assistant text Cursor's stop payload omits.
+EVENT_ALIASES = {
+    "sessionStart": "SessionStart",
+    "beforeSubmitPrompt": "UserPromptSubmit",
+    "postToolUse": "PostToolUse",
+    "stop": "Stop",
+    "preCompact": "PreCompact",
+    "sessionEnd": "SessionEnd",
+    "afterAgentResponse": "Stop",
+}
+PLATFORMS = ("claude", "cursor")
+# Bare MCP tool names this plugin advertises. Cursor prefixes them MCP:<name>; Claude/Codex
+# use mcp__…__<name>. Capturing those calls would copy retrieval back into memory.
+AFS_MCP_TOOLS = {
+    "search", "read", "browse", "access_read", "brief_me",
+    "doc_create", "doc_update", "doc_delete",
+    "access_grant", "access_revoke", "identity_write",
+    "message_write", "coordination_write", "knowledge_write",
+    "registry_write", "sources_write",
+}
 SECRET_KEY = re.compile(r"(?:password|passwd|secret|token|api[_-]?key|authorization|cookie|credential|private[_-]?key)", re.I)
 SECRET = re.compile(r"\b(?:afs_|cht_|sk-|ghp_|github_pat_|xox[baprs]-)[A-Za-z0-9_.-]+|\bBearer\s+\S+|\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", re.I)
 ASSIGNMENT = re.compile(r'''((?:password|secret|token|api[_-]?key|authorization|cookie)\s*[=:]\s*)(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;]+)''', re.I)
@@ -45,6 +66,64 @@ class MemoryError(Exception):
 
 def digest(value):
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def normalize_event_name(name):
+    """Map a host event name onto the Claude lifecycle names this script understands."""
+    if not isinstance(name, str) or not name:
+        return ""
+    return EVENT_ALIASES.get(name, name)
+
+
+def normalize_payload(payload):
+    """Fill Cursor common fields into the Claude-shaped keys the rest of the script reads."""
+    if not isinstance(payload, dict):
+        return {}
+    out = dict(payload)
+    if not out.get("session_id") and isinstance(out.get("conversation_id"), str):
+        out["session_id"] = out["conversation_id"]
+    if not out.get("cwd"):
+        roots = out.get("workspace_roots")
+        if isinstance(roots, list) and roots and isinstance(roots[0], str):
+            out["cwd"] = roots[0]
+        elif os.environ.get("CURSOR_PROJECT_DIR"):
+            out["cwd"] = os.environ["CURSOR_PROJECT_DIR"]
+    if not out.get("transcript_path") and os.environ.get("CURSOR_TRANSCRIPT_PATH"):
+        out["transcript_path"] = os.environ["CURSOR_TRANSCRIPT_PATH"]
+    if "tool_response" not in out and "tool_output" in out:
+        out["tool_response"] = out["tool_output"]
+    # afterAgentResponse: text is the assistant turn Cursor's stop hook does not carry.
+    if isinstance(out.get("text"), str) and not out.get("last_assistant_message"):
+        out["last_assistant_message"] = out["text"]
+    if isinstance(out.get("hook_event_name"), str):
+        out["hook_event_name"] = normalize_event_name(out["hook_event_name"])
+    return out
+
+
+def is_afs_tool(tool):
+    """True when a host tool name is one of this plugin's MCP tools (any host prefix)."""
+    t = str(tool).lower()
+    if "agentlefs" in t or "mcp__afs__" in t or "memory_hooks" in t:
+        return True
+    bare = t[4:] if t.startswith("mcp:") else t.rsplit("__", 1)[-1]
+    return bare in AFS_MCP_TOOLS
+
+
+def render_hook_output(output, event, platform):
+    """Translate Claude's hookSpecificOutput envelope into Cursor's when asked.
+
+    Cursor's beforeSubmitPrompt accepts only continue / user_message — it cannot inject
+    recalled memory — so context is dropped there rather than faked into an unsupported field.
+    """
+    if platform != "cursor" or not output:
+        return output
+    result = {}
+    specific = output.get("hookSpecificOutput") if isinstance(output.get("hookSpecificOutput"), dict) else {}
+    context = specific.get("additionalContext")
+    if isinstance(context, str) and context.strip() and event == "SessionStart":
+        result["additional_context"] = context
+    # Capture diagnostics are not a user-facing block reason; omit on Cursor.
+    return result
 
 
 def home():
@@ -449,9 +528,14 @@ def detached_flush(key):
     subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "_flush-session", key], **kwargs)
 
 
-def hook(event, payload):
+def hook(event, payload, platform="claude"):
     output = {}
     context = []
+    event = normalize_event_name(event)
+    payload = normalize_payload(payload)
+    # Cursor's beforeSubmitPrompt cannot inject context (cursor.com/docs/hooks), so skip the
+    # recall round-trip there; capture still runs. sessionStart is where Cursor injects.
+    inject = platform != "cursor" or event == "SessionStart"
     try:
         config = settings()
         if not config:
@@ -459,7 +543,7 @@ def hook(event, payload):
         if event not in EVENTS:
             raise MemoryError("unsupported memory lifecycle event")
         key = session_key(config, payload)
-        delivery_id = payload.get("tool_use_id") or payload.get("event_id") or payload.get("turn_id")
+        delivery_id = payload.get("tool_use_id") or payload.get("event_id") or payload.get("turn_id") or payload.get("generation_id")
         if event == "SessionStart":
             sweep_acknowledged(exclude={key})
             context.append("AgentleFS lifecycle memory is enabled for /" + "/".join(config["folder"]) + ". Captured session events are saved through your configured identity and folder permissions.")
@@ -471,26 +555,33 @@ def hook(event, payload):
             prompt = payload.get("prompt", "")
             if not isinstance(prompt, str):
                 raise MemoryError("hook prompt is not text")
-            anchor = restore_anchor(key)
-            if anchor:
-                context.append(anchor)
+            if inject:
+                anchor = restore_anchor(key)
+                if anchor:
+                    context.append(anchor)
             enqueue(config, key, event, prompt, delivery_id)
-            try:
-                recalled = recall(config, prompt) if prompt.strip() else ""
-            except MemoryError as error:
-                recalled = ""
-                output["systemMessage"] = "AgentleFS memory: " + str(error)
-            if recalled:
-                context.append(recalled)
+            if inject:
+                try:
+                    recalled = recall(config, prompt) if prompt.strip() else ""
+                except MemoryError as error:
+                    recalled = ""
+                    output["systemMessage"] = "AgentleFS memory: " + str(error)
+                if recalled:
+                    context.append(recalled)
             flush_matching(config, key, 2.0)
         elif event == "PostToolUse":
             tool = str(payload.get("tool_name", ""))
             # Retrieval itself must not become a new memory copy or feedback loop.
-            if "agentlefs" not in tool.lower() and "mcp__afs__" not in tool.lower() and "memory_hooks" not in str(payload.get("tool_input", "")):
+            if not is_afs_tool(tool) and "memory_hooks" not in str(payload.get("tool_input", "")):
                 enqueue(config, key, event, redact({"tool": tool, "input": payload.get("tool_input"), "response": payload.get("tool_response")}), delivery_id)
                 flush_session(config, key, 2.0)
         elif event == "Stop":
-            text = assistant_text(payload)
+            # On Cursor, afterAgentResponse owns the assistant-text capture (stop's payload has
+            # no last_assistant_message). Avoid a second copy from the transcript on stop.
+            if platform == "cursor" and not isinstance(payload.get("last_assistant_message"), str):
+                text = ""
+            else:
+                text = assistant_text(payload)
             if text:
                 enqueue(config, key, event, text, delivery_id)
             flush_session(config, key, 2.0)
@@ -505,9 +596,9 @@ def hook(event, payload):
         output["systemMessage"] = "AgentleFS memory: " + str(error)
     except Exception:
         output["systemMessage"] = "AgentleFS memory: local hook failed; queued events are retained"
-    if context and event in {"SessionStart", "UserPromptSubmit"}:
+    if context and event in {"SessionStart", "UserPromptSubmit"} and inject:
         output["hookSpecificOutput"] = {"hookEventName": event, "additionalContext": "\n\n".join(context)}
-    return output
+    return render_hook_output(output, event, platform)
 
 
 def main(argv=None):
@@ -522,7 +613,9 @@ def main(argv=None):
     worker = commands.add_parser("_flush-session")
     worker.add_argument("session")
     hooks = commands.add_parser("hook")
-    hooks.add_argument("event", nargs="?", choices=sorted(EVENTS))
+    hooks.add_argument("event", nargs="?", choices=sorted(EVENTS) + sorted(EVENT_ALIASES))
+    hooks.add_argument("--platform", choices=PLATFORMS, default="claude",
+                       help="Host output envelope: claude (hookSpecificOutput) or cursor (additional_context).")
     args = parser.parse_args(argv)
     try:
         if args.command == "configure":
@@ -550,7 +643,8 @@ def main(argv=None):
             payload = json.loads(raw)
             if not isinstance(payload, dict):
                 raise MemoryError("hook input must be a JSON object")
-            print(json.dumps(hook(args.event or payload.get("hook_event_name", ""), payload), ensure_ascii=False))
+            event = args.event or payload.get("hook_event_name", "")
+            print(json.dumps(hook(event, payload, platform=args.platform), ensure_ascii=False))
         else:
             config = settings()
             if args.command == "status":

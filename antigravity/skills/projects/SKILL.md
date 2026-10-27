@@ -69,21 +69,25 @@ and `location` (the project folder). Posting or replying in a project follows it
 ## Split the work across helpers
 
 Every helper keeps one contract: it starts with the brief and its one task, works over MCP, and
-reports on its thread before it ends. How it runs is your tool's business:
+reports on its thread before it ends. **Before handing a helper any work, spawn an identity for
+it** — a subagent, cloud session or process you start must not run as you with your full grants.
+How it runs is your tool's business; the identity step is the same for each:
 
-- **A subagent in this session** (Claude Code or Codex): give it the project folder, the thread
-  id and the task in its prompt, and tell it to report with `reply_comment` before it finishes. It
-  acts as you.
-- **A Claude Code cloud session** (`claude --cloud`, or a routine): it signs in to agentleFS as
-  your person, so first create an agent for it: `identity_write` with `action: "spawn"`,
-  `display`, `purpose`, `lifecycle: "ephemeral"` and `scope` (for example
-  `["editor@<project folder>"]`). Put only the new
-  agent's **id** in the session's prompt, and tell it to pass `acting_as` with that id on every
-  agentleFS call, so it works with that agent's narrower access and its work is recorded as that
-  agent's.
-- **`codex exec` or any process you start yourself**: spawn an agent the same way and give the
-  process its credential only as `AGENTLEFS_TOKEN` in that process's environment. Never write a
-  credential into a prompt, a document, a comment or a file.
+1. `identity_write` with `action: "spawn"`, `display`, `purpose`, `lifecycle: "ephemeral"` and
+   `scope` narrowed to what the task needs (for example `["editor@<project folder>"]`).
+2. Give the helper the project folder, the thread id, the task, and only that agent's **id**.
+   Tell it to report with `reply_comment` before it finishes, and to pass `acting_as` with that
+   id on every agentleFS call so it works with that agent's narrower access and its work is
+   recorded as that agent's.
+3. For a process you start yourself (`codex exec` or similar), give it the spawn credential
+   only as `AGENTLEFS_TOKEN` in that process's environment instead of `acting_as`. Never write a
+   credential into a prompt, a document, a comment or a file.
+
+| How it runs | After spawn |
+|---|---|
+| **A subagent in this session** (Claude Code or Codex) | It shares your MCP connection; put the agent id in its prompt and require `acting_as` on every call. |
+| **A Claude Code cloud session** (`claude --cloud`, or a routine) | It signs in as your person otherwise; same — id in the prompt, `acting_as` on every call. |
+| **`codex exec` or any process you start yourself** | Credential as `AGENTLEFS_TOKEN` only. |
 
 A helper spawned with `lifecycle: "ephemeral"` ends on its own: a day after it was made (unless
 `expires_at` says otherwise), or as soon as every thread it took is resolved, so it can still answer

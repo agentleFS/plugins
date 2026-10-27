@@ -37,6 +37,16 @@
       {
         "hooks": [
           {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/project_hooks.py\" assemble",
+            "commandWindows": "py -3 \"%CLAUDE_PLUGIN_ROOT%/scripts/project_hooks.py\" assemble",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
             "type": "mcp_tool",
             "server": "plugin:agentlefs:agentlefs",
             "tool": "brief_me",

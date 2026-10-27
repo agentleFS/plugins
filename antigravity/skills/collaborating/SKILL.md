@@ -1,6 +1,6 @@
 ---
 name: collaborating
-description: Coordinate with other agents and people through agentleFS (afs). Use when the user wants to make sure no other agent edits a document or section at the same time, asks another agent or teammate something and wants to wait for the answer, wants to send a finding, request, handoff or commitment, wants to be told when a document, folder or truth changes, wants a shared space with another team's agent in the same organization that does not expose either side's private documents, or wants to spawn, list or retire a helper agent with narrower access than their own.
+description: Coordinate with other agents and people through agentleFS (afs). Use when the user wants to make sure no other agent edits a document or section at the same time, asks another agent or teammate something and wants to wait for the answer, wants to send a finding, request, handoff or commitment, wants to be told when a document, folder or truth changes, wants a shared space with another team's agent in the same organization that does not expose either side's private documents, or wants to spawn, list or retire a helper agent with narrower access than their own. For multi-agent / swarm work that should use waits, rooms and typed messages as the board (not ad-hoc chat), also load the swarm-board skill.
 ---
 
 # Working alongside other agents in agentleFS
@@ -16,6 +16,12 @@ Reads are `read`, `browse` and `access_read`, which change nothing. Writes are
 `message_write` (messages, comments, rooms), `coordination_write` (claims, waits,
 subscriptions, cursors, truths) and `identity_write` (helper agents, your card, a fresh
 session); ending an agent is `access_revoke`.
+
+**Multi-agent board.** When more than one agent is in play (spawned helpers, another
+person's agent, cron or intermittent heads), follow the `swarm-board` skill: register
+`wait: true` on asks, use `handoff` / `commitment` for work transfer, open a **room** across
+chains, and treat `brief_me` waits as the board — do not rebuild the same state in chat or
+prose task docs. This file is the tool reference; that skill is the soft recipe.
 
 ## Who is who
 
@@ -41,8 +47,11 @@ either has edited rather than after.
    `action: "renew"` for a long job, and release it when you are done:
    `{"action": "release", "claim_id": "…"}`. An unrenewed claim simply expires.
 
-`browse` with `action: "claims"` shows your open claims; `brief_me` shows them too, along
-with other agents' claims that overlap yours.
+`browse` with `action: "claims"` shows your open claims. Pass `location` or `node` to peek
+open claims **on that readable target** (overlap suggestion for assembly — who holds it,
+intent, until); a target you cannot read answers not-found. `brief_me` still lists your
+claims and other agents' claims that overlap yours. Overlap peeks never auto-merge or
+block; colliding writes stay refused at the claim door.
 
 ## Asking, telling, handing off: `message_write` with `action: "send"`
 
@@ -170,15 +179,23 @@ Address an agent by its handle as `@handle`.
 
 ## A helper agent with narrower access
 
+**Spawn before you hand work off.** A subagent, cloud session, `codex exec` process or other
+helper must not run as this session's person with full grants. Create its identity first, then
+give it only that identity's id (or credential) and the task — it acts as that agent, not as
+you. The `projects` skill's "Split the work across helpers" covers how each runner uses the
+identity (`acting_as` on a shared connection, or `AGENTLEFS_TOKEN` in a process you start).
+
 `identity_write` with `action: "spawn"`, `display` (its name), `purpose`, and `scope` — a
 list of `role@location`, for example `["viewer@docs"]` for read-only on the `docs` folder, or
 `editor@specs/api.md` for one document. A child can never hold more than its parent, and
-`expires_at` can bound it in time.
+`expires_at` can bound it in time. For a short-lived helper, add `lifecycle: "ephemeral"`.
 
-The answer carries the child's first access and refresh tokens, shown once. Spawning does not
-start a process; it creates the identity whatever runs the helper will use. Give the
-credentials to the user for that purpose and never write them into a document, a message or
-a file — they are a credential. For a headless helper that cannot run a refresh flow, add
+The answer carries the child's id and its first access and refresh tokens, shown once.
+Spawning does not start a process; it creates the identity whatever runs the helper will use.
+Put the child's **id** in the helper's prompt and tell it to pass `acting_as` with that id on
+every agentleFS call when it shares this connection. Give the credentials to the user only
+when a process needs its own sign-in, and never write them into a document, a message or a
+file — they are a credential. For a headless helper that cannot run a refresh flow, add
 `bootstrap_key: true` for a long-lived key bound to the child, which dies when the child is
 retired.
 

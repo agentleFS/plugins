@@ -14,6 +14,26 @@ One store. People and agents same folders. Each agent see only what its human le
 
 Browser open. Sign in. Done.
 
+## Connected, but the wrong account or Organization
+
+Working connection can still be wrong Organization or wrong email. No error — store just look almost empty. Same how-to at https://agentlefs.com/docs/connect and in the `connection` skill.
+
+**Organization (same email).** Clear client auth, authenticate again, pick Organization in Clerk consent dropdown.
+
+**Email.** Sign out of agentleFS in browser first (https://agentlefs.com → Sign out), then clear client auth and authenticate again. Consent page has no account switcher (#1267 would fix that).
+
+| Client | Steps | Status |
+|---|---|---|
+| Claude Code | `/mcp` → agentlefs → Clear authentication → Authenticate | Verified |
+| Claude Desktop / Claude (web) | Disconnect connector, reconnect | Unverified |
+| Codex CLI | `codex mcp login agentlefs` again (or remove server and re-add) | Unverified |
+| Codex app | Settings → MCP servers → remove, then Add / Authenticate | Unverified |
+| Gemini CLI | `/mcp auth agentlefs` again; sign out in browser if session sticks | Unverified |
+| ChatGPT (custom MCP) | Remove plugin, add server with OAuth again | Unverified |
+| Cursor | MCP settings → clear auth → re-authenticate | Unverified |
+
+Then `browse` with `action: "folders"` to prove which Organization you reached.
+
 ## Commands
 
 | Command | Do |
@@ -38,20 +58,26 @@ Claude pick these when need.
 | `shared-truths-and-lessons` | Team facts. Lessons. Dead ends. |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `collaborating` | Agents message, claim work, wait. |
+| `swarm-board` | Multi-agent / swarm soft recipes: waits, rooms, typed handoffs as the board (not ad-hoc chat). |
 | `catch-up` | What changed. What wait on you. |
+| `proactive-assembly` | Unnamed work ask: soft entry mode + ranked cited context packet (projects, docs, asks, write-back). Suggestions only. |
+| `entry-mode-playbooks` | Soft recipes for `lost` / `ui` / `bug` / `feature` (assemble steps, caps, write-back checklist, done-when). Loaded by proactive-assembly; skippable. Not a wizard. |
+| `writeback-loop` | Guided write-back before stop: commit findings/docs/comments to suggested targets (soft checklist; human may skip). Product form of auto-writeback. |
 | `sources` | Connect GitHub, Google Drive. |
 | `connection` | Fix sign-in trouble. |
 | `authorization-model` | Why agent see what it see. |
 | `memory` | Set up automatic recall and session capture, check pending saves, or disable it. |
 | `projects` | Start a project with other people and their agents. Post, take, report work. Split it across helpers. |
+| `github-issue-bridge` | Bind a GitHub issue to an afs folder or document; post a safe pointer on the issue, never ACL-gated prose. |
 
 ## Automatic memory
 
-Claude Code and local Codex sessions can run the bundled lifecycle hooks. After
-you configure a save folder and hook credential, the plugin recalls relevant
-memory before each prompt and captures prompts, tool traces, and assistant
-responses automatically. Python 3.9 or newer is required; no Python packages are
-installed. Hosts without command hooks can continue using the MCP tools and skills.
+Claude Code, local Codex, and Cursor sessions can run the bundled lifecycle hooks.
+After you configure a save folder and hook credential, the plugin recalls relevant
+memory where the host allows injection and captures prompts, tool traces, and
+assistant responses automatically. Python 3.9 or newer is required; no Python
+packages are installed. Hosts without command hooks can continue using the MCP
+tools and skills.
 
 ```sh
 # AGENTLEFS_TOKEN is an agent credential supplied by your environment.
@@ -59,18 +85,19 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" configure --folder "engi
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" status
 ```
 
-Use the installed plugin's absolute path if your shell has no `CLAUDE_PLUGIN_ROOT`.
-On Codex, review and trust the hooks through the host's hook controls; plugin
-installation alone does not trust them. The `memory` skill walks through setup.
+Use the installed plugin's absolute path if your shell has no `CLAUDE_PLUGIN_ROOT`
+(Cursor supplies `CURSOR_PLUGIN_ROOT` instead). On Codex, review and trust the hooks
+through the host's hook controls; plugin installation alone does not trust them.
+The `memory` skill walks through setup.
 
-| Event | Behavior |
-|---|---|
-| `SessionStart` | Restore the local checkpoint and retry pending saves. |
-| `UserPromptSubmit` | Stage the prompt locally and retrieve relevant memory with citations. |
-| `PostToolUse` | Stage a bounded tool trace and attempt delivery. |
-| `Stop` | Capture the assistant response and attempt delivery. |
-| `PreCompact` | Persist a checkpoint for restoration after compaction. |
-| `SessionEnd` | Persist the final checkpoint and start a detached delivery attempt. |
+| Event (Claude / Codex) | Cursor | Behavior |
+|---|---|---|
+| `SessionStart` | `sessionStart` | Restore the local checkpoint and retry pending saves; inject that memory is enabled. |
+| `UserPromptSubmit` | `beforeSubmitPrompt` | Stage the prompt locally. Claude/Codex also retrieve memory with citations; Cursor cannot inject on this hook, so recall is skipped there. |
+| `PostToolUse` | `postToolUse` | Stage a bounded tool trace and attempt delivery. |
+| `Stop` | `afterAgentResponse` + `stop` | Capture the assistant response (Cursor: from `afterAgentResponse`) and attempt delivery. |
+| `PreCompact` | `preCompact` | Persist a checkpoint for restoration after compaction. |
+| `SessionEnd` | `sessionEnd` | Persist the final checkpoint and start a detached delivery attempt. |
 
 Capture starts only after setup. Hooks use the same `AGENTLEFS_URL` and
 `AGENTLEFS_TOKEN` conventions as the CLI, with the hosted MCP endpoint as the
@@ -106,19 +133,24 @@ packages with hooks, and cloud orchestration does not run these command hooks.
 
 A project is a folder marked as one: its brief is the folder's `AGENTS.md`, its
 conversation is the folder's discussion, and whoever can read the folder is a
-member. The `projects` skill starts one and runs it. Four hooks keep agents on
-it, with no setup and no credential of their own:
+member. The `projects` skill starts one and runs it. Hooks keep agents on it,
+with no setup and no credential of their own:
 
 | Event | Hook |
 |---|---|
-| `SessionStart` | Name the session's git repository, so the agent can ask `brief_me` for the projects that cover it. No network call. |
-| `UserPromptSubmit` | Call `brief_me` with `only: "projects"` over the session's own agentleFS connection, and add what moved in its projects. Nothing when nothing did. |
-| `Stop`, `SubagentStop` | An agent that took a project thread on and did not report it is sent back once to report. Read from the session's transcript; no network call. |
-| `PostToolUse` | A session that coordinates helpers or other people through agentleFS (spawning, asking for work, posting on a folder) twice without a project is told once that it could be one. From the transcript; no network call. |
+| `SessionStart` | Name the session's git repository, so the agent can ask `brief_me` for the projects that cover it, and remind it to run `proactive-assembly` when the first task names no project. No network call. |
+| `UserPromptSubmit` | Call `brief_me` with `only: "projects"` over the session's own agentleFS connection, and add what moved in its projects. Nothing when nothing did. Also, when the prompt looks like an unnamed work ask (lost / UI / bug / feature), infer a soft entry mode and inject a short `proactive-assembly` reminder to return a ranked cited context packet (suggestions only; skipped when a project is already named). Pattern match only; no network; no mode picker. |
+| `Stop`, `SubagentStop` | An agent that took a project thread on and did not report it is sent back once to report. Else, when assembly suggested write-back and nothing durable was written, sent back once with the guided `writeback-loop` checklist (soft recipe; human may skip). Read from the session's transcript; no network call. |
+| `PostToolUse` | A session that coordinates helpers or other people through agentleFS (spawning, asking for work, posting on a folder) twice without a project is told once that it could be one. The same hook tips once toward `swarm-board` when multi-agent sends/spawns happen without a wait or room. From the transcript; no network call. |
 
 Claude Code and Codex read separate hook files (`hooks/hooks.json`,
 `hooks/codex-hooks.json`) because they name the plugin's server differently in
-an `mcp_tool` hook; the two files are otherwise the same.
+an `mcp_tool` hook; the two files are otherwise the same. Cursor reads
+`hooks/cursor-hooks.json` (camelCase events, flat `command` hooks, `--platform cursor`).
+Cursor has no `mcp_tool` hook type and cannot inject on `beforeSubmitPrompt`, so the
+per-prompt `brief_me only=projects` call and the `assemble` reminder stay
+Claude/Codex-only; `sessionStart` still names the repository and the unnamed-task
+reminder so the agent can ask `brief_me` / run `proactive-assembly` itself.
 
 ## Agents
 

@@ -1,4 +1,66 @@
 {
   "version": 1,
-  "hooks": {}
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 15
+      },
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/project_hooks.py\" session-start --platform cursor",
+        "timeout": 5
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 15
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 10
+      },
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/project_hooks.py\" nudge --platform cursor",
+        "matcher": "message_write|identity_write",
+        "timeout": 5
+      }
+    ],
+    "afterAgentResponse": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 10
+      }
+    ],
+    "stop": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 10
+      },
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/project_hooks.py\" stop --platform cursor",
+        "timeout": 5
+      }
+    ],
+    "preCompact": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 10
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/memory_hooks.py\" hook --platform cursor",
+        "timeout": 3
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/project_hooks.py\" stop --platform cursor",
+        "timeout": 5
+      }
+    ]
+  }
 }

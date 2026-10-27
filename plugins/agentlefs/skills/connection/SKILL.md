@@ -1,6 +1,6 @@
 ---
 name: connection
-description: How this client signs in to the agentleFS (afs) MCP server, and how to diagnose that connection. Use when agentleFS tools are unavailable, return 401, 404, or auth errors; when the user asks how to set up, sign in to, or authenticate this client with agentleFS; when the connection succeeds but returns no folders; when configuring a self-hosted endpoint; or when setting up headless/CI access. Also use before concluding that agentleFS is broken. Syncing GitHub or Google Drive content into afs is the sources skill, not this one.
+description: How this client signs in to the agentleFS (afs) MCP server, and how to diagnose that connection. Use when agentleFS tools are unavailable, return 401, 404, or auth errors; when the user asks how to set up, sign in to, or authenticate this client with agentleFS; when the connection succeeds but returns no folders or reaches the wrong Organization or email; when configuring a self-hosted endpoint; or when setting up headless/CI access. Also use before concluding that agentleFS is broken. Syncing GitHub or Google Drive content into afs is the sources skill, not this one.
 ---
 
 # agentleFS connection
@@ -84,13 +84,37 @@ Only a successful tool call proves a working connection. Call `browse` with `act
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
 | Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `access_grant` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
+| Connected, but the wrong account or Organization | Browser session is a different email, or the consent page's Organization was left at its default | See **Switching Organization or email** below. Same email, wrong Organization: clear the client's auth and re-authenticate, then pick the Organization in Clerk's consent dropdown. Wrong email: sign out of agentleFS in the browser first, then clear auth and re-authenticate (consent has no account switcher; #1267 would remove that step). |
 | Connected, folder looks nearly empty | Content is gated from this principal | Expected. Denied reads exactly like not-found. |
 | `how="meaning"` silently searched by text | Deployment has no vector index | Check `vectorIndex` in `/healthz`. Degradation is intentional. |
 | Tools are absent from `/mcp` entirely | Plugin not enabled, or the server is unreachable | Check plugin state, then `/healthz` |
 | A read errored instead of returning fewer rows | Fail-closed: a truncated allow-set throws | Surface it. The system refused to under-report. |
+
+## Switching Organization or email
+
+A working connection can still be the wrong one: the wrong Organization under the same email, or a different email entirely. There is no error either way — `browse` just shows that principal's reach, which can look almost empty. The same steps live at https://agentlefs.com/docs/connect and in the plugin README.
+
+**Organization (same email).** Clear the client's stored authentication and authenticate again. On Clerk's consent page, pick the Organization from the dropdown. Fred confirmed on 2026-10-17 that the dropdown appears (default DCR scopes include `user:org:read`).
+
+**Email.** Sign out of agentleFS in the browser first (https://agentlefs.com → account menu → Sign out), then clear the client's authentication and authenticate again. The consent page has no account switcher (Fred, 2026-10-17), and production Clerk reports `single_session_mode: true`, so the browser keeps the previous session until you sign out. #1267 (a consent page with an account dropdown) would remove this browser sign-out step when it ships.
+
+### Per client
+
+| Client | Steps | Status |
+|---|---|---|
+| Claude Code | `/mcp` → agentlefs → Clear authentication → Authenticate | Verified (Fred, 2026-10-17) |
+| Claude Desktop / Claude (web) | Disconnect the connector, then reconnect and complete the browser flow | Unverified |
+| Codex CLI | Re-run `codex mcp login agentlefs` (for a stuck session, remove the server from Codex's MCP config and add it again) | Unverified |
+| Codex app | Settings → MCP servers → remove or disconnect agentlefs, then Add server / Authenticate again | Unverified |
+| Gemini CLI | `/mcp auth agentlefs` again — unclear whether it forces a fresh consent; if the wrong session sticks, sign out in the browser first | Unverified |
+| ChatGPT (custom MCP) | Remove the custom MCP plugin, add the server again with OAuth, complete the browser flow | Unverified |
+| Cursor | MCP settings → agentlefs → disconnect / clear auth, then re-authenticate | Unverified |
+
+For an email switch, do the browser sign-out **before** the client's clear/re-auth step in every row above. After either switch, prove the new principal with `browse` action `folders` — only a successful tool call shows what you reached.
 
 ## Avoid
 
 - Calling a console API endpoint from an agent context. The console API accepts only a browser session, so an OAuth or `afs_` credential gets a 401 every time. For anything needing the cross-principal view, deep-link the person to `https://agentlefs.com`.
 - Diagnosing "connected but empty" as a broken connection. It is an authorization outcome, and saying so correctly is the difference between a useful answer and a wasted hour.
 - Concluding the store is empty from an empty view. See the `authorization-model` skill.
+- Treating a nearly empty store as "no content" without checking whether this connection is the wrong Organization or email (row above).

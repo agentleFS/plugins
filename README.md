@@ -57,10 +57,14 @@ Once you're in, `/agentlefs:connect` verifies with a real call and tells you whi
 you're in: connected and granted, connected but reaching nothing, or not signed in. Those
 three need completely different fixes.
 
-### Copy-paste: fill the store
+### Fill an empty store: `/agentlefs:seed`
 
-New store with nothing in it? Semantic search works, but it has nothing to search. Paste
-this to seed it from what your agent already learned about your project:
+New store with nothing in it? Semantic search works, but it has nothing to search.
+Run **`/agentlefs:seed`** — it asks where to write, then fills the store from what
+your agent already learned about your project. Prefer the command over pasting the
+prompt by hand.
+
+If you are not on Claude Code (no slash commands), paste this instead:
 
 ```
 Use agentleFS as our team's long-term memory. Call browse with action folders to
@@ -96,7 +100,11 @@ Also included, and triggered by what you ask rather than by a slash command:
 |---|---|
 | `documents` | You ask what your team has written down, or want a doc opened, saved, edited or commented on — with the typed search that cites every hit |
 | `catch-up` | You ask to be caught up, or refer to ongoing work as though the agent should already know — the same ground as `/agentlefs:catch-up`, without having to ask for it |
+| `proactive-assembly` | An implement/fix/build/UI/lost ask names no project — soft entry mode + ranked cited context packet (projects, docs, asks, write-back), suggestions only |
+| `entry-mode-playbooks` | Soft recipes for lost / ui / bug / feature (assemble steps, caps, write-back checklist, done-when); loaded by proactive-assembly; skippable — not a wizard |
+| `writeback-loop` | Guided write-back before stop — commit findings/docs/comments to suggested targets (soft checklist; human may skip) |
 | `collaborating` | Another agent is involved: claiming a section before editing, asking and waiting for an answer, being told when a doc changes, a shared room with another team's agent, or a helper agent with narrower access |
+| `swarm-board` | Multi-agent / swarm work should use waits, rooms, and typed handoffs as the board — soft recipes (especially under cron), not ad-hoc chat |
 | `shared-truths-and-lessons` | You want a decision or fact recorded with its evidence, want to push back on one, want a lesson or dead end kept so nobody repeats it, or want a skill from the public registry |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `sharing` | You share something, need access you lack, have requests to approve, ask who (or which agent) can see something, or offer a folder to another organization |
@@ -105,16 +113,27 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `deleting` | Something is about to be removed, restored or permanently erased, and the blast radius needs saying out loud first |
 | `authorization-model` | Anything turns on who can read what, or a result comes back thinner than expected |
 | `connection` | The tools are missing, returning 401, or connected but reaching nothing |
+| `memory` | You want automatic recall and session capture set up, checked, or turned off |
+| `projects` | You want to start a project, see what is open, take or report work, or split it across helpers |
+| `github-issue-bridge` | You want a GitHub issue bound to an afs folder or document (safe pointer on the issue, never ACL-gated prose) |
 
 Plus two agents: `context-researcher` for grounded retrieve-and-cite work, and
 `access-reviewer` for read-only access review — read-only by tool allowlist rather than
 by instruction.
 
-**Self-hosted?** The endpoint is a single literal line in
-`plugins/agentlefs/.mcp.json` - point it at your own host (keeping the `/mcp`
-path) and load the directory with `claude --plugin-dir`. It is deliberately not a
-templated value, because the interpolation Claude Code supports is not portable to
-other agents and produced a server that silently never connected.
+**Self-hosted?** The marketplace plugin hardcodes `https://mcp.agentlefs.com/mcp`,
+so installing it against your own deployment would connect to the hosted host and
+show an empty workspace you cannot explain. Use `claude mcp add` with your
+endpoint instead:
+
+```
+claude mcp add --transport http --scope user agentlefs https://<your-mcp-host>/mcp
+```
+
+A local checkout can still load `claude --plugin-dir` after you edit the one
+literal URL line in `plugins/agentlefs/.mcp.json` (kept literal on purpose —
+`${…}` interpolation is not portable across agents and produced a server that
+silently never connected).
 
 ## Codex
 
@@ -181,9 +200,11 @@ server without the skills.
 
 Same package, same marketplace repository, same browser sign-in. Cursor reads
 `.cursor-plugin/plugin.json` and the root `.cursor-plugin/marketplace.json`, and loads
-the shared `skills/`, `agents/`, `commands/` and `.mcp.json`. Lifecycle memory hooks stay
-Claude Code / Codex for now: Cursor's hook schema differs, so the Cursor manifest points
-at an empty `hooks/cursor-hooks.json` rather than Claude's file.
+the shared `skills/`, `agents/`, `commands/` and `.mcp.json`. Lifecycle hooks live in
+`hooks/cursor-hooks.json` (Cursor's camelCase schema); they capture memory and name the
+session's repository. Two Claude/Codex behaviours have no Cursor equivalent today:
+`mcp_tool` project briefs on each prompt, and injecting recalled memory into
+`beforeSubmitPrompt` (that hook can only allow or block).
 
 **1. Add the marketplace.** In Cursor, open **Dashboard → Plugins & MCPs → Team Marketplaces →
 Add Marketplace → Import from Repo**, and paste:
