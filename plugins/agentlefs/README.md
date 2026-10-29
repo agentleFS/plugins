@@ -20,7 +20,7 @@ Working connection can still be wrong Organization or wrong email. No error — 
 
 **Organization (same email).** Clear client auth, authenticate again, pick Organization in Clerk consent dropdown.
 
-**Email.** Sign out of agentleFS in browser first (https://agentlefs.com → Sign out), then clear client auth and authenticate again. Consent page has no account switcher (#1267 would fix that).
+**Email.** Clear client auth and authenticate again. On the consent page click **Use another account**, sign in as the intended email, then Allow.
 
 | Client | Steps | Status |
 |---|---|---|
@@ -55,7 +55,7 @@ Claude pick these when need.
 | `sync-conversation-summary` | Write short summary of this chat. 500 words max. Never transcript. Go same folder as last time. |
 | `sharing` | Give access. Ask for access. |
 | `deleting` | Delete. Undo. Erase for good. |
-| `shared-truths-and-lessons` | Team facts. Lessons. Dead ends. |
+| `shared-truths-and-lessons` | Decisions and why: rationale, alternatives, relevant human discussion and evidence in an anchor document, linked to a native AFS truth. Also team facts, lessons and dead ends. No Mandate required. |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `collaborating` | Agents message, claim work, wait. |
 | `swarm-board` | Multi-agent / swarm soft recipes: waits, rooms, typed handoffs as the board (not ad-hoc chat). |

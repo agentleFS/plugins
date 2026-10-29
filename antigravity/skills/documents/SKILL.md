@@ -82,7 +82,13 @@ Where it belongs depends on what it is:
 - **One decision, fact or assumption** the organization should hold, with evidence, is a
   truth; **a lesson or dead end** is knowledge. Both are in the
   `shared-truths-and-lessons` skill, and both are findable and contestable in ways a
-  paragraph is not. A summary that records a decision can offer that as well.
+  paragraph is not. For a decision teammates need to understand later, preserve the
+  concise context, rationale, alternatives/tradeoffs, relevant attributed human questions
+  and answers, evidence, and revisit conditions in its anchor document, then link its
+  decision truth. Use `shared-truths-and-lessons` for that workflow; Mandate is only
+  needed for its separate team ballot flow. Never save hidden chain-of-thought or copy
+  a raw private session into a shared document. A summary that records a decision can
+  offer the truth as well.
 - **This conversation itself**, saved as a record of the session, is the
   `sync-conversation-summary` skill.
 

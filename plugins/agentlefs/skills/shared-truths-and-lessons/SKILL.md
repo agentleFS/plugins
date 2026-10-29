@@ -1,6 +1,6 @@
 ---
 name: shared-truths-and-lessons
-description: Record, check and challenge what an organization holds true, and keep lessons, in agentleFS (afs). Use when the user wants one specific decision, fact or assumption held as the organization's shared truth, with its evidence ("record that we decided Postgres 16 is the minimum"), says a recorded fact or decision is wrong and wants to push back on it, wants a lesson, workflow or dead end written down so nobody repeats it, or asks whether anyone — in their organization or in the public registry — has already shared a skill, workflow or lesson for something, including pulling one in or proposing one of theirs for publication. Not for a summary document of a topic or of several decisions (the documents skill) or saving this conversation (sync-conversation-summary).
+description: Record, check and challenge what an organization holds true, and keep lessons, in agentleFS (afs). Use when the user wants one specific decision, fact or assumption held as the organization's shared truth, with its evidence and rationale ("record that we decided Postgres 16 is the minimum", "why did we choose this approach?", "save why we made this decision"), says a recorded fact or decision is wrong and wants to push back on it, wants a lesson, workflow or dead end written down so nobody repeats it, or asks whether anyone — in their organization or in the public registry — has already shared a skill, workflow or lesson for something, including pulling one in or proposing one of theirs for publication. Not for a summary document of a topic or of several decisions (the documents skill) or saving this conversation (sync-conversation-summary).
 ---
 
 # Truths, lessons and the public registry
@@ -9,14 +9,15 @@ A document says what someone wrote. A **truth** says what the organization holds
 statement, anchored to the document it is about, with evidence, that others can verify,
 contest and supersede. A **knowledge item** is a lesson, dead end, workflow or skill that
 agents rank by how many independent chains found it useful. Both are findable and
-contestable in ways a paragraph in a document is not, which is why a single decision or a
-dead end belongs here rather than in a new file. A summary or write-up of several things is
-a document (the `documents` skill); write both when the user wants both.
+contestable in ways a paragraph in a document is not. A decision truth identifies the choice;
+its anchor document preserves the useful explanation. A summary or write-up of several things
+is a document (the `documents` skill); record decision truths alongside it when requested.
 
 Proposing, accepting, contesting and superseding are `coordination_write` actions;
 reading truths is `browse` (`action: "truths"`) and `read` (`action: "truth"`).
 
-For an item needing team approval or a Mandate team ballot, use the `mandate-ledger`
+Everyday decisions use these native AFS tools without Mandate, a ballot block, or a separate
+credential. For an item needing team approval or a Mandate team ballot, use the `mandate-ledger`
 skill. The AFS-backed Mandate Decisions board reads the same ballot document and
 hash-bound choice truth. Ordinary truth acceptance does not select a ballot option
 or start a harness; a preference is not human acceptance.
@@ -24,6 +25,11 @@ or start a harness; a preference is not human acceptance.
 ## Recording a decision, fact or assumption
 
 1. Find the document it is about — the ADR, the spec, the contract. `search` finds it.
+   Read it and check its existing decision truths before creating a duplicate. If the user
+   wants the reasoning kept and the anchor lacks it, add the decision context below with
+   the `documents` skill. If no anchor exists, create one in the user-selected or already
+   authorized folder before proposing the truth. A new folder is not implied by a request
+   to record a decision.
 2. `coordination_write` with `action: "propose"`, `location` of that document, `kind` (`decision`,
    `fact` or `assumption`), `statement` (one plain sentence), and `evidence` (a list: the
    document's path, commits, URLs, message ids).
@@ -36,6 +42,75 @@ or start a harness; a preference is not human acceptance.
 If you or the user checked it, record how: `action: "verify"` with `id`, `method`,
 `result`, and `rerunnable` (whether someone else could run the same check). A truth with a
 recorded check is what search reports as `verified_truth`.
+
+## Preserve why a decision was made
+
+When asked to record a decision for teammates, keep enough explicit context for another
+person or agent to understand it later. If recording decisions is already authorized for
+the work and destination, capture material decisions there as they are made. Otherwise
+offer to save them; do not silently copy a private session into shared storage.
+
+Use a concise Markdown entry in the anchor document, with a unique decision heading.
+Reuse the existing ADR/spec format when it has equivalent fields:
+
+- **Decision:** the choice, decision maker (human or delegated agent), date, and whether
+  it is proposed or accepted. Do not attribute an agent recommendation to a human.
+- **Context and constraints:** the problem, intended outcome, requirements, and relevant
+  limits that shaped the choice. Separate assumptions from established facts.
+- **Rationale:** a short explanation of the reasons communicated or supported by evidence.
+- **Alternatives and tradeoffs:** credible options considered, why they were declined,
+  and the costs or limitations of the chosen approach. Mark missing information as unknown.
+- **Human questions and answers:** selected relevant questions, clarifications, and answers
+  from the discussion, attributed to their actual speakers. Paraphrase faithfully and
+  distinguish direct user requirements from the agent's interpretation.
+- **Evidence:** links or durable document/commit/message references supporting the choice.
+- **Revisit when:** conditions, unresolved questions, or new evidence that could change it.
+
+For a structured explanation on the native Decisions page, follow the
+[decision context guide and document template](references/decision-context.md).
+It adds one `decision-context` JSON fence with readable title, question, summary,
+reasons, alternatives, human Q&A and revisit conditions. Keep ordinary Markdown
+readable too. Prefer one decision per newly created structured source; do not
+attach a single story to several unrelated decisions. Use the currently connected
+AFS organization and an existing authorized project destination when appropriate;
+the global page aggregates reachable decisions from their source folders. No new
+folder or wider access is implied.
+
+When maintaining work status for an authorized decision, follow the separate
+[execution report guide](references/decision-execution.md). Record actual pickup,
+material progress, waiting questions or blockers, and completion with real output
+evidence in a `decision-execution` companion fence. Its harness, agent and state
+are author-reported; they do not replace recording-client provenance or the
+connected organization's identity. Missing reports mean no execution was recorded,
+not that work never started. Truth acceptance, claim changes and session endings
+do not establish execution state.
+
+Summarize the explicit rationale and relevant discussion. Never request, invent, or save
+hidden chain-of-thought, a raw private transcript, credentials, or unrelated personal context.
+Do not manufacture alternatives, human approval, evidence, or a transcript link that does
+not exist. An access-limited reference does not give the reader access to its contents;
+summarize only context authorized for the destination's audience.
+
+Use `doc_update` with `action: "edit"` and `append` to add an entry to an existing
+document's unique section; use `expected_commit` for edits to existing text. Then propose
+the decision truth at that document's `location`, with a concise `statement` and `evidence`
+pointing to the durable context. Return the `truth:<id>` in the confirmation; do not edit
+the anchor just to add a backlink after proposing, because that would immediately mark its
+recorded source version as changed. If saving the document succeeds but proposing the truth
+fails, report that partial outcome and retry
+only the missing write; do not duplicate the document. Return both the document link and
+truth status so the user knows what was recorded. Accepted truth status records the choice,
+not a team ballot, quorum, or authorization to execute unrelated work.
+
+## Answering “why did we choose this?”
+
+Search the topic and open the anchor document and decision truth. Follow supersession
+links and include any relevant contest or unresolved assumption. Give the choice, the
+recorded rationale, key alternatives/tradeoffs, and conditions for revisiting, with citations.
+Attribute recorded human requirements; label your own inference. If rationale was never
+recorded or is outside this session's reach, say so instead of reconstructing a private
+conversation. A teammate can use this overview to make a new choice; it does not grant
+them authority to change someone else's decision.
 
 ## Disagreeing with one
 

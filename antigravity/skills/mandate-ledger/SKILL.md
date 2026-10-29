@@ -1,6 +1,6 @@
 ---
 name: mandate-ledger
-description: Create or update a team approval request or decision shared with Mandate's Decisions board through agentleFS (afs). Use for "this needs team approval", "put this to the team", "update this Mandate decision", and questions about existing team ballots. Use shared-truths-and-lessons for ordinary facts without a team ballot, documents for write-ups of several decisions, and sharing for access requests.
+description: Create or update a team approval request or decision shared with Mandate's Decisions board through agentleFS (afs). Use for "this needs team approval", "put this to the team", "update this Mandate decision", and questions about existing team ballots. Use shared-truths-and-lessons for everyday decisions and their rationale, facts or assumptions without a team ballot, documents for write-ups of several decisions, and sharing for access requests.
 ---
 
 # Shared team decisions in AFS
@@ -16,6 +16,18 @@ A shared decision has one machine-readable ballot block in its document and a
 proposed or accepted truth describing its state. Read the [record format](references/shared-record.md)
 before writing. An ordinary Markdown note without that format can be shown as a
 legacy read-only record; it is not an actionable ballot.
+
+To make the rationale, alternatives and human questions readable in the native
+AFS Decisions page, also use the
+[decision context guide](../shared-truths-and-lessons/references/decision-context.md).
+Its `decision-context` fence is a separate companion explanation. Keep the canonical
+ballot schema and hashes unchanged; the companion cannot select an option or prove
+approval. Everyday decisions use native decision truths without this ballot workflow.
+For authorized work after a choice, maintain a separate
+[execution report](../shared-truths-and-lessons/references/decision-execution.md)
+bound to that exact ballot hash. Capture real pickup, progress, questions or blockers,
+and completion evidence. The report is author-supplied work status, not an approval
+or a launch receipt; leave Mandate's execution authorization and receipts intact.
 
 ## Read existing decisions and pending requests
 
@@ -71,7 +83,10 @@ work. Filing does not send messages to particular people; message only when auth
 2. Prepare title, context, two to six options with stable ids, summaries and
    tradeoffs, evidence, and optional preference clearly labeled as a recommendation.
    For yes/no approval use approve and defer or decline. Include reviewers or a
-   deadline only when supplied.
+   deadline only when supplied. Capture the explicit rationale and selected human
+   questions in the companion explanation when available. Leave absent answers and
+   decision makers unrecorded rather than inventing them, and keep a pending
+   recommendation distinct from an approved choice.
 3. Format the canonical ballot using the [record format](references/shared-record.md).
    If local execution is available, the bundled Python formatter emits exact MCP
    arguments without connecting to AFS:

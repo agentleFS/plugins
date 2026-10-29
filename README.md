@@ -105,7 +105,7 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `writeback-loop` | Guided write-back before stop — commit findings/docs/comments to suggested targets (soft checklist; human may skip) |
 | `collaborating` | Another agent is involved: claiming a section before editing, asking and waiting for an answer, being told when a doc changes, a shared room with another team's agent, or a helper agent with narrower access |
 | `swarm-board` | Multi-agent / swarm work should use waits, rooms, and typed handoffs as the board — soft recipes (especially under cron), not ad-hoc chat |
-| `shared-truths-and-lessons` | You want a decision or fact recorded with its evidence, want to push back on one, want a lesson or dead end kept so nobody repeats it, or want a skill from the public registry |
+| `shared-truths-and-lessons` | Record everyday decisions with their rationale, alternatives, relevant attributed human discussion and evidence, without Mandate. Also contest facts, keep lessons and dead ends, or find public skills. |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `sharing` | You share something, need access you lack, have requests to approve, ask who (or which agent) can see something, or offer a folder to another organization |
 | `sources` | You want a GitHub repo or Drive folder synced in, a sync checked, or a vote cast for a connector that does not exist yet |
