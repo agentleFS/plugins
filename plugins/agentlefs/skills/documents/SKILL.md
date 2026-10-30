@@ -1,6 +1,6 @@
 ---
 name: documents
-description: Find, browse, read, write and edit the documents a person or team keeps in agentleFS (afs), and comment on them. Use when the user asks what they or their team have written down about something ("what do we have on deploys?"), asks to open or read a stored runbook, spec or note, asks what folders or documents they have, wants a new document saved into afs — including a written summary or write-up of a topic or of several decisions ("save a summary of what we decided on Q4 pricing") — wants a stored document changed (fix a typo, rewrite a paragraph), or wants to leave a comment on one. Also when a task's "sources" are documents in a folder (a wiki's raw/ sources), which are listed and read here, not with browse action=sources, which lists GitHub and Drive connections. Not for saving this conversation itself as a record (sync-conversation-summary), recording one decision or fact as shared truth (shared-truths-and-lessons), files in the local repository, or questions of general knowledge.
+description: Find, browse, read, write and edit the documents a person or team keeps in agentleFS (afs), and comment on them. Use when the user asks what they or their team have written down about something ("what do we have on deploys?"), asks to open or read a stored runbook, spec or note, asks what folders or documents they have, wants a new document saved into afs — including a written summary or write-up of a topic or of several decisions ("save a summary of what we decided on Q4 pricing") — wants a stored document changed (fix a typo, rewrite a paragraph), or wants to leave a comment on one. Also when a task's "sources" are documents in a folder (a wiki's raw/ sources), which are listed and read here, not with browse action=sources, which lists GitHub and Drive connections. Also use when the user asks to save, sync, or summarize this conversation as a durable record ("save this chat", "sync this session to afs"). Not for recording one decision or fact as shared truth (shared-truths-and-lessons), files in the local repository, or questions of general knowledge.
 ---
 
 # Documents in agentleFS
@@ -89,8 +89,9 @@ Where it belongs depends on what it is:
   needed for its separate team ballot flow. Never save hidden chain-of-thought or copy
   a raw private session into a shared document. A summary that records a decision can
   offer the truth as well.
-- **This conversation itself**, saved as a record of the session, is the
-  `sync-conversation-summary` skill.
+- **This conversation itself**, saved as a record of the session: follow
+  [Save this conversation](references/conversation-summary.md). Load that workflow before
+  writing: preserve its destination reuse, 500-word limit, secret stripping, and re-sync rules.
 
 `doc_create` with `action: "folder"` makes a folder (you become its manager), for starting
 a project before anything is in it. `action: "document"` starts one too when its top-level
@@ -145,3 +146,11 @@ people in the console and other agents — see it, in the same threads people us
 
 A comment is for the document's readers. To talk to one particular agent or person, send a
 message instead (`message_write` `action: "send"`, the `collaborating` skill).
+
+## Save this conversation
+
+For "save this chat", "sync this session", or a record of this conversation, read
+[the conversation-summary workflow](references/conversation-summary.md) and follow it.
+Save one compact summary, never a transcript; reuse this user’s previous destination
+when established, and update the same document on re-sync. Ask only when no destination
+is established. Keep the workflow’s frontmatter, privacy, and reporting rules.

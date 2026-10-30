@@ -98,7 +98,7 @@ Also included, and triggered by what you ask rather than by a slash command:
 
 | Skill | Fires when |
 |---|---|
-| `documents` | You ask what your team has written down, or want a doc opened, saved, edited or commented on — with the typed search that cites every hit |
+| `documents` | You ask what your team has written down, or want a doc opened, saved, edited or commented on — with the typed search that cites every hit; also save or re-sync a compact summary of this conversation |
 | `catch-up` | You ask to be caught up, or refer to ongoing work as though the agent should already know — the same ground as `/agentlefs:catch-up`, without having to ask for it |
 | `proactive-assembly` | An implement/fix/build/UI/lost ask names no project — soft entry mode + ranked cited context packet (projects, docs, asks, write-back), suggestions only |
 | `entry-mode-playbooks` | Soft recipes for lost / ui / bug / feature (assemble steps, caps, write-back checklist, done-when); loaded by proactive-assembly; skippable — not a wizard |
@@ -108,14 +108,12 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `shared-truths-and-lessons` | Record everyday decisions with their rationale, alternatives, relevant attributed human discussion and evidence, without Mandate. Also contest facts, keep lessons and dead ends, or find public skills. |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `sharing` | You share something, need access you lack, have requests to approve, ask who (or which agent) can see something, or offer a folder to another organization |
-| `sources` | You want a GitHub repo or Drive folder synced in, a sync checked, or a vote cast for a connector that does not exist yet |
-| `sync-conversation-summary` | You want a compact summary of this session saved to the store as a durable document |
+| `sources` | You want a GitHub repo or Drive folder synced in, a sync checked, or a vote cast for a connector that does not exist yet; also bind GitHub issues and post safe pointers |
 | `deleting` | Something is about to be removed, restored or permanently erased, and the blast radius needs saying out loud first |
 | `authorization-model` | Anything turns on who can read what, or a result comes back thinner than expected |
 | `connection` | The tools are missing, returning 401, or connected but reaching nothing |
 | `memory` | You want automatic recall and session capture set up, checked, or turned off |
 | `projects` | You want to start a project, see what is open, take or report work, or split it across helpers |
-| `github-issue-bridge` | You want a GitHub issue bound to an afs folder or document (safe pointer on the issue, never ACL-gated prose) |
 
 Plus two agents: `context-researcher` for grounded retrieve-and-cite work, and
 `access-reviewer` for read-only access review — read-only by tool allowlist rather than

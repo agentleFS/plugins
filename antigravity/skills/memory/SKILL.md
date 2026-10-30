@@ -78,7 +78,7 @@ other team documents.
 
 Automatic captures are bounded event records, not model-generated summaries.
 Common credentials are redacted, but arbitrary secrets in prose cannot all be
-recognized. Do not claim otherwise. The sync-conversation-summary skill still
+recognized. Do not claim otherwise. The documents skill’s save-this-conversation workflow still
 writes a deliberate compact summary when the user asks for one.
 
 Session-end delivery is best effort. Earlier hooks checkpoint locally, and later

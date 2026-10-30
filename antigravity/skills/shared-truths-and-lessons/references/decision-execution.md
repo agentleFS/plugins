@@ -5,6 +5,12 @@ doing about it. Acceptance is not pickup, progress, completion or authorization
 for a separate action. Use this companion only for work within the user's
 authorized scope; it does not grant authority to execute a decision.
 
+For an explicit selected proposal handed to a harness, follow the
+[decision pickup workflow](decision-pickup.md): a ready work brief is claimed,
+re-read, and changed to a confirmed working report before the executor acts.
+`readyForPickup` and `workBrief` belong in this execution companion, never the
+canonical ballot. A ready handoff does not auto-launch a harness.
+
 Keep three kinds of provenance distinct:
 
 - The originating organization comes from the connected AFS organization and the
@@ -65,7 +71,9 @@ native truth's statement.
 ```
 
 For a ballot, use `ballotHash` with the exact canonical hash returned by the ballot
-helper in place of the native `decision` binding. Do not regenerate hashes from a
+helper. A ready handoff must also include `decision` matching the exact chosen
+machine statement, so another option in the same ballot cannot inherit its work.
+Preserve both bindings when reporting progress. Do not regenerate hashes from a
 summary, put execution fields in the canonical ballot, or treat a hash as proof
 of acceptance. An execution report must stay bound to the decision it describes.
 Review a report before rebinding it to a replacement decision or ballot.
@@ -85,6 +93,13 @@ Keep `harness` and `agent` within 200 characters, `runUrl` within 2,000, and
 characters. Keep the execution block below 128 KiB and its source below 1 MiB.
 The API labels a report as coming from the current document; do not insert an
 API-generated `source` marker into the authored report.
+
+For an explicit handoff, `workBrief` is optional text up to 8,000 characters and
+`readyForPickup` is an optional boolean. The API exposes a ready handoff only
+when the flag is explicitly `true`, the state is `not_started`, and a nonempty
+valid `workBrief` is present. `not_started` alone does not queue work. On actual
+pickup, preserve the brief and set the flag to `false` while changing the state
+to `working`, as described in the pickup workflow.
 
 ## Safe update workflow
 

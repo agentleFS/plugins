@@ -1,8 +1,3 @@
----
-name: sync-conversation-summary
-description: Save a compact summary of the current conversation into agentleFS (afs) as one durable document. Use when the thing the user wants saved is this conversation, session or chat itself ("save this session to afs", "sync this chat", "write up what we did here"). Not for a summary document about a topic or a set of decisions (the documents skill), recording a single decision or fact (a truth, in shared-truths-and-lessons), or a lesson or dead end (knowledge). Saves where this user's last sync went, and asks only when there is no previous one.
----
-
 # Sync this conversation to agentleFS
 
 A session ends and everything in it is gone. This turns the conversation into a

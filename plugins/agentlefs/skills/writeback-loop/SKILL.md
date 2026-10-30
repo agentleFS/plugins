@@ -7,7 +7,7 @@ description: Before stopping an unnamed or lightly named agentleFS (afs) harness
 
 Meet-them lasting value: **update the system** so the next person or head picks up from
 the record, not from a dead chat. Tools already exist (`doc_create` / `doc_update`,
-`message_write`, truths via `coordination_write`, `sync-conversation-summary`). This
+`message_write`, truths via `coordination_write`, `documents` (save this conversation)). This
 skill is the **habit** — a guided checklist before stop, not a new write API and not a
 console wizard.
 
@@ -27,7 +27,7 @@ Run once near the end of a turn / before you would stop when **any** of these ho
 
 - The human said not to record / "skip write-back" / "nothing durable."
 - You already wrote the durable outcome this turn (`doc_create` / `doc_update`, a
-  finding/comment/`request` message, a truth, or `sync-conversation-summary`).
+  finding/comment/`request` message, a truth, or `documents` (save this conversation)).
 - The turn was pure Q&A / orientation with **no** finding, plan, or decision to keep.
 - You are mid-flight and the human clearly wants another coding step first — finish that,
   then run this before the real stop.
@@ -38,7 +38,7 @@ signal to run the steps below (or say plainly you are skipping and why), not as 
 ## HITL (always)
 
 - **Suggestion-first, then write.** Prefer the packet's **Suggested write-back** paths.
-  If none fit, ask once for a folder/doc, or use `sync-conversation-summary` when the
+  If none fit, ask once for a folder/doc, or use `documents` (save this conversation) when the
   durable thing *is* the conversation.
 - **Never silent dump.** Do not paste the whole chat. Do not invent a new top-level
   folder or project when a reachable match exists.
@@ -83,7 +83,7 @@ ask which target.
    - Spec/plan/note body → `doc_update` edit, or `doc_create` into the agreed folder.
    - Locked decision → `shared-truths-and-lessons` / `coordination_write` propose (not by
      default on every stop).
-   - Whole-session residue with no better home → `sync-conversation-summary` skill.
+   - Whole-session residue with no better home → `documents` (save this conversation) skill.
 4. **Write** with the ordinary tools. Match neighbors' frontmatter when creating a doc.
    Cite paths in your reply.
 5. **Report.** Path or message id + cite link. Name anything you left out on purpose.

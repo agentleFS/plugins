@@ -10,6 +10,8 @@ For who is doing the work and its reported progress, use the separate
 [execution report](decision-execution.md). Keep organizational origin, recording
 client provenance and author-reported execution identity distinct; do not infer
 execution status from the decision's acceptance.
+For a selected approach explicitly handed off as bounded work, use the
+[decision pickup workflow](decision-pickup.md); acceptance alone is not pickup.
 
 ## Destination and scope
 

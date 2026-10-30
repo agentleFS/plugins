@@ -51,8 +51,7 @@ Claude pick these when need.
 
 | Skill | Do |
 |---|---|
-| `documents` | Find, read, write, edit docs. Comment. |
-| `sync-conversation-summary` | Write short summary of this chat. 500 words max. Never transcript. Go same folder as last time. |
+| `documents` | Find, read, write, edit and comment on docs; save or re-sync a compact conversation summary. |
 | `sharing` | Give access. Ask for access. |
 | `deleting` | Delete. Undo. Erase for good. |
 | `shared-truths-and-lessons` | Decisions and why: rationale, alternatives, relevant human discussion and evidence in an anchor document, linked to a native AFS truth. Also team facts, lessons and dead ends. No Mandate required. |
@@ -63,12 +62,11 @@ Claude pick these when need.
 | `proactive-assembly` | Unnamed work ask: soft entry mode + ranked cited context packet (projects, docs, asks, write-back). Suggestions only. |
 | `entry-mode-playbooks` | Soft recipes for `lost` / `ui` / `bug` / `feature` (assemble steps, caps, write-back checklist, done-when). Loaded by proactive-assembly; skippable. Not a wizard. |
 | `writeback-loop` | Guided write-back before stop: commit findings/docs/comments to suggested targets (soft checklist; human may skip). Product form of auto-writeback. |
-| `sources` | Connect GitHub, Google Drive. |
+| `sources` | Connect GitHub or Google Drive; bind GitHub issues and post safe pointers. |
 | `connection` | Fix sign-in trouble. |
 | `authorization-model` | Why agent see what it see. |
 | `memory` | Set up automatic recall and session capture, check pending saves, or disable it. |
 | `projects` | Start a project with other people and their agents. Post, take, report work. Split it across helpers. |
-| `github-issue-bridge` | Bind a GitHub issue to an afs folder or document; post a safe pointer on the issue, never ACL-gated prose. |
 
 ## Automatic memory
 
@@ -226,7 +224,7 @@ The plugin connects to one server and includes skills, commands, and optional me
 - **Fetch from agentleFS:** only what your grants let you read.
 - **Leave agentleFS:** only when you ask. `access_grant` share out email person in other org. `identity_write` webhook post to URL you give. `registry_write` post public comment, rating, report. `sources_write` connect GitHub or Google.
 - **Local memory:** configured hooks keep pending captures and checkpoints on your machine and may read the host-provided transcript to recover an assistant response. Ordinary MCP tools do not fetch your local chat history.
-- **`sync-conversation-summary`:** run only when you ask to save this chat. Claude write short summary, 500 words max, never transcript. Only that summary sent, as one doc, to folder you pick (or folder last summary went).
+- **`documents` (save this conversation):** run only when you ask to save this chat. Claude write short summary, 500 words max, never transcript. Only that summary sent, as one doc, to folder you pick (or folder last summary went).
 - **No Slack skill.** Removed. Plugin never call other connector you did not name.
 
 ## More

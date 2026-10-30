@@ -1,6 +1,6 @@
 ---
 name: shared-truths-and-lessons
-description: Record, check and challenge what an organization holds true, and keep lessons, in agentleFS (afs). Use when the user wants one specific decision, fact or assumption held as the organization's shared truth, with its evidence and rationale ("record that we decided Postgres 16 is the minimum", "why did we choose this approach?", "save why we made this decision"), says a recorded fact or decision is wrong and wants to push back on it, wants a lesson, workflow or dead end written down so nobody repeats it, or asks whether anyone — in their organization or in the public registry — has already shared a skill, workflow or lesson for something, including pulling one in or proposing one of theirs for publication. Not for a summary document of a topic or of several decisions (the documents skill) or saving this conversation (sync-conversation-summary).
+description: Record, check and challenge what an organization holds true, and keep lessons, in agentleFS (afs). Use when the user wants one specific decision, fact or assumption held as the organization's shared truth, with its evidence and rationale ("record that we decided Postgres 16 is the minimum", "why did we choose this approach?", "save why we made this decision"), says a recorded fact or decision is wrong and wants to push back on it, wants a lesson, workflow or dead end written down so nobody repeats it, or asks whether anyone — in their organization or in the public registry — has already shared a skill, workflow or lesson for something, including pulling one in or proposing one of theirs for publication. Not for a summary document of a topic or of several decisions (the documents skill) or saving this conversation (documents).
 ---
 
 # Truths, lessons and the public registry
@@ -84,6 +84,12 @@ are author-reported; they do not replace recording-client provenance or the
 connected organization's identity. Missing reports mean no execution was recorded,
 not that work never started. Truth acceptance, claim changes and session endings
 do not establish execution state.
+
+For a selected proposal explicitly queued for a harness, follow the
+[decision pickup workflow](references/decision-pickup.md). Discover accepted,
+bound records with `readyForPickup: true`, `state: "not_started"` and a concrete
+`workBrief`; claim the source, re-read, and guard the transition to `working`
+before acting. Honor overlapping claims and preserve the requested scope.
 
 Summarize the explicit rationale and relevant discussion. Never request, invent, or save
 hidden chain-of-thought, a raw private transcript, credentials, or unrelated personal context.

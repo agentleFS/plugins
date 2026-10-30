@@ -1,6 +1,6 @@
 ---
 name: sources
-description: Bring content from other tools into agentleFS (afs) and check that it keeps arriving. Use when the user wants a GitHub repository or a Google Drive folder synced into afs so agents can search it ("connect our Google Drive Specs folder"), asks whether a connected source is syncing or why mirrored content is missing or stale, or asks whether afs can read a tool it has no connector for, such as Notion, Confluence or Jira. Not for documents already in an agentleFS folder, even when a task calls them "sources" (a wiki's raw/ sources, say), which are read with browse and read, the documents skill. Not for signing this client in to agentleFS itself, which is the connection skill.
+description: Bring content from other tools into agentleFS (afs) and check that it keeps arriving. Use when the user wants a GitHub repository or a Google Drive folder synced into afs so agents can search it ("connect our Google Drive Specs folder"), asks whether a connected source is syncing or why mirrored content is missing or stale, or asks whether afs can read a tool it has no connector for, such as Notion, Confluence or Jira. Also use when asked to link or bind a GitHub issue to an afs folder or document, resolve that link, or post its safe pointer on the issue. Not for documents already in an agentleFS folder, even when a task calls them "sources" (a wiki's raw/ sources, say), which are read with browse and read, the documents skill. Not for signing this client in to agentleFS itself, which is the connection skill.
 ---
 
 # Connected sources
@@ -14,7 +14,8 @@ next sync would overwrite them.
 GitHub and Google Drive are the connectors that exist today.
 
 **Issue ↔ folder/doc (not a file mirror):** to bind a GitHub issue to an AFS node and post only a
-safe pointer on the issue, use the `github-issue-bridge` skill (`sources_write` `bind_issue`). That
+safe pointer on the issue, follow [the issue bridge workflow](references/github-issue-bridge.md)
+(`sources_write` `bind_issue`). Read it before binding, resolving, unbinding, or posting. That
 is identity/state linkage, not repo sync.
 
 **A source here means a connection, not a document.** When a task says "sources" and means

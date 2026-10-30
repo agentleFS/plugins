@@ -28,6 +28,11 @@ For authorized work after a choice, maintain a separate
 bound to that exact ballot hash. Capture real pickup, progress, questions or blockers,
 and completion evidence. The report is author-supplied work status, not an approval
 or a launch receipt; leave Mandate's execution authorization and receipts intact.
+When a selected option is explicitly queued as bounded work in the native AFS
+interface, use the [decision pickup workflow](../shared-truths-and-lessons/references/decision-pickup.md).
+Claim and re-read the same source before recording pickup. This uses the canonical
+choice binding and native AFS tools without requiring Mandate to be running;
+it does not auto-launch a harness or bypass execution authorization.
 
 ## Read existing decisions and pending requests
 

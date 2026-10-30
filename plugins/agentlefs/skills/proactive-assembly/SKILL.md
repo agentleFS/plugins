@@ -130,5 +130,5 @@ overrideable — never a picker.
   work produces something durable — then run **`writeback-loop`** before stop (guided
   checklist; human may skip). A Stop hook may remind once.
 - Do not store new memories until work is underway and the user wants them kept
-  (`writeback-loop` / `sync-conversation-summary` / `memory` / ordinary `doc_create`
+  (`writeback-loop` / `documents` (save this conversation) / `memory` / ordinary `doc_create`
   into the chosen folder).

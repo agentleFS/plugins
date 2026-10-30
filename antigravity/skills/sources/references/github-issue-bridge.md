@@ -1,8 +1,3 @@
----
-name: github-issue-bridge
-description: Bind a GitHub issue to an agentleFS (afs) folder or document and post a safe pointer on the issue — never ACL-gated prose. Use when work lives in both GitHub issues and afs (Fred’s issues-default), or when asked to link issue #N to a project folder/doc.
----
-
 # GitHub issue ↔ AFS bridge
 
 First-class **issue ↔ node** link beyond F14 file mirrors. State stays on the AFS tape; the issue gets only a **safe pointer**.
@@ -24,10 +19,12 @@ browse action=github_issues location="project/folder"     # → issues
 
 ## Post the pointer (required after bind)
 
+Never post ACL-gated prose or document bodies to GitHub.
+
 Post **only** `pointer_body` on the issue — bare `/d/<id>` link, no titles, no document text, no summaries of grant-gated content. GitHub readers may be wider than AFS grants.
 
 ```bash
-gh issue comment OWNER/REPO N --body "$POINTER_BODY"
+gh issue comment N --repo OWNER/REPO --body "$POINTER_BODY"
 ```
 
 Or paste `pointer_body` in the GitHub UI. Do **not** auto-paste AFS prose onto public issues.
