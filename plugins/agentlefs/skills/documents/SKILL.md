@@ -1,6 +1,6 @@
 ---
 name: documents
-description: Find, browse, read, write and edit the documents a person or team keeps in agentleFS (afs), and comment on them. Use when the user asks what they or their team have written down about something ("what do we have on deploys?"), asks to open or read a stored runbook, spec or note, asks what folders or documents they have, wants a new document saved into afs — including a written summary or write-up of a topic or of several decisions ("save a summary of what we decided on Q4 pricing") — wants a stored document changed (fix a typo, rewrite a paragraph), or wants to leave a comment on one. Also when a task's "sources" are documents in a folder (a wiki's raw/ sources), which are listed and read here, not with browse action=sources, which lists GitHub and Drive connections. Also use when the user asks to save, sync, or summarize this conversation as a durable record ("save this chat", "sync this session to afs"). Not for recording one decision or fact as shared truth (shared-truths-and-lessons), files in the local repository, or questions of general knowledge.
+description: "Find, read, write, edit and review shared documents in agentleFS (afs). Use for team runbooks/specs/notes, document or folder browsing, review feedback, clarification questions, disagreements, and reading or responding to document comments\u2014even when the user does not say comment. Also save topic summaries or this conversation. For recording one shared decision/fact use shared-truths-and-lessons; for team ballots use mandate-ledger. Folder documents (including wiki raw/ sources) belong here; synced GitHub/Drive connections use sources. Not for local repository files or general knowledge."
 ---
 
 # Documents in agentleFS
@@ -134,18 +134,38 @@ it at the source.
 Pass an `idempotency_key` you choose on any write you might retry, so a retry after a
 timeout is not applied twice.
 
-## Commenting
+## Reviewing and commenting
 
-`message_write` with `action: "comment"` puts a note on a document where its readers —
-people in the console and other agents — see it, in the same threads people use:
+For “review this proposal,” “give feedback on this spec,” or “respond to their
+feedback,” read the source **and** `browse action: "comments"` with its `location`.
+Existing questions, unresolved issues and relevant earlier replies are part of
+that review context. Use the existing thread for the same issue rather than
+posting a duplicate root comment.
 
-- `action: "comment"` with `location`, `body`, and either `quote` (the exact text you mean,
-  e.g. step 3's line) or `span` (a block id from `browse` with `action: "spans"`).
-- `browse` with `action: "comments"` and `location` lists the threads; `message_write`
-  `action: "reply_comment"` and `"resolve_comment"` take `thread`.
+When the request authorizes shared feedback, use `message_write`:
 
-A comment is for the document's readers. To talk to one particular agent or person, send a
-message instead (`message_write` `action: "send"`, the `collaborating` skill).
+- `action: "comment"`, `location` and `body` for a new issue, clarification
+  question, disagreement or general discussion on a document **or folder**.
+  Anchor passage-specific feedback with `quote` (exact source text) or `span`
+  (a block id from `browse action: "spans"`). Both are optional for general
+  document/folder discussion; never invent a quote or attach it to unrelated text.
+- `action: "reply_comment"`, `thread` and `body` to answer or continue a thread.
+  When reporting a fix, explain what changed and link the relevant evidence.
+- `action: "resolve_comment"` and `thread` only when the issue has been addressed
+  or explicitly closed, and resolving is authorized. Posting a reply or changing
+  some text does not establish resolution; unresolved disagreement stays open.
+
+A review request alone does not authorize publishing feedback. If posting is not
+in scope, present the review in chat or draft the comments. Respect instructions
+such as “review only” or “do not post.” Comments are visible to the source's
+readers; do not copy private chat, credentials or hidden reasoning into them.
+If the source or intended audience is unclear, identify it before posting.
+
+Use a document's discussion for feedback its readers should see. Use a direct
+message for a particular recipient (`message_write action: "send"`, the
+`collaborating` skill). Editing the source is a separate task: comments do not
+silently authorize rewriting it. A decision comment is discussion, not a formal
+ballot, human acceptance or authorization to execute work.
 
 ## Save this conversation
 

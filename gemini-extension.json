@@ -1,6 +1,6 @@
 {
   "name": "agentlefs",
-  "version": "0.9.0",
+  "version": "0.10.2",
   "description": "Shared second brain for any AI with agent permissions",
   "contextFileName": "AGENTS.md",
   "mcpServers": {

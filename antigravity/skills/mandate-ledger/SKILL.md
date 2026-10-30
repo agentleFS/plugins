@@ -1,6 +1,6 @@
 ---
 name: mandate-ledger
-description: Create or update a team approval request or decision shared with Mandate's Decisions board through agentleFS (afs). Use for "this needs team approval", "put this to the team", "update this Mandate decision", and questions about existing team ballots. Use shared-truths-and-lessons for everyday decisions and their rationale, facts or assumptions without a team ballot, documents for write-ups of several decisions, and sharing for access requests.
+description: "Create, read and update team decision ballots in agentleFS (afs) and Mandate. Use when proposing or comparing approaches for a team-affecting product, architecture, rollout, pricing or policy choice; asking the user to choose between substantive alternatives; or asked to make a decision, seek team input or update a ballot. Use shared-truths-and-lessons for facts and decisions already made without team review, and sharing for access requests."
 ---
 
 # Shared team decisions in AFS
@@ -33,6 +33,34 @@ interface, use the [decision pickup workflow](../shared-truths-and-lessons/refer
 Claim and re-read the same source before recording pickup. This uses the canonical
 choice binding and native AFS tools without requiring Mandate to be running;
 it does not auto-launch a harness or bypass execution authorization.
+
+## Reviewing an existing ballot
+
+Read the decision source and `browse action: "comments"` at its location before
+reviewing or responding to feedback. Follow the `documents` review workflow:
+when shared feedback is authorized, put questions, objections and replies in the
+existing source discussion, reusing the thread for the same issue. Do not create
+a second ballot merely to discuss the current one or overwrite its rationale
+with unaccepted feedback. Preserve durable, attributed human questions/answers in
+`decision-context` when updating that explanation. Comments and resolved threads
+are not canonical choices, acceptance or execution authorization; use the formal
+choice workflow below for an explicit human selection.
+
+## When proposing a team choice
+
+Before presenting substantive team-affecting alternatives or a recommendation, find
+and reuse the relevant ballot, or file one **pending** ballot in the established
+shared decision destination and link it in your response. Include options,
+tradeoffs, your recommendation and open questions. This applies even when the
+user did not say “ballot” or “team approval.”
+
+If the audience or destination is unknown, prepare the proposal and clarify that
+missing information. Do not substitute a private note, broaden grants, or claim
+that an unsuccessful write was filed. Follow the person's instruction to skip
+filing. Routine edits, personal suggestions and already settled facts do not need
+new ballots. Filing is neither acceptance nor an extra approval gate: continue
+independent work already authorized by the user. Only a human choice can bind an
+option, and execution still needs its own authorization.
 
 ## Read existing decisions and pending requests
 

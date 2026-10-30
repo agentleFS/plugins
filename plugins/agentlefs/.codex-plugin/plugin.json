@@ -1,6 +1,6 @@
 {
   "name": "agentlefs",
-  "version": "0.9.0",
+  "version": "0.10.2",
   "description": "Shared second brain for any AI with agent permissions",
   "author": {
     "name": "agentleFS",
@@ -43,7 +43,7 @@
     "privacyPolicyURL": "https://agentlefs.com/privacy",
     "termsOfServiceURL": "https://agentlefs.com/terms",
     "defaultPrompt": [
-      "What has my team written down in afs about how we do deploys?",
+      "Help me propose a decision to my team, with options, tradeoffs, and a recommendation.",
       "Save a summary of what we just decided to afs."
     ],
     "brandColor": "#9e362f",

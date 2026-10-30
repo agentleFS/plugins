@@ -31,6 +31,7 @@ import os
 import re
 import subprocess
 import sys
+from decision_workflow import GUIDANCE as DECISION_GUIDANCE, candidate as decision_candidate, after_tool as decision_after_tool, observe as decision_observe
 
 MAX_INPUT = 1024 * 1024
 MAX_TRANSCRIPT = 64 * 1024 * 1024
@@ -209,6 +210,7 @@ def session_start(event, platform="claude"):
         + PLAYBOOKS_MARK + " for that mode, return one ranked cited "
         "context packet (suggestions only; human filters)."
     )
+    parts.append("Read pending team ballots in the existing brief_me briefing; do not duplicate them. " + DECISION_GUIDANCE)
     emit_context(
         " ".join(parts),
         event.get("hook_event_name") or "SessionStart",
@@ -266,11 +268,17 @@ def assemble(event, platform="claude"):
     this command.
     """
     prompt = prompt_text(event)
+    decision_tip = ""
+    if decision_candidate(prompt):
+        decision_observe("candidate_hint", "unconfirmed")
+        decision_tip = DECISION_GUIDANCE + " "
     if not looks_like_unnamed_task(prompt):
+        if decision_tip:
+            emit_context(decision_tip, event.get("hook_event_name") or "UserPromptSubmit", platform)
         return
     mode = infer_entry_mode(prompt)
     emit_context(
-        "This prompt names no agentleFS project. Before coding, run " + ASSEMBLE_MARK
+        decision_tip + "This prompt names no agentleFS project. Before coding, run " + ASSEMBLE_MARK
         + " in mode `" + mode + "` (soft guess — override if wrong; no picker): load "
         + PLAYBOOKS_MARK + " for that mode (assemble steps, caps, write-back checklist, "
         "done-when; skippable), then return one ranked, cited, permission-bound context "
@@ -479,6 +487,10 @@ def scan_nudge_transcript(path):
 
 
 def nudge(event, platform="claude"):
+    decision_tip = decision_after_tool(event)
+    if decision_tip:
+        emit_context(decision_tip, event.get("hook_event_name") or "PostToolUse", platform)
+        return
     name = event.get("tool_name") or ""
     args = event.get("tool_input") if isinstance(event.get("tool_input"), dict) else {}
     if not (is_tool(name, "message_write") or is_tool(name, "identity_write")):
@@ -556,7 +568,9 @@ def stop(event, platform="claude"):
         "Before stopping, run guided write-back (" + WRITEBACK_MARK + " skill): commit any durable "
         "finding, plan, comment, or decision to the packet's suggested write-back targets (or an "
         "agreed folder) via doc_create/doc_update, message_write, or a truth — soft checklist, not a "
-        "wizard. Prefer documents/comments/messages humans already edit. If nothing durable or the "
+        "wizard. For decision work, reconcile the pending ballot or accepted source and report actual "
+        "progress/blockers; only mark completed with evidence for the authorized scope. "
+        "Prefer documents/comments/messages humans already edit. If nothing durable or the "
         "human said skip write-back, say so plainly and stop. Caps: 1–2 targets; no transcript dump.",
         platform,
     )

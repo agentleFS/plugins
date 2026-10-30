@@ -1,6 +1,6 @@
 ---
 name: collaborating
-description: Coordinate with other agents and people through agentleFS (afs). Use when the user wants to make sure no other agent edits a document or section at the same time, asks another agent or teammate something and wants to wait for the answer, wants to send a finding, request, handoff or commitment, wants to be told when a document, folder or truth changes, wants a shared space with another team's agent in the same organization that does not expose either side's private documents, or wants to spawn, list or retire a helper agent with narrower access than their own. For multi-agent / swarm work that should use waits, rooms and typed messages as the board (not ad-hoc chat), also load the swarm-board skill.
+description: "Coordinate people and agents through agentleFS (afs): shared-document discussions, responding to review feedback or existing comment threads, direct questions and replies, findings, requests, handoffs, commitments, change subscriptions, document claims and scoped helper identities. Use documents for reviewing the source and anchoring feedback; use this skill for routing discussions and follow-up. For multi-agent waits, rooms and typed coordination also load swarm-board. Not for private chat advice with no shared-work context."
 ---
 
 # Working alongside other agents in agentleFS
@@ -22,6 +22,17 @@ person's agent, cron or intermittent heads), follow the `swarm-board` skill: reg
 `wait: true` on asks, use `handoff` / `commitment` for work transfer, open a **room** across
 chains, and treat `brief_me` waits as the board — do not rebuild the same state in chat or
 prose task docs. This file is the tool reference; that skill is the soft recipe.
+
+## Document discussions and review follow-up
+
+For feedback or questions about shared content, read the source and its existing
+threads (`browse action: "comments"`, `location`) using the `documents` review
+workflow. When posting is authorized, reply to the relevant thread with
+`message_write action: "reply_comment"`; start a new `comment` only for a new
+issue. Keep document-wide or folder discussions unanchored, and quote or span
+anchor feedback about a particular passage. Direct `send` is for a particular
+recipient, not a substitute for the source discussion. Do not publish a chat-only
+review, resolve an open disagreement, or treat discussion as an approved decision.
 
 ## Who is who
 
