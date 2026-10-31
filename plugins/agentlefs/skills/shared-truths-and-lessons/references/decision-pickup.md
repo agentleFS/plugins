@@ -14,6 +14,13 @@ spend money, deploy, or perform work outside the brief and the user's authorizat
 
 ## Recognize a ready handoff
 
+An authorized user follow-up such as “the decision has been made” is a cue to
+inspect the current source and pick up ready work now, not to return a status-only
+acknowledgement. When the ready handoff below is valid and within the existing
+authorization, continue through claim and implementation in the same turn.
+Do not require another “start implementation” message. A statement alone is not
+proof of which option won: verify the stored choice first.
+
 The following is a fictional native example. Do not create a queued work request
 from a recommendation or a missing execution report. `decision` must match the
 accepted truth's statement. For a canonical ballot, include both the exact chosen

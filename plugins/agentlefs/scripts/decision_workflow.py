@@ -5,6 +5,16 @@ from pathlib import Path
 import re
 from datetime import datetime, timezone
 
+PICKUP_GUIDANCE = (
+    "The user reports a decision was made. Read the existing ballot, current accepted choice and "
+    "execution report; do not create another ballot or infer an option from agreement alone. "
+    "If the choice is valid, readyForPickup is true, state is not_started, and the bounded work is "
+    "authorized, follow the decision-pickup workflow now: claim, re-read, record working, and "
+    "continue implementation in this turn. Do not stop at a status-only acknowledgement or ask "
+    "for authorization already supplied. Honor overlapping claims, opt-outs and real blockers. "
+    "Acceptance alone without a queued work request or user authorization does not start work."
+)
+
 GUIDANCE = (
     "Use mandate-ledger for substantive team choices: reuse an existing ballot or file one pending "
     "ballot in the established shared destination before presenting alternatives or a recommendation. "
@@ -12,8 +22,17 @@ GUIDANCE = (
     "routine edits, personal suggestions and settled facts need no new ballot. A pending proposal "
     "is not approval. Verify human choice and execution authorization separately; report actual "
     "progress, questions/blockers and completion evidence on the same decision source. "
-    "Neither truth acceptance nor session exit proves work started or finished."
+    "Neither truth acceptance nor session exit proves work started or finished. " + PICKUP_GUIDANCE
 )
+
+
+def pickup_candidate(prompt):
+    """Continuation hint only; it neither determines the option nor authorizes work."""
+    text = prompt[:16384].lower()
+    if re.search(r"\b(?:don't|do not)\s+(?:start|implement|continue|pick\s+up|execute|launch|proceed|begin)\b|\b(?:not yet|hold off|stop|pause)\b", text):
+        return False
+    return bool(re.search(r"\bdecision\b.{0,40}\b(?:made|accepted|selected|approved|decided)\b", text)
+                or re.search(r"\b(?:start|implement|continue|pick up)\b.{0,60}\b(?:decision|selected option|approved work)\b", text))
 
 
 def candidate(prompt):
@@ -51,6 +70,17 @@ def after_tool(event):
     name = (event.get("tool_name") or "").split("__")[-1].removeprefix("MCP:")
     args = event.get("tool_input")
     if not isinstance(args, dict):
+        return None
+    if name in ("read", "browse") and args.get("action") in ("document", "truth", "truths"):
+        response = event.get("tool_response", event.get("tool_output"))
+        if isinstance(response, dict):
+            response = json.dumps(response)
+        if isinstance(response, str):
+            # A bounded hint about a read, never proof of authority or a completed pickup.
+            response = response[:1048576].replace('\\"', '"')
+            if re.search(r'"readyForPickup"\s*:\s*true', response) or 'mandate-decision-choice/v1' in response:
+                observe("pickup_hint", "unconfirmed")
+                return PICKUP_GUIDANCE
         return None
     if name in ("Read", "read_file"):
         path = args.get("file_path", args.get("path", ""))

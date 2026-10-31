@@ -70,7 +70,7 @@
         ]
       },
       {
-        "matcher": ".*(message_write|identity_write|coordination_write|doc_create|doc_update|Read|read_file)",
+        "matcher": ".*(message_write|identity_write|coordination_write|doc_create|doc_update|read|browse|Read|read_file)",
         "hooks": [
           {
             "type": "command",

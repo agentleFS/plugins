@@ -24,7 +24,7 @@
       },
       {
         "command": "python3 \"${CURSOR_PLUGIN_ROOT}/scripts/project_hooks.py\" nudge --platform cursor",
-        "matcher": "message_write|identity_write|coordination_write|doc_create|doc_update|Read|read_file",
+        "matcher": "message_write|identity_write|coordination_write|doc_create|doc_update|read|browse|Read|read_file",
         "timeout": 5
       }
     ],

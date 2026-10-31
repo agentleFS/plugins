@@ -1,6 +1,6 @@
 ---
 name: mandate-ledger
-description: "Create, read and update team decision ballots in agentleFS (afs) and Mandate. Use when proposing or comparing approaches for a team-affecting product, architecture, rollout, pricing or policy choice; asking the user to choose between substantive alternatives; or asked to make a decision, seek team input or update a ballot. Use shared-truths-and-lessons for facts and decisions already made without team review, and sharing for access requests."
+description: "Create, read and update team decision ballots in agentleFS (afs) and Mandate. Use when proposing or comparing approaches for a team-affecting product, architecture, rollout, pricing or policy choice; asking the user to choose between substantive alternatives; or asked to make a decision, seek team input or update a ballot. Also use when the user says a decision has been made, to verify the recorded choice and continue authorized ready work through decision pickup. Use shared-truths-and-lessons for facts and decisions already made without team review, and sharing for access requests."
 ---
 
 # Shared team decisions in AFS
@@ -33,6 +33,22 @@ interface, use the [decision pickup workflow](../shared-truths-and-lessons/refer
 Claim and re-read the same source before recording pickup. This uses the canonical
 choice binding and native AFS tools without requiring Mandate to be running;
 it does not auto-launch a harness or bypass execution authorization.
+
+When the user says the decision has been made, read the existing choice and
+execution report immediately. If its exact binding is valid, the report is
+`not_started` with `readyForPickup: true`, and the bounded work is authorized,
+claim it and continue implementation in this turn using the pickup workflow.
+Do not end with only “accepted, ready for pickup” or ask for permission already
+given. Honor overlapping claims and real blockers. Acceptance without an explicit
+work request does not authorize execution; unclear or unrecorded choices still
+need clarification rather than guessing the recommended option.
+
+The MCP Apps document panel presents actionless canonical ballots as selectable
+option cards. Read the source (or its proposed truth) to show it. Submission uses
+the existing connected identity and authority checks; it cannot prove a separate
+human identity, start a harness, or approve launch-action ballots. Unsupported
+hosts retain the text options and console link. Never report an attempted UI
+submission as recorded without reading back a hash-verified accepted choice.
 
 ## Reviewing an existing ballot
 

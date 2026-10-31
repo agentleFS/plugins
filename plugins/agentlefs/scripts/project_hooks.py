@@ -31,7 +31,7 @@ import os
 import re
 import subprocess
 import sys
-from decision_workflow import GUIDANCE as DECISION_GUIDANCE, candidate as decision_candidate, after_tool as decision_after_tool, observe as decision_observe
+from decision_workflow import GUIDANCE as DECISION_GUIDANCE, PICKUP_GUIDANCE, pickup_candidate, candidate as decision_candidate, after_tool as decision_after_tool, observe as decision_observe
 
 MAX_INPUT = 1024 * 1024
 MAX_TRANSCRIPT = 64 * 1024 * 1024
@@ -269,7 +269,11 @@ def assemble(event, platform="claude"):
     """
     prompt = prompt_text(event)
     decision_tip = ""
-    if decision_candidate(prompt):
+    if pickup_candidate(prompt):
+        decision_observe("pickup_candidate_hint", "unconfirmed")
+        emit_context(PICKUP_GUIDANCE, event.get("hook_event_name") or "UserPromptSubmit", platform)
+        return  # A continuation of an existing decision, not a new unnamed project.
+    elif decision_candidate(prompt):
         decision_observe("candidate_hint", "unconfirmed")
         decision_tip = DECISION_GUIDANCE + " "
     if not looks_like_unnamed_task(prompt):
