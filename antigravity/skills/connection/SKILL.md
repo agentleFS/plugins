@@ -94,7 +94,7 @@ Only a successful tool call proves a working connection. Call `browse` with `act
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
 | Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `access_grant` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
-| Connected, but the wrong account or Organization | Browser session is a different email, or the consent page's Organization was left at its default | See **Switching Organization or email** below. Same email, wrong Organization: clear the client's auth and re-authenticate, then pick the Organization in Clerk's consent dropdown. Wrong email: on the consent page click **Use another account**, sign in as the intended email, then finish Allow. |
+| Connected, but the wrong account or Organization | Browser session is a different email, or the consent page's Organization was left at its default | See **Switching Organization or email** below. Same email, wrong Organization: clear the client's auth and re-authenticate, then pick the Organization on the consent page, Personal included. Wrong email: on the consent page click **Use another account**, sign in as the intended email, then finish Allow. |
 | Connected, folder looks nearly empty | Content is gated from this principal | Expected. Denied reads exactly like not-found. |
 | `how="meaning"` silently searched by text | Deployment has no vector index | Check `vectorIndex` in `/healthz`. Degradation is intentional. |
 | Tools are absent from `/mcp` entirely | Plugin not enabled / not reloaded, `claude mcp add` ran mid-session, or the server is unreachable | Plugin: `/reload-plugins` (or restart below v2.1.268). Bare `mcp add` inside a session: restart Claude Code — a running session does not re-read MCP config. Then check `/healthz` |
@@ -104,7 +104,7 @@ Only a successful tool call proves a working connection. Call `browse` with `act
 
 A working connection can still be the wrong one: the wrong Organization under the same email, or a different email entirely. There is no error either way — `browse` just shows that principal's reach, which can look almost empty. The same steps live at https://agentlefs.com/docs/connect and in the plugin README.
 
-**Organization (same email).** Clear the client's stored authentication and authenticate again. On the consent page (`/oauth-consent`), pick the Organization from Clerk's dropdown (`user:org:read`). Leaving the default keeps the personal Organization.
+**Organization (same email).** Clear the client's stored authentication and authenticate again. On the consent page (`/oauth-consent`), pick the Organization from its picker (`user:org:read`): Personal, then every Organization you belong to. It starts on the Organization active in the console.
 
 **Email.** Clear the client's authentication and authenticate again. On the consent page, click **Use another account**, sign in as the intended email, then Allow. The instance stays single-session, so that button signs out and returns to the same consent URL (the #1267 fallback; multi-session stays off).
 

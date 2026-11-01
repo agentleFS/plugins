@@ -18,7 +18,7 @@ Browser open. Sign in. Done.
 
 Working connection can still be wrong Organization or wrong email. No error — store just look almost empty. Same how-to at https://agentlefs.com/docs/connect and in the `connection` skill.
 
-**Organization (same email).** Clear client auth, authenticate again, pick Organization in Clerk consent dropdown.
+**Organization (same email).** Clear client auth, authenticate again, pick the Organization (Personal included) on the consent page.
 
 **Email.** Clear client auth and authenticate again. On the consent page click **Use another account**, sign in as the intended email, then Allow.
 
