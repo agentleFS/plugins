@@ -525,9 +525,10 @@ def nudge(event, platform="claude"):
         parts.append(
             "This session is coordinating agents without a wait or room on the board. Follow the "
             + BOARD_MARK
-            + " skill: send asks with wait=true and a continuation (even under cron — next brief_me "
-            "sees what resolved), use handoff/commitment for work transfer, and create_room when "
-            "chains differ. Do not rebuild the board in chat or prose task docs."
+            + " skill (doorbell + shared filing cabinet): put the brief in shared docs, send asks "
+            "with wait=true and a continuation (even under cron — next brief_me sees what resolved; "
+            "waits do not auto-start a harness), use handoff/commitment for work transfer, and "
+            "create_room when chains differ. Do not rebuild the board in chat or prose task docs."
         )
     if (
         current_coords

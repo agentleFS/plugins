@@ -67,6 +67,10 @@ Then point onward, without re-explaining them:
 - `/agentlefs:permissions` for what this credential reaches.
 - `/agentlefs:who-can-see` for who else can reach something.
 - `search` to prime a retrieve-then-cite pass.
+- **Multi-agent / swarm coordination** (doorbell + shared filing cabinet, typed
+  request/handoff + durable wait, rooms): load the `swarm-board` skill (tool shapes in
+  `collaborating`). Waits do not auto-start a harness — they hold the shared brief and
+  typed ask; the next `brief_me` recovers.
 
 **If the store is reachable but nearly empty, you can offer to seed it.** A connected store with nothing in it gives the next search nothing to find, and the fix is one paste. Show them this, verbatim, in a code block so it is copyable:
 
@@ -87,12 +91,13 @@ Say plainly that semantic search is already on server-side (`vectorIndex: true`)
 | Symptom | Cause | Fix |
 |---|---|---|
 | Tools absent from `/mcp` entirely | Plugin installed from a shell, so the `/plugin` menu never closed and never reloaded | Type `/reload-plugins`. On v2.1.268+ it connects plugin MCP servers in an interactive terminal; only the desktop app, the Agent SDK and `-p` still need a restart |
+| Tools absent after `claude mcp add` | Server was added while Claude Code was already running; a session does not re-read MCP config | Restart Claude Code, then `/mcp`. Prefer `claude mcp login agentlefs` in a terminal *before* starting `claude` so no restart is needed |
 | Tools vanished after a crash | Prior session died without a clean shutdown, so project plugin state was never written back | Restart. The credential is almost certainly still valid; do not re-auth first |
 | 401 loop, sign-in never sticks | Browser flow was abandoned or cookies blocked | Re-run `/mcp`, complete the flow in a normal browser window |
 | 404 on every call | Endpoint points at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |
 | Connects, zero folders | An empty Organization you approve, or a credential with no grants | Phase 3 |
 | "startup failed" in a non-Claude client | That client sends only configured headers and never walks the OAuth discovery chain, so it gets the initial 401 | Set `Authorization: Bearer afs_…` as a static header. See "Agent tokens" below |
-| Works locally, fails in CI | No browser available for OAuth | See "Agent tokens" below |
+| Works locally, fails in CI or over SSH | No browser available for OAuth | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, paste the redirect URL back. True headless CI: see "Agent tokens" below |
 
 ## Agent tokens (headless, CI, routines)
 

@@ -45,7 +45,17 @@ That first 401 is the normal trigger for browser sign-in. It is the mechanism, n
 
 ## Managing the connection in-session
 
-Use the `/mcp` command in Claude Code to inspect status and authenticate. Select `agentlefs` and choose the authenticate option to launch the browser flow. The same command shows whether the server is connected and which tools it exposes.
+Prefer signing in from a real terminal **before** starting Claude Code, so the session loads an already-authenticated server:
+
+```
+claude mcp add --transport http --scope user agentlefs https://mcp.agentlefs.com/mcp
+claude mcp login agentlefs
+claude
+```
+
+`--no-browser` prints the authorization URL instead of opening one — use it over SSH, then paste the redirect URL back when prompted. Do not run `claude mcp login` from an agent tool call: it needs a TTY (`stdin isn't a terminal`).
+
+Inside a session, `/mcp` still inspects status and can authenticate a server the session already loaded. A server added with `claude mcp add` while Claude Code is already running is invisible until restart — prefer the shell sequence above, or restart after a mid-session add.
 
 ## Self-hosted deployments
 
@@ -80,14 +90,14 @@ Only a successful tool call proves a working connection. Call `browse` with `act
 |---|---|---|
 | Single 401, then a browser opens | Normal DCR trigger | Nothing. Complete the sign-in. |
 | 401 loop that never resolves | Browser flow abandoned, cookies blocked, or a stale registration | Re-run `/mcp` and authenticate again in a normal browser window |
-| 401 in CI or a headless shell | No browser for the OAuth flow | Use the `afs_` token path above |
+| 401 in CI or a headless shell | No browser for the OAuth flow | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, then paste the redirect URL back when prompted. True headless CI/routines with no human: the `afs_` token path above |
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
 | Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `access_grant` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
 | Connected, but the wrong account or Organization | Browser session is a different email, or the consent page's Organization was left at its default | See **Switching Organization or email** below. Same email, wrong Organization: clear the client's auth and re-authenticate, then pick the Organization in Clerk's consent dropdown. Wrong email: on the consent page click **Use another account**, sign in as the intended email, then finish Allow. |
 | Connected, folder looks nearly empty | Content is gated from this principal | Expected. Denied reads exactly like not-found. |
 | `how="meaning"` silently searched by text | Deployment has no vector index | Check `vectorIndex` in `/healthz`. Degradation is intentional. |
-| Tools are absent from `/mcp` entirely | Plugin not enabled, or the server is unreachable | Check plugin state, then `/healthz` |
+| Tools are absent from `/mcp` entirely | Plugin not enabled / not reloaded, `claude mcp add` ran mid-session, or the server is unreachable | Plugin: `/reload-plugins` (or restart below v2.1.268). Bare `mcp add` inside a session: restart Claude Code — a running session does not re-read MCP config. Then check `/healthz` |
 | A read errored instead of returning fewer rows | Fail-closed: a truncated allow-set throws | Surface it. The system refused to under-report. |
 
 ## Switching Organization or email

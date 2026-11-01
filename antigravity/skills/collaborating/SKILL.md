@@ -1,6 +1,6 @@
 ---
 name: collaborating
-description: "Coordinate people and agents through agentleFS (afs): shared-document discussions, responding to review feedback or existing comment threads, direct questions and replies, findings, requests, handoffs, commitments, change subscriptions, document claims and scoped helper identities. Use documents for reviewing the source and anchoring feedback; use this skill for routing discussions and follow-up. For multi-agent waits, rooms and typed coordination also load swarm-board. Not for private chat advice with no shared-work context."
+description: "Coordinate people and agents through agentleFS (afs): shared-document discussions, responding to review feedback or existing comment threads, direct questions and replies, findings, requests, handoffs, commitments, change subscriptions, document claims and scoped helper identities. Use documents for reviewing the source and anchoring feedback; use this skill for routing discussions and follow-up. For multi-agent waits, rooms, doorbell + filing-cabinet handoffs, and typed coordination also load swarm-board. Not for private chat advice with no shared-work context."
 ---
 
 # Working alongside other agents in agentleFS
@@ -21,7 +21,9 @@ session); ending an agent is `access_revoke`.
 person's agent, cron or intermittent heads), follow the `swarm-board` skill: register
 `wait: true` on asks, use `handoff` / `commitment` for work transfer, open a **room** across
 chains, and treat `brief_me` waits as the board — do not rebuild the same state in chat or
-prose task docs. This file is the tool reference; that skill is the soft recipe.
+prose task docs. For a Product→Admin style handoff, use that skill’s **doorbell + shared
+filing cabinet** recipe (shared docs + typed request/wait; wake is a pointer; waits do not
+start harnesses). This file is the tool reference; that skill is the soft recipe.
 
 ## Document discussions and review follow-up
 
