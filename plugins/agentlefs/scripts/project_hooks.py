@@ -20,7 +20,7 @@ hands it on stdin and the session's own transcript (docs/design/shared-projects.
   nudge          a session that coordinates work through agentleFS without a project (it spawns
                  helpers, asks agents or people for work, or posts on a folder, twice or more, and
                  never starts one) is told once that the work could be a project. The same pass tips
-                 once toward swarm-board when multi-agent spawn/ask traffic has no wait or room.
+                 once toward swarm-board when multi-agent spawn/ask traffic has no wait.
 
 `--platform cursor` selects Cursor's output envelope (additional_context / followup_message);
 the default remains Claude/Codex's hookSpecificOutput / decision block.
@@ -409,7 +409,7 @@ COORDINATING = (
     lambda name, args: tool_suffix(name) == "message_write" and args.get("action") == "comment",
 )
 NUDGE_MARK = "could be run as an agentleFS project"
-# Multi-agent board (F23): spawn or ask/handoff without wait/room — tip swarm-board once.
+# Multi-agent board (F23): spawn or ask/handoff without a wait — tip swarm-board once.
 BOARD_MARK = "swarm-board"
 BOARD_KINDS = ("question", "request", "handoff", "commitment")
 
@@ -444,11 +444,9 @@ def is_board_coordinating(name, args):
 
 
 def is_board_primitive(name, args):
-    """A wait or room already on the board — no swarm-board tip needed."""
+    """A wait already on the board — no swarm-board tip needed."""
     if is_tool(name, "message_write"):
         if args.get("action") == "send" and args.get("wait") is True:
-            return True
-        if args.get("action") in ("create_room", "join", "invite"):
             return True
     if is_tool(name, "coordination_write") and args.get("action") == "wait_for":
         return True
@@ -514,7 +512,7 @@ def nudge(event, platform="claude"):
         scan["has_board_primitive"] = True
 
     parts = []
-    # Board tip first (F23): multi-agent traffic without wait/room — soft recipe, once.
+    # Board tip first (F23): multi-agent traffic without wait — soft recipe, once.
     if (
         current_board
         and not scan["board_told"]
@@ -523,12 +521,13 @@ def nudge(event, platform="claude"):
         and not (current_board and args.get("wait") is True)
     ):
         parts.append(
-            "This session is coordinating agents without a wait or room on the board. Follow the "
+            "This session is coordinating agents without a wait on the board. Follow the "
             + BOARD_MARK
             + " skill (doorbell + shared filing cabinet): put the brief in shared docs, send asks "
             "with wait=true and a continuation (even under cron — next brief_me sees what resolved; "
             "waits do not auto-start a harness), use handoff/commitment for work transfer, and "
-            "create_room when chains differ. Do not rebuild the board in chat or prose task docs."
+            "spawn helpers with scope on the shared folder. Do not rebuild the board in chat or "
+            "prose task docs."
         )
     if (
         current_coords

@@ -1,6 +1,6 @@
 ---
 name: collaborating
-description: "Coordinate people and agents through agentleFS (afs): shared-document discussions, responding to review feedback or existing comment threads, direct questions and replies, findings, requests, handoffs, commitments, change subscriptions, document claims and scoped helper identities. Use documents for reviewing the source and anchoring feedback; use this skill for routing discussions and follow-up. For multi-agent waits, rooms, doorbell + filing-cabinet handoffs, and typed coordination also load swarm-board. Not for private chat advice with no shared-work context."
+description: "Coordinate people and agents through agentleFS (afs): shared-document discussions, responding to review feedback or existing comment threads, direct questions and replies, findings, requests, handoffs, commitments, change subscriptions, document claims and scoped helper identities. Use documents for reviewing the source and anchoring feedback; use this skill for routing discussions and follow-up. For multi-agent waits, doorbell + filing-cabinet handoffs, and typed coordination also load swarm-board. Not for private chat advice with no shared-work context."
 ---
 
 # Working alongside other agents in agentleFS
@@ -13,17 +13,18 @@ words) where an action takes it; it is kept with the event and is how a person l
 understands why.
 
 Reads are `read`, `browse` and `access_read`, which change nothing. Writes are
-`message_write` (messages, comments, rooms), `coordination_write` (claims, waits,
+`message_write` (messages, comments), `coordination_write` (claims, waits,
 subscriptions, cursors, truths) and `identity_write` (helper agents, your card, a fresh
 session); ending an agent is `access_revoke`.
 
 **Multi-agent board.** When more than one agent is in play (spawned helpers, another
 person's agent, cron or intermittent heads), follow the `swarm-board` skill: register
-`wait: true` on asks, use `handoff` / `commitment` for work transfer, open a **room** across
-chains, and treat `brief_me` waits as the board — do not rebuild the same state in chat or
-prose task docs. For a Product→Admin style handoff, use that skill’s **doorbell + shared
-filing cabinet** recipe (shared docs + typed request/wait; wake is a pointer; waits do not
-start harnesses). This file is the tool reference; that skill is the soft recipe.
+`wait: true` on asks, use `handoff` / `commitment` for work transfer, share a folder as the
+filing cabinet (spawn + scope for same-chain helpers), and treat `brief_me` waits as the
+board — do not rebuild the same state in chat or prose task docs. For a Product→Admin style
+handoff, use that skill’s **doorbell + shared filing cabinet** recipe (shared docs + typed
+request/wait; wake is a pointer; waits do not start harnesses). This file is the tool
+reference; that skill is the soft recipe.
 
 ## Document discussions and review follow-up
 
@@ -131,7 +132,7 @@ changed, goes through; so answer a stalemate with evidence, or take it to a pers
 
 1. `coordination_write` with `action: "subscribe"` and the `location` of a document or folder
    (a folder covers everything beneath it; add `span` for one section). It can also follow a
-   truth (`truth`), a room you are in (`room_id`) or an identity (`identity`).
+   truth (`truth`) or an identity (`identity`).
 2. To be woken on the next change: `coordination_write` with `action: "wait_for"`,
    `on_subscription` set to the subscription id, a `deadline` (at most 30 days) and a
    `continuation`. A wait fires once, so register again after each change if the user wants
@@ -144,31 +145,14 @@ Tell the user honestly how they will hear: through the next `brief_me` or a chec
 this identity's card has a webhook or stream channel (`identity_write` with
 `action: "set_card"` and `wake_channel`).
 
-## A shared space with another team's agent: a room
+## Cross-organization or cross-person sharing
 
-A room is where agents from different chains — different people's agents, in the same
-organization — work together without seeing each other's private context. Access inside is
-membership, not grants, and nothing enters it except what a member deliberately moves in.
+Same-chain helpers share via `identity_write` `spawn` with a narrowed `scope` on a shared
+folder (the filing cabinet). Someone in **another organization** gets a folder through
+`access_grant` with `action: "share_out"` (the `sharing` skill), not a separate coordination
+space on this tool surface.
 
-**Rooms stay inside this organization.** Invitees are resolved among this organization's
-identities only, so an agent that belongs to another organization — a vendor's, a
-customer's — cannot be invited, by id or by name. Before creating a room for someone
-outside, ask whether their agent works in this organization. If it does not, offer them a
-folder instead (`access_grant` with `action: "share_out"`, in the `sharing` skill), made for
-the purpose and holding only what they should see.
-
-1. `message_write` with `action: "create_room"`, a `name`, and `invite` (identity ids or
-   exact names). The answer carries the room's id and its folder: its documents are read and
-   written with the ordinary document tools, and its conversation is a message with
-   `to: ["room:<id>"]`. `action: "invite"` with `room_id` and `invite` adds people later.
-2. Invitees join with `action: "join"` and the `room_id` (from the invitation in their
-   `brief_me`, or `browse` with `action: "rooms"`); joining is their consent.
-3. To bring something in, `action: "move_in"` with `room_id`, `name` (the item's file
-   name), `content` and `derived_from` (the paths or node ids it came from). You supply the
-   text — the raw text or your own redaction; the platform never redacts for you. A source
-   your chain cannot approve sharing stays invisible to members who cannot read it, and a
-   share request is filed for it. Moving in widens who can read it, so the client asks first.
-
+## Driving an agent:
 ## Driving an agent: its seat and its journal
 
 A persistent or intermittent agent is driven by one session at a time. Before writing as it (with

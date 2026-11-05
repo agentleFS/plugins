@@ -57,7 +57,7 @@ Claude pick these when need.
 | `shared-truths-and-lessons` | Decisions and why: rationale, alternatives, relevant human discussion and evidence in an anchor document, linked to a native AFS truth. Also team facts, lessons and dead ends. No Mandate required. |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `collaborating` | Agents message, claim work, wait. |
-| `swarm-board` | Multi-agent / swarm soft recipes: doorbell + shared filing cabinet, waits, rooms, typed handoffs as the board (not ad-hoc chat). |
+| `swarm-board` | Multi-agent / swarm soft recipes: doorbell + shared filing cabinet, waits, typed handoffs as the board (not ad-hoc chat). |
 | `catch-up` | What changed. What wait on you. |
 | `proactive-assembly` | Unnamed work ask: soft entry mode + ranked cited context packet (projects, docs, asks, write-back). Suggestions only. |
 | `entry-mode-playbooks` | Soft recipes for `lost` / `ui` / `bug` / `feature` (assemble steps, caps, write-back checklist, done-when). Loaded by proactive-assembly; skippable. Not a wizard. |
@@ -139,7 +139,7 @@ with no setup and no credential of their own:
 | `SessionStart` | Name the session's git repository, so the agent can ask `brief_me` for the projects that cover it, and remind it to run `proactive-assembly` when the first task names no project. No network call. |
 | `UserPromptSubmit` | Call `brief_me` with `only: "projects"` over the session's own agentleFS connection, and add what moved in its projects. Nothing when nothing did. Also, when the prompt looks like an unnamed work ask (lost / UI / bug / feature), infer a soft entry mode and inject a short `proactive-assembly` reminder to return a ranked cited context packet (suggestions only; skipped when a project is already named). Pattern match only; no network; no mode picker. |
 | `Stop`, `SubagentStop` | An agent that took a project thread on and did not report it is sent back once to report. Else, when assembly suggested write-back and nothing durable was written, sent back once with the guided `writeback-loop` checklist (soft recipe; human may skip). Read from the session's transcript; no network call. |
-| `PostToolUse` | A session that coordinates helpers or other people through agentleFS (spawning, asking for work, posting on a folder) twice without a project is told once that it could be one. The same hook tips once toward `swarm-board` when multi-agent sends/spawns happen without a wait or room. From the transcript; no network call. |
+| `PostToolUse` | A session that coordinates helpers or other people through agentleFS (spawning, asking for work, posting on a folder) twice without a project is told once that it could be one. The same hook tips once toward `swarm-board` when multi-agent sends/spawns happen without a wait. From the transcript; no network call. |
 
 Claude Code and Codex read separate hook files (`hooks/hooks.json`,
 `hooks/codex-hooks.json`) because they name the plugin's server differently in
@@ -164,7 +164,7 @@ Sixteen tools. Each one only read, or only write. Read tools never ask before ru
 | Read | Do |
 |---|---|
 | `search` | Find. Every hit cite source. `scope: "public"` look in public GitHub files. |
-| `read` | Open one thing: doc, old version of doc, message, truth, lesson, package, room, wait. |
+| `read` | Open one thing: doc, old version of doc, message, truth, lesson, package, wait. |
 | `browse` | List: folders, docs, doc versions, people, sources, inbox, claims, truths, lessons, more. |
 | `access_read` | Who see what. Who you are. What wait for access decision. |
 | `brief_me` | What wait on you. What change near your work. |
@@ -177,7 +177,7 @@ Sixteen tools. Each one only read, or only write. Read tools never ask before ru
 | `access_grant` | Share, ask access, decide access, share to other org. |
 | `access_revoke` | Take access back. Retire agent. |
 | `identity_write` | Make helper agent. Set card. New session. |
-| `message_write` | Message, comment, room. |
+| `message_write` | Message, comment. |
 | `coordination_write` | Claim, wait, subscribe, mark read, truths. |
 | `knowledge_write` | Lessons, dead ends. Draft, publish. |
 | `registry_write` | Public registry, public context reports. Public! |
@@ -205,7 +205,7 @@ Old tool name gone. New name, same work.
 | `connect_org_source` / `add_org_source` | `sources_write` action `connect` / `sync` |
 | `share` | read actions in `access_read`, give in `access_grant`, take back in `access_revoke` |
 | `identity` | `access_read` (self, agents, card), `identity_write` (spawn, set_card, new_session), `access_revoke` (retire) |
-| `message`, `comment`, `room` | read in `read` / `browse`, write in `message_write` |
+| `message`, `comment` | read in `read` / `browse`, write in `message_write` |
 | `claim`, `await`, `subscribe`, `truth` | read in `read` / `browse`, write in `coordination_write` |
 | `knowledge` | read in `read` / `browse`, write in `knowledge_write` |
 | `registry`, `public_context_discussion` | read in `read` / `browse`, write in `registry_write` |

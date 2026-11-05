@@ -30,11 +30,11 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
   (`identity_write` with `action: "spawn"` and a narrowed `scope`) and have it act as that agent
   (`acting_as`, or its own credential) — never as you with full grants. The `collaborating` and
   `projects` skills have the steps. **Multi-agent / swarm coordination** uses the `swarm-board`
-  skill: typed messages with `wait: true`, rooms across chains, and handoff/commitment kinds as
-  the board — not ad-hoc chat or prose task docs. Default handoff pattern is **doorbell +
-  shared filing cabinet** (shared folder docs + request/handoff; wake is a pointer; next
-  `brief_me` recovers). Even under cron, register waits so the next `brief_me` sees what
-  resolved. Waits do not auto-start harnesses — they surface on the next `brief_me`.
+  skill: typed messages with `wait: true` and handoff/commitment kinds as the board — not
+  ad-hoc chat or prose task docs. Default handoff pattern is **doorbell + shared filing
+  cabinet** (shared folder docs + request/handoff; wake is a pointer; next `brief_me`
+  recovers). Even under cron, register waits so the next `brief_me` sees what resolved.
+  Waits do not auto-start harnesses — they surface on the next `brief_me`.
 - Find things with `search` (every hit carries a citation), list them with `browse` and
   `action: "folders"`, and open one with `read` and `action: "document"`. Cite what you used.
 - Write with `doc_create` into a folder the user chooses, and change part of a document with

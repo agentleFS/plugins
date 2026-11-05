@@ -68,7 +68,7 @@ Then point onward, without re-explaining them:
 - `/agentlefs:who-can-see` for who else can reach something.
 - `search` to prime a retrieve-then-cite pass.
 - **Multi-agent / swarm coordination** (doorbell + shared filing cabinet, typed
-  request/handoff + durable wait, rooms): load the `swarm-board` skill (tool shapes in
+  request/handoff + durable wait): load the `swarm-board` skill (tool shapes in
   `collaborating`). Waits do not auto-start a harness — they hold the shared brief and
   typed ask; the next `brief_me` recovers.
 
