@@ -1,6 +1,6 @@
 ---
 name: swarm-board
-description: Soft recipes so multi-agent or swarm work coordinates on agentleFS (afs) waits, typed messages, and shared docs — the board — instead of ad-hoc chat, prose task docs, or notebook locks. Load after connect when the user wants swarm handoffs, a Product→Admin doorbell, a shared filing cabinet across agent seats, spawning helpers, asking other agents, or waiting for a reply or a doc change. Especially under cron or intermittent heads, where waits were historically unused. Soft recipe, not a console wizard. Complements collaborating (primitives) and projects (folder briefs). Waits do not auto-start harnesses.
+description: "Soft recipes so multi-agent or swarm work coordinates on agentleFS (afs) waits, typed messages, and shared docs — the board — instead of ad-hoc chat, prose task docs, or notebook locks. Load after connect when the user wants swarm handoffs, a Product→Admin doorbell, a shared filing cabinet across agent seats, spawning helpers, asking other agents, or waiting for a reply or a doc change. Especially under cron or intermittent heads, where waits were historically unused. Soft recipe, not a console wizard. Complements collaborating (primitives) and projects (folder briefs). Waits do not auto-start harnesses."
 ---
 
 # Swarm board (messages + waits + shared docs)

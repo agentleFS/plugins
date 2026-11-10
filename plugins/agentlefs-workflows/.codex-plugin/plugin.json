@@ -1,0 +1,39 @@
+{
+  "name": "agentlefs-workflows",
+  "version": "0.12.16",
+  "description": "Optional project hooks and helper scripts for the agentleFS plugin: project briefings, work-ask suggestions and the team ballot formatter",
+  "author": {
+    "name": "agentleFS",
+    "email": "contact@agentlefs.com",
+    "url": "https://agentlefs.com"
+  },
+  "homepage": "https://agentlefs.com",
+  "repository": "https://github.com/agentleFS/plugins",
+  "license": "MIT",
+  "keywords": [
+    "agentlefs",
+    "afs",
+    "hooks",
+    "projects",
+    "decisions"
+  ],
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "agentleFS Workflows",
+    "shortDescription": "Project hooks for agentleFS",
+    "longDescription": "Optional companion to the agentleFS plugin. Its hooks name the session's repository and the agentleFS skills that can help, brief the agent on what moved in its agentleFS projects on each prompt, and remind it once before stopping when a project thread it took is unreported. It also carries the formatter the mandate-ledger skill uses for team ballots. Install the agentleFS plugin first.",
+    "developerName": "agentleFS",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://agentlefs.com",
+    "supportURL": "https://agentlefs.com/support",
+    "privacyPolicyURL": "https://agentlefs.com/privacy",
+    "termsOfServiceURL": "https://agentlefs.com/terms",
+    "brandColor": "#9e362f",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
+    "logoDark": "./assets/logo-dark.png"
+  }
+}

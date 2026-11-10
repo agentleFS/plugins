@@ -1,6 +1,6 @@
 ---
 name: proactive-assembly
-description: When a coding or continue-work ask names no agentleFS (afs) project or folder ("implement this feature", "fix the auth bug", "UI sucks", "don't know what to change"), before coding infer a soft entry mode (lost / ui / bug / feature) and return one ranked, cited, permission-bound context packet — candidate projects/folders, docs/decisions, open asks/waits, suggested write-back targets. Suggestions only; capped; same reach as search/read. Skip when the user already named a project (continue-project). Not for catch-up, general Q&A, or when a project pointer is already present.
+description: "When a coding or continue-work ask names no agentleFS (afs) project or folder (\"implement this feature\", \"fix the auth bug\", \"UI sucks\", \"don't know what to change\"), before coding infer a soft entry mode (lost / ui / bug / feature) and return one ranked, cited, permission-bound context packet — candidate projects/folders, docs/decisions, open asks/waits, suggested write-back targets. Suggestions only; capped; same reach as search/read. Skip when the user already named a project (continue-project). Not for catch-up, general Q&A, or when a project pointer is already present."
 ---
 
 # Proactive assembly (ask-conditioned context packet)

@@ -1,6 +1,6 @@
 ---
 name: sharing
-description: Give, get and check access in agentleFS (afs). Use when the user wants to share a folder or document with a colleague, asks for access they do not have ("I need access to the legal folder"), has access requests waiting on their approval, asks who can read something or whether a particular agent can see something, or wants to offer a folder to someone in another organization or accept one offered to them. For why access works the way it does, the authorization-model skill.
+description: "Give, get and check access in agentleFS (afs). Use when the user wants to share a folder or document with a colleague, asks for access they do not have (\"I need access to the legal folder\"), has access requests waiting on their approval, asks who can read something or whether a particular agent can see something, or wants to offer a folder to someone in another organization or accept one offered to them. For why access works the way it does, the authorization-model skill."
 ---
 
 # Sharing and access in agentleFS

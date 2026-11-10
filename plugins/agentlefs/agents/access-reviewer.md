@@ -1,7 +1,6 @@
 ---
 name: access-reviewer
-description: Read-only review of what an agentleFS (afs) credential can reach, and what can and cannot be determined about access from an agent context. Use to audit this principal's effective reach, to explain why content is or is not visible, or to prepare a sharing or access-review decision before a human acts on it in the console. Never mutates anything.
-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__access_read
+description: "Read-only review of what an agentleFS (afs) credential can reach, and what can and cannot be determined about access from an agent context. Use to audit this principal's effective reach, to explain why content is or is not visible, or to prepare a sharing or access-review decision before a human acts on it in the console. Never mutates anything."
 model: sonnet
 ---
 

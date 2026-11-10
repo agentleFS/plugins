@@ -9,6 +9,23 @@ afterthought.
 > open PRs here, edits are overwritten by the next publish. File issues at
 > [agentlefs.com](https://agentlefs.com).
 
+## Install in one step
+
+[**Add to Cursor**](https://agentlefs.com/docs/connect?ref=plugins-readme) ·
+[**Add to VS Code**](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522agentlefs%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fmcp.agentlefs.com%252Fmcp%253Fref%253Dvscode-install-link%2522%257D)
+
+| Client | Run |
+|---|---|
+| Claude Code | `/plugin marketplace add agentleFS/plugins` then `/plugin install agentlefs@agentlefs` |
+| Claude (claude.ai, Desktop) | Customize → Connectors → Add custom connector: `https://mcp.agentlefs.com/mcp?ref=claude-custom-connector` |
+| Codex | `codex plugin marketplace add agentleFS/plugins` then `codex plugin add agentlefs@agentlefs` |
+| Antigravity | `agy plugin install https://github.com/agentleFS/plugins/tree/main/antigravity` |
+| Gemini CLI | `gemini extensions install https://github.com/agentleFS/plugins` |
+
+Each signs in through your browser on first use. Cursor's install link is a `cursor://` link,
+which GitHub does not render, so the badge opens [the connect page](https://agentlefs.com/docs/connect?ref=plugins-readme)
+where it is one click.
+
 ## Why bother
 
 Your agent already knows how software works. It knows nothing about **how your company
@@ -85,6 +102,13 @@ them. If a search comes back thin, say it may be a permission boundary rather th
 telling me nothing exists.
 ```
 
+Nothing is remembered automatically. To make saving a habit, add a line like this to your own
+`CLAUDE.md` or `AGENTS.md`; each save is still an offer you can decline:
+
+```
+At the end of each session, offer to save a summary to agentleFS.
+```
+
 | Command | Answers |
 |---------|---------|
 | `/agentlefs:connect` | Get me connected, and tell me why I see nothing |
@@ -112,12 +136,28 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `deleting` | Something is about to be removed, restored or permanently erased, and the blast radius needs saying out loud first |
 | `authorization-model` | Anything turns on who can read what, or a result comes back thinner than expected |
 | `connection` | The tools are missing, returning 401, or connected but reaching nothing |
-| `memory` | You want automatic recall and session capture set up, checked, or turned off |
+| `memory` | Earlier sessions' saved summaries or notes would help, or you ask it to remember something. Nothing is saved unless you ask |
 | `projects` | You want to start a project, see what is open, take or report work, or split it across helpers |
 
 Plus two agents: `context-researcher` for grounded retrieve-and-cite work, and
-`access-reviewer` for read-only access review — read-only by tool allowlist rather than
-by instruction.
+`access-reviewer` for read-only access review. Neither carries a tool allowlist, which the
+Claude directory reserves for Verified publishers, so each asks before any tool your settings
+do not already allow, and every write tool asks.
+
+### Optional: agentleFS Workflows
+
+The `agentlefs` plugin runs nothing on your computer: no hooks, no scripts. The same marketplace
+carries a second plugin, `agentlefs-workflows`, for people who want hooks: they name the session's
+repository and the skills that can help, brief the agent on what moved in your projects on each
+prompt, and remind it once before stopping when a project thread it took is unreported. It also
+carries the formatter the `mandate-ledger` skill uses for team ballots. It needs Python 3.9 or
+newer, and its README lists every hook and network call.
+
+```
+/plugin install agentlefs-workflows@agentlefs
+```
+
+Codex and Cursor list it in the same marketplace.
 
 **Self-hosted?** The marketplace plugin hardcodes `https://mcp.agentlefs.com/mcp`,
 so installing it against your own deployment would connect to the hosted host and
@@ -184,10 +224,13 @@ Claude Code and Codex artifacts.
 
 ## Antigravity
 
-The `antigravity/` folder is an Antigravity plugin: the hosted server plus the same skills.
+The `antigravity/` folder is an Antigravity plugin: the hosted server and the same skills. The
+optional `antigravity-workflows/` folder adds the project hooks in Antigravity's `hooks.json`
+(its README says which events it carries).
 
 ```
 agy plugin install https://github.com/agentleFS/plugins/tree/main/antigravity
+agy plugin install https://github.com/agentleFS/plugins/tree/main/antigravity-workflows
 ```
 
 Antigravity signs in on the first call through the browser, as Gemini does. Install the folder,
@@ -198,11 +241,11 @@ server without the skills.
 
 Same package, same marketplace repository, same browser sign-in. Cursor reads
 `.cursor-plugin/plugin.json` and the root `.cursor-plugin/marketplace.json`, and loads
-the shared `skills/`, `agents/`, `commands/` and `.mcp.json`. Lifecycle hooks live in
-`hooks/cursor-hooks.json` (Cursor's camelCase schema); they capture memory and name the
-session's repository. Two Claude/Codex behaviours have no Cursor equivalent today:
-`mcp_tool` project briefs on each prompt, and injecting recalled memory into
-`beforeSubmitPrompt` (that hook can only allow or block).
+the shared `skills/`, `agents/`, `commands/` and `.mcp.json`. The optional
+`agentlefs-workflows` plugin's hooks live in its `hooks/cursor-hooks.json` (Cursor's camelCase
+schema); they name the session's repository and the skills that can help, and record nothing.
+Two Claude/Codex behaviours have no Cursor equivalent today: `mcp_tool` project briefs on each
+prompt, and the prompt-time `assemble` suggestion (`beforeSubmitPrompt` can only allow or block).
 
 **1. Add the marketplace.** In Cursor, open **Dashboard → Plugins & MCPs → Team Marketplaces →
 Add Marketplace → Import from Repo**, and paste:

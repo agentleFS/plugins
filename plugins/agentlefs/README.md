@@ -65,90 +65,47 @@ Claude pick these when need.
 | `sources` | Connect GitHub or Google Drive; bind GitHub issues and post safe pointers. |
 | `connection` | Fix sign-in trouble. |
 | `authorization-model` | Why agent see what it see. |
-| `memory` | Set up automatic recall and session capture, check pending saves, or disable it. |
+| `memory` | Recall what earlier sessions saved when it helps. Save a summary or note only when you ask. |
 | `projects` | Start a project with other people and their agents. Post, take, report work. Split it across helpers. |
 
-## Automatic memory
+## Memory
 
-Claude Code, local Codex, and Cursor sessions can run the bundled lifecycle hooks.
-After you configure a save folder and hook credential, the plugin recalls relevant
-memory where the host allows injection and captures prompts, tool traces, and
-assistant responses automatically. Python 3.9 or newer is required; no Python
-packages are installed. Hosts without command hooks can continue using the MCP
-tools and skills.
+Nothing is remembered unless you ask. The plugin has no hooks: nothing records your prompts,
+tool calls or replies, and it saves nothing to agentleFS on its own.
 
-```sh
-# AGENTLEFS_TOKEN is an agent credential supplied by your environment.
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" configure --folder "engineering/memory"
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/memory_hooks.py" status
-```
+- **Recall.** When a task continues earlier work, the `memory` skill can `search` and `read`
+  what you saved before (session summaries, notes, truths, lessons) and cite it. Same reach as
+  any other read: only what your grants let you see.
+- **Save, when you ask.** "Save a summary of this session" writes one compact summary (500
+  words at most, never a transcript) to the folder you pick, through the `documents` skill. A
+  single decision or a lesson goes through `shared-truths-and-lessons`.
+- **Make it routine, if you want.** Add a line to your own `CLAUDE.md` or `AGENTS.md`, for
+  example:
 
-Use the installed plugin's absolute path if your shell has no `CLAUDE_PLUGIN_ROOT`
-(Cursor supplies `CURSOR_PLUGIN_ROOT` instead). On Codex, review and trust the hooks
-through the host's hook controls; plugin installation alone does not trust them.
-The `memory` skill walks through setup.
+  ```
+  At the end of each session, offer to save a summary to agentleFS.
+  ```
 
-| Event (Claude / Codex) | Cursor | Behavior |
-|---|---|---|
-| `SessionStart` | `sessionStart` | Restore the local checkpoint and retry pending saves; inject that memory is enabled. |
-| `UserPromptSubmit` | `beforeSubmitPrompt` | Stage the prompt locally. Claude/Codex also retrieve memory with citations; Cursor cannot inject on this hook, so recall is skipped there. |
-| `PostToolUse` | `postToolUse` | Stage a bounded tool trace and attempt delivery. |
-| `Stop` | `afterAgentResponse` + `stop` | Capture the assistant response (Cursor: from `afterAgentResponse`) and attempt delivery. |
-| `PreCompact` | `preCompact` | Persist a checkpoint for restoration after compaction. |
-| `SessionEnd` | `sessionEnd` | Persist the final checkpoint and start a detached delivery attempt. |
-
-Capture starts only after setup. Hooks use the same `AGENTLEFS_URL` and
-`AGENTLEFS_TOKEN` conventions as the CLI, with the hosted MCP endpoint as the
-default URL. They cannot read the host's OAuth credential store. A token supplied
-with `configure --token-stdin` is stored locally with restrictive permissions;
-never put a credential in a command argument or a committed file.
-
-Captures are stored as individual documents in the chosen folder. That folder's
-existing permissions determine who can read them. The plugin bounds captured
-text and redacts common credential formats; this is not a guarantee that every
-secret embedded in arbitrary prose can be recognized. Choose a destination whose
-audience is appropriate for your conversations.
-
-Pending captures are written locally before network delivery. Failed or refused
-saves stay pending, and later hooks or `flush` retry them. Each capture has a
-stable document name and idempotency key. A local checkpoint is not a remote-save
-acknowledgement, and a detached worker is not guaranteed to survive host shutdown.
-Use `status` to check the queue and `flush` to retry it. `disable` stops capture,
-recall, and delivery; it does not delete existing local or remote records.
-Idle local checkpoints for fully acknowledged sessions expire after 30 days;
-pending captures are never removed by that cleanup. Records are isolated by
-credential, endpoint, folder, working directory, and host session. After changing
-the credential, endpoint, or folder, `status` reports older captures separately
-as `pending_other`; restore their original configuration to retry them.
-
-The lifecycle follows [Cognee's plugin](https://github.com/topoteretes/cognee-integrations/blob/main/integrations/claude-code/hooks/hooks.json),
-with an AgentleFS implementation using the existing MCP tools. No Cognee service
-or additional model provider is required. These executable hooks are intended for
-local plugin installations; OpenAI's public plugin directory currently excludes
-packages with hooks, and cloud orchestration does not run these command hooks.
+  The agent then offers at the end of each session, and each save is still yours to accept.
 
 ## Projects
 
 A project is a folder marked as one: its brief is the folder's `AGENTS.md`, its
 conversation is the folder's discussion, and whoever can read the folder is a
-member. The `projects` skill starts one and runs it. Hooks keep agents on it,
-with no setup and no credential of their own:
+member. The `projects` skill starts one and runs it.
 
-| Event | Hook |
-|---|---|
-| `SessionStart` | Name the session's git repository, so the agent can ask `brief_me` for the projects that cover it, and remind it to run `proactive-assembly` when the first task names no project. No network call. |
-| `UserPromptSubmit` | Call `brief_me` with `only: "projects"` over the session's own agentleFS connection, and add what moved in its projects. Nothing when nothing did. Also, when the prompt looks like an unnamed work ask (lost / UI / bug / feature), infer a soft entry mode and inject a short `proactive-assembly` reminder to return a ranked cited context packet (suggestions only; skipped when a project is already named). Pattern match only; no network; no mode picker. |
-| `Stop`, `SubagentStop` | An agent that took a project thread on and did not report it is sent back once to report. Else, when assembly suggested write-back and nothing durable was written, sent back once with the guided `writeback-loop` checklist (soft recipe; human may skip). Read from the session's transcript; no network call. |
-| `PostToolUse` | A session that coordinates helpers or other people through agentleFS (spawning, asking for work, posting on a folder) twice without a project is told once that it could be one. The same hook tips once toward `swarm-board` when multi-agent sends/spawns happen without a wait. From the transcript; no network call. |
+## Optional: agentleFS Workflows
 
-Claude Code and Codex read separate hook files (`hooks/hooks.json`,
-`hooks/codex-hooks.json`) because they name the plugin's server differently in
-an `mcp_tool` hook; the two files are otherwise the same. Cursor reads
-`hooks/cursor-hooks.json` (camelCase events, flat `command` hooks, `--platform cursor`).
-Cursor has no `mcp_tool` hook type and cannot inject on `beforeSubmitPrompt`, so the
-per-prompt `brief_me only=projects` call and the `assemble` reminder stay
-Claude/Codex-only; `sessionStart` still names the repository and the unnamed-task
-reminder so the agent can ask `brief_me` / run `proactive-assembly` itself.
+This plugin runs nothing on your computer: no hooks, no scripts. A second plugin in the same
+marketplace, `agentlefs-workflows`, adds them for people who want them: hooks that name the
+session's repository and the skills that can help, brief the agent on what moved in your
+projects on each prompt (a `brief_me` call to the agentleFS server), and remind it once before
+stopping when a project thread it took is unreported; and the formatter the `mandate-ledger`
+skill uses for team ballots. Its README lists every hook, what it injects and every network call.
+
+```
+/plugin install agentlefs-workflows@agentlefs
+```
 
 ## Agents
 
@@ -212,20 +169,31 @@ Old tool name gone. New name, same work.
 | `connectors` | `browse` action `connectors`, `sources_write` action `vote` |
 | `brief_me` `ack_through` | `coordination_write` action `ack_brief` |
 
-## What go where
+## What goes where
 
-The plugin connects to one server and includes skills, commands, and optional memory hooks.
+The plugin connects to one server and adds skills, commands and agents.
 
 - **Skills and commands:** instructions the agent reads to use the connected server.
-- **Run:** Python lifecycle hooks when the host supports and trusts them. Memory capture and recall require setup.
-- **Connect:** one server, `https://mcp.agentlefs.com/mcp`. Sign in by OAuth in browser. No token in file.
-- **Send to agentleFS:** tool-call arguments, including configured automatic memory captures and recall queries. Docs you save. Messages, comments. Who you share with (email). One-line `reason` on some writes.
-- **agentleFS keep:** docs, messages, comments, until deleted. Audit log keep who did what, when, where. Search words: only hash, never words. `reason`: one line, max 200 chars, kept with event.
-- **Fetch from agentleFS:** only what your grants let you read.
-- **Leave agentleFS:** only when you ask. `access_grant` share out email person in other org. `identity_write` webhook post to URL you give. `registry_write` post public comment, rating, report. `sources_write` connect GitHub or Google.
-- **Local memory:** configured hooks keep pending captures and checkpoints on your machine and may read the host-provided transcript to recover an assistant response. Ordinary MCP tools do not fetch your local chat history.
-- **`documents` (save this conversation):** run only when you ask to save this chat. Claude write short summary, 500 words max, never transcript. Only that summary sent, as one doc, to folder you pick (or folder last summary went).
-- **No Slack skill.** Removed. Plugin never call other connector you did not name.
+- **Runs locally:** nothing. The plugin has no hooks and no scripts; the optional
+  `agentlefs-workflows` plugin, a separate install, discloses its own.
+- **Connects to:** one server, `https://mcp.agentlefs.com/mcp`. You sign in with OAuth in the
+  browser; no token is stored in a file.
+- **Sent to agentleFS:** the arguments of each tool call; documents you save; messages and comments; the
+  email addresses of people you share with; and a one-line `reason` on some writes.
+- **Kept by agentleFS:** documents, messages and comments until you delete them. The audit log
+  keeps who did what, when and where. Search words are kept only as a hash, never as text. A
+  `reason` is one line of at most 200 characters, kept with its event.
+- **Fetched from agentleFS:** only what your grants let you read.
+- **Leaves agentleFS:** only when you ask. `access_grant` `share_out` emails a person in another
+  organization; `identity_write` `set_card` posts to a webhook URL you give; `registry_write`
+  posts a public comment, rating or report; `sources_write` connects GitHub or Google Drive.
+- **Memory:** nothing is captured automatically. A session is saved only when you ask, as
+  described under Memory above.
+- **`documents` (save this conversation):** runs only when you ask to save this chat. The agent
+  writes a short summary of at most 500 words, never a transcript, from what is already in its
+  context; no tool reads your chat history. Only that summary is sent, as one document, to the
+  folder you pick (or the folder your last summary went to).
+- **No Slack skill.** The plugin never calls another connector you did not name.
 
 ## More
 

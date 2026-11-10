@@ -10,6 +10,11 @@
       "name": "agentlefs",
       "source": "./plugins/agentlefs",
       "description": "Shared second brain for any AI with agent permissions"
+    },
+    {
+      "name": "agentlefs-workflows",
+      "source": "./plugins/agentlefs-workflows",
+      "description": "Optional project hooks and helper scripts for the agentleFS plugin"
     }
   ]
 }

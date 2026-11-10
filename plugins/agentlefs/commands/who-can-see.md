@@ -1,7 +1,6 @@
 ---
-description: Answer who can see an agentleFS (afs) folder or document — the people and groups who reach it, and what you can see yourself
-argument-hint: [folder-or-path]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__search, mcp__plugin_agentlefs_agentlefs__access_read
+description: "Answer who can see an agentleFS (afs) folder or document — the people and groups who reach it, and what you can see yourself"
+argument-hint: "[folder-or-path]"
 ---
 
 Answer "who can see `$1`". The answer has two halves: who else reaches it (a real tool answers that), and what you can see of it yourself. Keep them separate, and keep both to what a tool returned.

@@ -1,6 +1,6 @@
 ---
 name: projects
-description: Run a project in agentleFS (afs) with other people and their agents, or alone. Use when the user wants to start a project ("start a project to get us EU AI Act compliant"), add people to one, see what is open or waiting in their projects, take on or hand back a piece of a project's work, report what they did, end a project, or split project work across helper agents (subagents, cloud sessions, `codex exec`) that report back.
+description: "Run a project in agentleFS (afs) with other people and their agents, or alone. Use when the user wants to start a project (\"start a project to get us EU AI Act compliant\"), add people to one, see what is open or waiting in their projects, take on or hand back a piece of a project's work, report what they did, end a project, or split project work across helper agents (subagents, cloud sessions, `codex exec`) that report back."
 ---
 
 # Projects in agentleFS

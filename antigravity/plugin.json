@@ -1,4 +1,27 @@
 {
   "name": "agentlefs",
-  "description": "Shared second brain for any AI with agent permissions"
+  "displayName": "agentleFS",
+  "description": "Shared second brain for any AI with agent permissions: your team's docs, decisions and projects, searched and cited in Antigravity, within each person's access.",
+  "version": "0.12.16",
+  "logo": "assets/logo.png",
+  "suggestedPrompts": [
+    "Search our team docs for how we deploy, and cite the sources",
+    "Catch me up on what is waiting on me in agentleFS",
+    "Who can see the engineering folder?"
+  ],
+  "author": {
+    "name": "agentleFS",
+    "url": "https://agentlefs.com"
+  },
+  "homepage": "https://agentlefs.com/docs/connect?ref=antigravity-plugin",
+  "repository": "https://github.com/agentleFS/plugins",
+  "license": "MIT",
+  "keywords": [
+    "agentlefs",
+    "knowledge",
+    "second-brain",
+    "permissions",
+    "mcp",
+    "documents"
+  ]
 }

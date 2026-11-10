@@ -1,6 +1,6 @@
 ---
 name: deleting
-description: How to delete, restore and permanently erase things in agentleFS (afs) without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest; when the user wants something deleted by mistake brought back or undone; when they ask to permanently erase or purge data, for example for a GDPR or other erasure request; and before calling doc_delete for any reason. Also use to explain why a delete or erase was refused, or why each needs two calls.
+description: "How to delete, restore and permanently erase things in agentleFS (afs) without destroying more than intended. Use whenever a deletion is on the table — removing a document, clearing out a directory, deleting a folder, cleaning up after a migration or a bad ingest; when the user wants something deleted by mistake brought back or undone; when they ask to permanently erase or purge data, for example for a GDPR or other erasure request; and before calling doc_delete for any reason. Also use to explain why a delete or erase was refused, or why each needs two calls."
 ---
 
 # Deleting from agentleFS

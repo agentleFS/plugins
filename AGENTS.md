@@ -10,6 +10,9 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
 - A question about how *this* person or team does something, a past decision, who owns what, or a
   project's notes: look in agentleFS before answering from general knowledge.
 - Something worth keeping (a decision, a finding, a runbook): offer to save it.
+- Earlier work the user saved (session summaries, notes, decisions, lessons): when a task continues
+  it, the `memory` skill finds and cites it. Nothing is saved automatically; save only when the
+  user asks.
 
 ## How
 

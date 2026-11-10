@@ -1,6 +1,6 @@
 ---
 name: connection
-description: How this client signs in to the agentleFS (afs) MCP server, and how to diagnose that connection. Use when agentleFS tools are unavailable, return 401, 404, or auth errors; when the user asks how to set up, sign in to, or authenticate this client with agentleFS; when the connection succeeds but returns no folders or reaches the wrong Organization or email; when configuring a self-hosted endpoint; or when setting up headless/CI access. Also use before concluding that agentleFS is broken. Syncing GitHub or Google Drive content into afs is the sources skill, not this one.
+description: "How this client signs in to the agentleFS (afs) MCP server, and how to diagnose that connection. Use when agentleFS tools are unavailable, return 401, 404, or auth errors; when the user asks how to set up, sign in to, or authenticate this client with agentleFS; when the connection succeeds but returns no folders or reaches the wrong Organization or email; when configuring a self-hosted endpoint; or when setting up headless/CI access. Also use before concluding that agentleFS is broken. Syncing GitHub or Google Drive content into afs is the sources skill, not this one."
 ---
 
 # agentleFS connection
@@ -28,7 +28,7 @@ Healthy `GET /healthz` returns:
 
 ## The auth flow: OAuth with Dynamic Client Registration
 
-For the normal MCP connection, there is **no token to mint, paste, or store**. The user signs in in a browser and the client registers itself. Optional local memory hooks use a separate agent credential because command hooks cannot access the host's OAuth credential store; the `memory` skill covers that setup.
+For the normal MCP connection, there is **no token to mint, paste, or store**. The user signs in in a browser and the client registers itself.
 
 Discovery chain:
 

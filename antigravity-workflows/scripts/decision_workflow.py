@@ -5,24 +5,25 @@ from pathlib import Path
 import re
 from datetime import datetime, timezone
 
+# Hook text describes and suggests; it never tells the model to skip asking the user or to act
+# without the user's request (plugins/CLAUDE.md, "Hook output").
 PICKUP_GUIDANCE = (
-    "The user reports a decision was made. Read the existing ballot, current accepted choice and "
-    "execution report; do not create another ballot or infer an option from agreement alone. "
-    "If the choice is valid, readyForPickup is true, state is not_started, and the bounded work is "
-    "authorized, follow the decision-pickup workflow now: claim, re-read, record working, and "
-    "continue implementation in this turn. Do not stop at a status-only acknowledgement or ask "
-    "for authorization already supplied. Honor overlapping claims, opt-outs and real blockers. "
-    "Acceptance alone without a queued work request or user authorization does not start work."
+    "This concerns a recorded agentleFS decision. If the user wants you to act on it, the mandate-ledger "
+    "skill can read the existing ballot, its accepted choice and its execution report (readyForPickup, "
+    "state) so the work follows the recorded decision; do not create another ballot or infer an option "
+    "from agreement alone. Whether to start, and how far to go, is the user's call; if that is unclear, "
+    "ask them. Honor overlapping claims, opt-outs and real blockers, and report the actual status. "
+    "Acceptance alone does not authorize work."
 )
 
 GUIDANCE = (
-    "Use mandate-ledger for substantive team choices: reuse an existing ballot or file one pending "
-    "ballot in the established shared destination before presenting alternatives or a recommendation. "
-    "Unknown audience/destination: prepare and clarify, never broaden access. Respect opt-outs; "
-    "routine edits, personal suggestions and settled facts need no new ballot. A pending proposal "
-    "is not approval. Verify human choice and execution authorization separately; report actual "
-    "progress, questions/blockers and completion evidence on the same decision source. "
-    "Neither truth acceptance nor session exit proves work started or finished. " + PICKUP_GUIDANCE
+    "For a substantive team choice (product, architecture, rollout, pricing, policy), the "
+    "mandate-ledger skill can help, and a pending ballot may already cover it, so reuse one rather "
+    "than duplicating it. If the user wants the team to weigh in, offer to record a ballot, and record "
+    "one only when they agree, in a destination they choose, without broadening access. Routine "
+    "edits, personal suggestions and settled facts need no ballot. A pending proposal is not "
+    "approval, and an accepted choice is not authorization to start work; when asked, report actual "
+    "progress, blockers and completion evidence on the decision's source."
 )
 
 
@@ -52,7 +53,7 @@ def observe(observation, outcome):
               "outcome": outcome, "skill_application": "unknown",
               "at": datetime.now(timezone.utc).isoformat()}
     try:
-        # Same private state boundary as memory; Dev AFS rewrites this environment/default.
+        # Private local state, never sent; Dev AFS rewrites this environment/default.
         home = Path(os.environ.get("AGENTLEFS_MEMORY_HOME", "~/.agentlefs/plugin-memory")).expanduser()
         home.mkdir(parents=True, exist_ok=True, mode=0o700)
         path = home / "decision-observations.jsonl"

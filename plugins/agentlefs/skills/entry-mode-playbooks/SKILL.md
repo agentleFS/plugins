@@ -1,6 +1,6 @@
 ---
 name: entry-mode-playbooks
-description: Soft recipes for unnamed harness entry modes (lost / ui / bug / feature) in agentleFS (afs) — assemble steps, caps, write-back checklist, and done-when. Loaded by proactive-assembly after soft mode inference; skippable and overrideable. Not a console wizard or entry-mode picker. Not for named continue-project or catch-up.
+description: "Soft recipes for unnamed harness entry modes (lost / ui / bug / feature) in agentleFS (afs) — assemble steps, caps, write-back checklist, and done-when. Loaded by proactive-assembly after soft mode inference; skippable and overrideable. Not a console wizard or entry-mode picker. Not for named continue-project or catch-up."
 ---
 
 # Entry-mode playbooks (soft recipes)

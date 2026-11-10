@@ -1,6 +1,6 @@
 ---
 name: catch-up
-description: Catch the user up on their work in agentleFS (afs) — what is waiting on them, what changed near their work, and where they left off. Use when they say "catch me up", "what's waiting on me", "what changed", "what was I working on", "where did I leave off" or "get me up to speed", or when they refer to their own ongoing work in afs ("the pricing thing", "my spec") as though you should already know which document they mean. Not for general questions, coding tasks in the open repository, or a session that has not touched afs.
+description: "Catch the user up on their work in agentleFS (afs) — what is waiting on them, what changed near their work, and where they left off. Use when they say \"catch me up\", \"what's waiting on me\", \"what changed\", \"what was I working on\", \"where did I leave off\" or \"get me up to speed\", or when they refer to their own ongoing work in afs (\"the pricing thing\", \"my spec\") as though you should already know which document they mean. Not for general questions, coding tasks in the open repository, or a session that has not touched afs."
 ---
 
 # Catch up on what the user has been working on

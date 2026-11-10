@@ -1,6 +1,6 @@
 {
   "name": "agentlefs",
-  "version": "0.12.12",
+  "version": "0.12.16",
   "description": "Shared second brain for any AI with agent permissions",
   "author": {
     "name": "agentleFS",
@@ -27,7 +27,6 @@
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
-  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "agentleFS",
     "shortDescription": "Shared second brain for any AI",

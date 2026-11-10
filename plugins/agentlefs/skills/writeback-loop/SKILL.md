@@ -1,6 +1,6 @@
 ---
 name: writeback-loop
-description: Before stopping an unnamed or lightly named agentleFS (afs) harness session that assembled context or produced durable findings, run a guided write-back checklist — commit docs/comments/messages/truths to the suggested targets (or an agreed folder) using existing MCP write tools. Soft recipe, not a wizard; human can skip. Product form of VF-auto-writeback. Not for sessions that already wrote back, pure chat with nothing durable, or when the human said not to record.
+description: "Before stopping an unnamed or lightly named agentleFS (afs) harness session that assembled context or produced durable findings, run a guided write-back checklist — commit docs/comments/messages/truths to the suggested targets (or an agreed folder) using existing MCP write tools. Soft recipe, not a wizard; human can skip. Product form of VF-auto-writeback. Not for sessions that already wrote back, pure chat with nothing durable, or when the human said not to record."
 ---
 
 # Write-back loop (guided, soft recipe)

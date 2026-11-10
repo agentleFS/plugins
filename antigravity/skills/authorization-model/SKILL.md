@@ -1,6 +1,6 @@
 ---
 name: authorization-model
-description: How agentleFS (afs) decides what a person or agent may read. Use when reasoning about afs access, grants, roles, cascade, groups or an agent's delegated scope; when a search or listing came back thinner than expected and you need to tell missing content from gated content; when explaining why someone or some agent cannot see a document; or when about to state who can or cannot see something. For carrying out a share, an access request or a who-can-see check, the sharing skill.
+description: "How agentleFS (afs) decides what a person or agent may read. Use when reasoning about afs access, grants, roles, cascade, groups or an agent's delegated scope; when a search or listing came back thinner than expected and you need to tell missing content from gated content; when explaining why someone or some agent cannot see a document; or when about to state who can or cannot see something. For carrying out a share, an access request or a who-can-see check, the sharing skill."
 ---
 
 # agentleFS authorization

@@ -1,7 +1,6 @@
 ---
-description: Share an agentleFS (afs) folder or document with members of your Organization by email — shows exactly who gets what, and shares only after you say yes
-argument-hint: [folder-or-path]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__access_read
+description: "Share an agentleFS (afs) folder or document with members of your Organization by email — shows exactly who gets what, and shares only after you say yes"
+argument-hint: "[folder-or-path]"
 ---
 
 Help the user share `$1` with someone in their Organization. Your job is to get the decision right, show its blast radius, and share only after they say yes to the exact preview.

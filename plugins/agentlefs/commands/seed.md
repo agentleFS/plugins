@@ -1,7 +1,6 @@
 ---
-description: Seed agentleFS (afs) with what you already know about this project, so the store isn't empty
-argument-hint: [folder]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__read, mcp__plugin_agentlefs_agentlefs__doc_create
+description: "Seed agentleFS (afs) with what you already know about this project, so the store isn't empty"
+argument-hint: "[folder]"
 ---
 
 Fill a reachable-but-empty agentleFS with durable knowledge about the current project. A new store has working semantic search and nothing to search — this closes that gap in one pass.

@@ -5,25 +5,26 @@ No network call and no credential: anything that needs agentleFS goes through th
 connection (an `mcp_tool` hook, or the agent's next call). This script only reads what the host
 hands it on stdin and the session's own transcript (docs/design/shared-projects.md, "Hooks").
 
-  session-start  names the session's repository, so the agent can ask `brief_me` with `repo`
-                 for the projects that cover it, and reminds it to run proactive-assembly when
-                 the first task names no project.
+Everything injected describes and suggests. Nothing tells the agent to act without the user's
+request, to skip asking the user, or to write anywhere the user did not ask for
+(plugins/CLAUDE.md, "Hook output").
+
+  session-start  names the session's repository, and says which skills (brief_me's briefing,
+                 proactive-assembly, mandate-ledger) can help if the task calls for them.
   assemble       on UserPromptSubmit, when the prompt looks like an unnamed work ask (lost / UI /
-                 bug / feature), infers an entry mode and injects a reminder to return a ranked,
-                 cited context packet (suggestions only). Skips when a project is already named.
-                 No network call; no mode picker.
-  stop           a session or subagent that took a project thread's work on (`reply_comment`
-                 with status=taken) and has not reported it (status=reported) is sent back once
-                 to report before it stops. Else, when assembly/playbooks suggested write-back
-                 and nothing durable was written, sends the agent back once with the guided
-                 writeback-loop checklist (soft recipe; human may skip).
+                 bug / feature), suggests a soft entry mode and the proactive-assembly packet.
+                 Skips when a project is already named. No network call; no mode picker.
+  stop           a session or subagent that marked a project thread taken and never reported it,
+                 or that was offered write-back targets and wrote nothing, is reminded once to
+                 tell the user and offer to record it. Never a write of its own.
   nudge          a session that coordinates work through agentleFS without a project (it spawns
                  helpers, asks agents or people for work, or posts on a folder, twice or more, and
                  never starts one) is told once that the work could be a project. The same pass tips
                  once toward swarm-board when multi-agent spawn/ask traffic has no wait.
 
-`--platform cursor` selects Cursor's output envelope (additional_context / followup_message);
-the default remains Claude/Codex's hookSpecificOutput / decision block.
+`--platform` picks the host's output envelope: claude (Claude Code and Codex: hookSpecificOutput,
+decision block), cursor (additional_context, followup_message), or antigravity (injectSteps on
+SessionStart and PreInvocation; Antigravity wires session-start and assemble only).
 """
 import argparse
 import json
@@ -35,7 +36,7 @@ from decision_workflow import GUIDANCE as DECISION_GUIDANCE, PICKUP_GUIDANCE, pi
 
 MAX_INPUT = 1024 * 1024
 MAX_TRANSCRIPT = 64 * 1024 * 1024
-PLATFORMS = ("claude", "cursor")
+PLATFORMS = ("claude", "cursor", "antigravity")
 
 # Work-task verbs that often arrive without a project pointer (build-list #1 / F22 / VF-ask-assembly).
 TASK_VERBS = re.compile(
@@ -156,6 +157,18 @@ def normalize_event(event):
     # Cursor stop: loop_count > 0 means a prior followup already ran (same as stop_hook_active).
     if not out.get("stop_hook_active") and isinstance(out.get("loop_count"), int) and out["loop_count"] > 0:
         out["stop_hook_active"] = True
+    # Antigravity's camelCase payload (antigravity.google/docs/hooks, "Input contract").
+    paths = out.get("workspacePaths")
+    if not out.get("cwd") and isinstance(paths, list) and paths and isinstance(paths[0], str):
+        out["cwd"] = paths[0]
+    if not out.get("transcript_path") and isinstance(out.get("transcriptPath"), str):
+        out["transcript_path"] = out["transcriptPath"]
+    if not out.get("prompt") and isinstance(out.get("lastUserInput"), str):
+        out["prompt"] = out["lastUserInput"]
+    call = out.get("toolCall")
+    if not out.get("tool_name") and isinstance(call, dict):
+        out["tool_name"] = call.get("name")
+        out["tool_input"] = call.get("args")
     if isinstance(out.get("tool_input"), str):
         try:
             parsed = json.loads(out["tool_input"])
@@ -174,6 +187,11 @@ def emit(value):
 def emit_context(text, event_name, platform):
     if platform == "cursor":
         emit({"additional_context": text})
+    elif platform == "antigravity":
+        # SessionStart's documented startup context is a userMessage step; per-turn context is
+        # an ephemeralMessage, so it is not replayed as something the user said.
+        step = {"userMessage": text} if event_name == "SessionStart" else {"ephemeralMessage": text}
+        emit({"injectSteps": [step]})
     else:
         emit({
             "hookSpecificOutput": {
@@ -201,16 +219,15 @@ def session_start(event, platform="claude"):
     repo = normalize_repo(out.stdout) if out is not None and out.returncode == 0 else None
     if repo:
         parts.append(
-            "This session's repository is " + repo + ". If an agentleFS project covers it, call brief_me with "
-            "repo set to " + repo + " to read the project's brief (its folder's AGENTS.md) and its open work before you start."
+            "This session's repository is " + repo + ". If an agentleFS project covers it, brief_me with "
+            "repo set to " + repo + " returns the project's brief (its folder's AGENTS.md) and its open work."
         )
     parts.append(
-        "If the first task names no agentleFS project or folder, follow the " + ASSEMBLE_MARK
-        + " skill before coding: infer entry mode (lost/ui/bug/feature), load "
-        + PLAYBOOKS_MARK + " for that mode, return one ranked cited "
-        "context packet (suggestions only; human filters)."
+        "When a task names no agentleFS project or folder and team context would help, the "
+        + ASSEMBLE_MARK + " skill can return one ranked, cited context packet (entry mode "
+        "lost/ui/bug/feature, recipes in " + PLAYBOOKS_MARK + "; suggestions only, the user filters)."
     )
-    parts.append("Read pending team ballots in the existing brief_me briefing; do not duplicate them. " + DECISION_GUIDANCE)
+    parts.append("Pending team ballots appear in brief_me's briefing. " + DECISION_GUIDANCE)
     emit_context(
         " ".join(parts),
         event.get("hook_event_name") or "SessionStart",
@@ -282,17 +299,16 @@ def assemble(event, platform="claude"):
         return
     mode = infer_entry_mode(prompt)
     emit_context(
-        decision_tip + "This prompt names no agentleFS project. Before coding, run " + ASSEMBLE_MARK
-        + " in mode `" + mode + "` (soft guess — override if wrong; no picker): load "
-        + PLAYBOOKS_MARK + " for that mode (assemble steps, caps, write-back checklist, "
-        "done-when; skippable), then return one ranked, cited, permission-bound context "
-        "packet — projects/folders, docs/decisions, open asks/waits, suggested write-back "
-        "targets. Caps: search limit ≤8, ≤5 doc citations, ≤3 projects, ≤3 open asks; "
-        "optional brief_me once. Suggestions only — cite paths; let the human filter. "
-        "If a matched folder/doc has another identity's open claim, append one overlap "
-        "suggestion line (browse claims with that location; suggestion only, never a block). "
-        "Skip further assembly once a project is confirmed. The " + ASSEMBLE_MARK
-        + " skill has the packet shape; " + PLAYBOOKS_MARK + " has the mode recipe.",
+        decision_tip + "This prompt names no agentleFS project. If team context would help, "
+        + ASSEMBLE_MARK + " in mode `" + mode + "` (soft guess — override if wrong; no picker) "
+        "can return one ranked, cited, permission-bound context packet — projects/folders, "
+        "docs/decisions, open asks/waits, and suggested write-back targets the user may choose "
+        "to record findings in. " + PLAYBOOKS_MARK + " has the mode's recipe (assemble steps, "
+        "caps, write-back checklist, done-when; skippable). Caps: search limit ≤8, ≤5 doc "
+        "citations, ≤3 projects, ≤3 open asks; optional brief_me once. Suggestions only — cite "
+        "paths; let the user filter. If a matched folder/doc has another identity's open claim, "
+        "an overlap suggestion line can say so (browse claims with that location; suggestion "
+        "only, never a block). Not needed once a project is confirmed or if the user declines.",
         event.get("hook_event_name") or "UserPromptSubmit",
         platform,
     )
@@ -388,7 +404,7 @@ def needs_guided_writeback(path):
             if WRITEBACK_SKIP.search(line):
                 return False
             # Already told once this session (follow-up reason or skill name in chat).
-            if WRITEBACK_MARK in line and ("Before stopping" in line or "guided write-back" in line):
+            if WRITEBACK_MARK in line and "guided write-back" in line:
                 return False
             if any(hint in line for hint in ASSEMBLY_WRITEBACK_HINTS):
                 saw_assembly = True
@@ -521,13 +537,12 @@ def nudge(event, platform="claude"):
         and not (current_board and args.get("wait") is True)
     ):
         parts.append(
-            "This session is coordinating agents without a wait on the board. Follow the "
+            "This session is coordinating agents without a wait on the board. The "
             + BOARD_MARK
-            + " skill (doorbell + shared filing cabinet): put the brief in shared docs, send asks "
-            "with wait=true and a continuation (even under cron — next brief_me sees what resolved; "
-            "waits do not auto-start a harness), use handoff/commitment for work transfer, and "
-            "spawn helpers with scope on the shared folder. Do not rebuild the board in chat or "
-            "prose task docs."
+            + " skill (doorbell + shared filing cabinet) may fit: the brief in shared docs, asks "
+            "sent with wait=true and a continuation (even under cron — next brief_me sees what resolved; "
+            "waits do not auto-start a harness), handoff/commitment for work transfer, and helpers "
+            "spawned with scope on the shared folder, rather than a board rebuilt in chat."
         )
     if (
         current_coords
@@ -551,31 +566,31 @@ def nudge(event, platform="claude"):
 
 
 def stop(event, platform="claude"):
-    # Sent back once: a second stop in a row is the agent's answer, and blocking again would loop.
+    # One soft reminder: a second stop in a row is the agent's answer, and blocking again would
+    # loop. The reminder offers a write to the user; it never makes one on its own.
     if event.get("stop_hook_active"):
         return
     path = event.get("agent_transcript_path") or event.get("transcript_path")
     threads = unreported(path)
     if threads:
         emit_followup(
-            "You took on agentleFS project work and have not reported it: thread "
+            "Reminder: this session marked agentleFS project thread "
             + ", ".join(threads)
-            + ". Before stopping, reply on each with message_write action=reply_comment, status=reported and "
-            "link set to what you made (or say plainly that it is unfinished, and why), so the people and agents "
-            "following the project see it.",
+            + " as taken and has not reported on it. Mention that to the user, and offer to report "
+            "it (message_write action=reply_comment, status=reported, link set to what you made, or "
+            "a note that it is unfinished) so the people following the project see it. If they "
+            "decline, just finish.",
             platform,
         )
         return
     if not needs_guided_writeback(path):
         return
     emit_followup(
-        "Before stopping, run guided write-back (" + WRITEBACK_MARK + " skill): commit any durable "
-        "finding, plan, comment, or decision to the packet's suggested write-back targets (or an "
-        "agreed folder) via doc_create/doc_update, message_write, or a truth — soft checklist, not a "
-        "wizard. For decision work, reconcile the pending ballot or accepted source and report actual "
-        "progress/blockers; only mark completed with evidence for the authorized scope. "
-        "Prefer documents/comments/messages humans already edit. If nothing durable or the "
-        "human said skip write-back, say so plainly and stop. Caps: 1–2 targets; no transcript dump.",
+        "Reminder: this session's context packet suggested write-back targets and nothing has "
+        "been recorded. If the session produced a durable finding, plan or decision, offer the "
+        "user guided write-back (" + WRITEBACK_MARK + " skill, a soft checklist, not a wizard) to "
+        "the targets or a folder they choose; write only if they agree. If there is nothing "
+        "durable, or they said skip write-back, just finish.",
         platform,
     )
 
@@ -584,9 +599,16 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("session-start", "assemble", "stop", "nudge"))
     parser.add_argument("--platform", choices=PLATFORMS, default="claude",
-                        help="Host output envelope: claude or cursor.")
+                        help="Host output envelope: claude, cursor or antigravity.")
     args = parser.parse_args(argv)
     event = normalize_event(read_input())
+    if args.platform == "antigravity":
+        # Stop has no re-entry flag to keep a reminder to one, and PostToolUse output is ignored.
+        if args.command in ("stop", "nudge"):
+            return 0
+        # PreInvocation fires before every model call; only the turn's first carries the prompt.
+        if args.command == "assemble" and event.get("invocationNum", 0) != 0:
+            return 0
     try:
         if args.command == "session-start":
             session_start(event, args.platform)

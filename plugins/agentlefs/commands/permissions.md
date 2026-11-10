@@ -1,7 +1,6 @@
 ---
-description: Summarize what this credential can actually reach in agentleFS (afs)
-argument-hint: [folder]
-allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__access_read
+description: "Summarize what this credential can actually reach in agentleFS (afs)"
+argument-hint: "[folder]"
 ---
 
 Report what this credential effectively reaches in agentleFS, and nothing more. This is a self-audit of the current principal's reach, not a report on anyone else's access.

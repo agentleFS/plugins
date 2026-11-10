@@ -1,0 +1,10 @@
+{
+  "agentlefs-projects": {
+    "SessionStart": [
+      { "type": "command", "command": "python3 ./scripts/project_hooks.py session-start --platform antigravity", "timeout": 5 }
+    ],
+    "PreInvocation": [
+      { "type": "command", "command": "python3 ./scripts/project_hooks.py assemble --platform antigravity", "timeout": 5 }
+    ]
+  }
+}

@@ -1,6 +1,5 @@
 ---
-description: Sign this client in to agentleFS (afs) and verify the connection with a real call — not for syncing GitHub or Google Drive content into afs
-allowed-tools: mcp__plugin_agentlefs_agentlefs__browse, mcp__plugin_agentlefs_agentlefs__doc_create
+description: "Sign this client in to agentleFS (afs) and verify the connection with a real call — not for syncing GitHub or Google Drive content into afs"
 ---
 
 Get the user from zero to a verified agentleFS connection. Work through the phases in order and stop as soon as the connection is proven working.

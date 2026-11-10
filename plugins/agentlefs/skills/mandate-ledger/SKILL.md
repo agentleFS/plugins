@@ -137,14 +137,15 @@ work. Filing does not send messages to particular people; message only when auth
    decision makers unrecorded rather than inventing them, and keep a pending
    recommendation distinct from an approved choice.
 3. Format the canonical ballot using the [record format](references/shared-record.md).
-   If local execution is available, the bundled Python formatter emits exact MCP
-   arguments without connecting to AFS:
+   When the optional `agentlefs-workflows` plugin is installed and local execution is
+   available, its Python formatter emits exact MCP arguments without connecting to AFS:
 
    ```sh
-   python3 <plugin-root>/scripts/mandate_ballot.py prepare /absolute/path/ballot.json --folder <verified-shared-folder>
+   python3 <agentlefs-workflows-root>/scripts/mandate_ballot.py prepare /absolute/path/ballot.json --folder <verified-shared-folder>
    ```
 
-   Resolve `<plugin-root>` to this installed plugin's actual directory. The example
+   Resolve `<agentlefs-workflows-root>` to that installed plugin's actual directory.
+   Without it, compose the document and proposal by hand from the record format. The example
    input is [shared-decision.example.json](references/shared-decision.example.json).
    Give each logical ballot a fresh idempotencyKey; retain it for retries. Do not
    use the example's id or key for a real request. The helper supports ballots
@@ -187,11 +188,15 @@ bound to their original ballot hashes; editing those bytes is not new approval.
 A recommendation, silence or permission to file a proposal is not acceptance.
 Only record a choice after the human explicitly selects an option. Read the current
 canonical ballot and truth first. For a ballot without launch actions, use the
-formatter to bind the choice to that exact ballot:
+formatter (from `agentlefs-workflows`, when installed) to bind the choice to that exact ballot:
 
 ```sh
-python3 <plugin-root>/scripts/mandate_ballot.py choose /absolute/path/ballot.json chosen-option-id
+python3 <agentlefs-workflows-root>/scripts/mandate_ballot.py choose /absolute/path/ballot.json chosen-option-id
 ```
+
+A choice must carry hashes computed exactly from the canonical ballot. Without the
+formatter, do not guess them: say so, and offer the user the optional
+`agentlefs-workflows` plugin or Mandate's own interface to record the choice.
 
 Use the exact canonical JSON just read as the input; never regenerate it from a
 summary. The helper emits a `mandate-decision-choice/v1` statement with decision id,
