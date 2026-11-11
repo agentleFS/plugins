@@ -1,6 +1,6 @@
 ---
 name: documents
-description: "Find, read, write, edit and review shared documents in agentleFS (afs). Use for team runbooks/specs/notes, document or folder browsing, review feedback, clarification questions, disagreements, and reading or responding to document comments\u2014even when the user does not say comment. Also save topic summaries or this conversation. For recording one shared decision/fact use shared-truths-and-lessons; for team ballots use mandate-ledger. Folder documents (including wiki raw/ sources) belong here; synced GitHub/Drive connections use sources. Not for local repository files or general knowledge."
+description: "Find, read, write, edit and review shared documents in agentleFS (afs). Use for team runbooks/specs/notes, document or folder browsing, review feedback, clarification questions, disagreements, and reading or responding to document comments—even when the user does not say comment. Also save topic summaries or this conversation. For recording one shared decision/fact use shared-truths-and-lessons; for team ballots use mandate-ledger. Folder documents (including wiki raw/ sources) belong here; synced GitHub/Drive connections use sources. Not for local repository files or general knowledge."
 ---
 
 # Documents in agentleFS
