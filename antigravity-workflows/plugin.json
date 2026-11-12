@@ -2,7 +2,7 @@
   "name": "agentlefs-workflows",
   "displayName": "agentleFS Workflows",
   "description": "Optional project hooks for the agentleFS plugin: names your repository and the skills that can help, and suggests context for unnamed work asks.",
-  "version": "0.12.19",
+  "version": "0.12.20",
   "logo": "assets/logo.png",
   "suggestedPrompts": [
     "Which of my agentleFS projects cover this repository?"
