@@ -2,7 +2,7 @@
   "name": "agentlefs",
   "displayName": "agentleFS",
   "description": "Shared second brain for any AI with agent permissions: your team's docs, decisions and projects, searched and cited in Antigravity, within each person's access.",
-  "version": "0.12.20",
+  "version": "0.12.21",
   "logo": "assets/logo.png",
   "suggestedPrompts": [
     "Search our team docs for how we deploy, and cite the sources",

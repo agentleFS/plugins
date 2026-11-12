@@ -1,6 +1,6 @@
 {
   "name": "agentlefs",
-  "version": "0.12.20",
+  "version": "0.12.21",
   "description": "Shared second brain for any AI with agent permissions",
   "author": {
     "name": "agentleFS",

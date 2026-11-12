@@ -1,7 +1,7 @@
 {
   "name": "agentlefs-workflows",
   "displayName": "agentleFS Workflows",
-  "version": "0.12.20",
+  "version": "0.12.21",
   "description": "Optional project hooks and helper scripts for the agentleFS plugin: project briefings, work-ask suggestions and the team ballot formatter",
   "author": {
     "name": "agentleFS",
