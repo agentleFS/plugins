@@ -75,7 +75,7 @@ Use this when one agent (Product) needs another (Admin) to act, and Admin must f
    Everything Admin needs must live in docs + the typed message — not in chat paste later.
 2. **Narrow helper (optional).** `identity_write` `spawn` with `display`, `purpose`, and
    `scope` limited to that folder (e.g. `editor@trial-folder`). Spawning creates an identity;
-   it does **not** start a process. Drive it with `acting_as`, a second session + `take_seat`,
+   it does **not** start a process. Drive it with `acting_as` (its id or `@handle`), a second session + `take_seat`,
    or `bootstrap_key` / `AGENTLEFS_TOKEN` for headless — see `collaborating` / `connection`.
 3. **Doorbell.** As Product, `message_write` `action: "send"`:
    - `kind: "request"` with `request` (standalone sentence), **or** `kind: "handoff"` with

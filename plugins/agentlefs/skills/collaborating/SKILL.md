@@ -152,17 +152,23 @@ folder (the filing cabinet). Someone in **another organization** gets a folder t
 `access_grant` with `action: "share_out"` (the `sharing` skill), not a separate coordination
 space on this tool surface.
 
-## Driving an agent:
 ## Driving an agent: its seat and its journal
 
-A persistent or intermittent agent is driven by one session at a time. Before writing as it (with
-its own credential, or `acting_as` it), take its seat: `identity_write` with `action: "take_seat"`.
+A persistent or intermittent agent is driven by one session at a time. `brief_me` lists the agents
+directly below you, each with its `@handle`, whether a session holds its seat (which client, until
+when) and how many asks wait on it. Before writing as one (with its own credential, or `acting_as`
+it, by id or `@handle`), take its seat: `identity_write` with `action: "take_seat"`.
 The answer carries a seat token, the agent's home folder, and the end of its journal; read the
 journal before carrying on. Pass the token as `seat` on every call after (over stdio,
-`AGENTLEFS_SEAT` in the environment), and renew it with `action: "renew_seat"` before
-`expiresAt`. A write without it is refused `seat_required`. `seat_held` means another session
-holds it: pass `take_over: true` only if the user confirms that session is gone, since its next
-write is then refused `seat_stale`. If you are told `seat_stale`, another session took over:
+`AGENTLEFS_SEAT` in the environment): every call that carries it, a read as much as a write, keeps
+the seat yours for its lease (`lease_s` on `take_seat`, 120 to 300 seconds, default 120), so the
+default lease is enough for a working session. Only when you will make no calls for longer than that, renew it
+with `action: "renew_seat"`. Stop calling and the seat lapses one lease later, so a session that
+crashed frees the agent by itself. A write without it is refused `seat_required`. `seat_held` means another session
+holds it. A session that crashed frees it by itself, so wait for the time the refusal names, or pass
+`take_over: true` from then on, when less than a quarter of its lease is left; its next write is then
+refused `seat_stale`. A session that is still calling cannot be taken over: if it must stop, the
+agent's person puts the agent to sleep, which vacates the seat. If you are told `seat_stale`, another session took over:
 stop and take the seat again rather than retrying. Give it up with `action: "release_seat"` when
 done. An ephemeral helper needs no seat.
 
