@@ -16,6 +16,7 @@ destructive, so the user's client asks before each call.
 | The user wants | Call |
 |---|---|
 | A colleague in this organization to get access | `access_grant` with `action: "share"` |
+| To take a same-organization grant back | `access_revoke` with `action: "ungrant"` |
 | Access they do not have themselves | `access_grant` with `action: "request"` |
 | To know which people and groups reach something | `access_read` with `action: "who_can_read"` |
 | To know whether a specific agent (or person) can read something | `access_read` with `action: "can_see"` |
@@ -44,6 +45,17 @@ A token lasts ten minutes and is bound to that exact folder, role and address li
 any of them and preview again.
 
 Default to `viewer`, and prefer a document to a folder when that is all they need.
+
+## Taking a same-organization grant back: `access_revoke` with `action: "ungrant"`
+
+Resolve who holds the grant with `access_read` `action: "who_can_read"`, or pick a member id
+from `browse` with `action: "people"`. Then call `access_revoke` with `action: "ungrant"`,
+that `subject_id`, the `role`, and `location`. For a single file, also pass
+`scope_type: "document"`. Same authority as the console's Access → Delete and the SDK's
+`DELETE /v1/grants`: a manager there, or an editor for viewer/editor where editors may share.
+Confirm with the user first. A grant that is already gone answers `revoked: false` without
+error. An inherited grant is taken back at the ancestor `who_can_read` names, not at the
+child path.
 
 **Who may do this.** As in Google Drive: a manager of the folder or document, or of a folder
 above it, may share it as anything; an editor there may share it as `viewer` or `editor`, unless
