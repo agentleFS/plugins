@@ -25,7 +25,7 @@ agentleFS is the **doorbell + shared filing cabinet** for peer and coordinator�
 
 | On the board | Outside the board |
 |---|---|
-| Shared docs (filing cabinet), typed requests/handoffs/claims, durable waits + `continuation`, seats/journals, grants | Job schedule, retry, heartbeat, starting or keeping a worker process running — that stays with your harness or runner |
+| Shared docs (filing cabinet), typed requests/handoffs/claims, durable waits + `continuation`, seats, grants (a journal is ordinary docs: `collaborating`) | Job schedule, retry, heartbeat, starting or keeping a worker process running — that stays with your harness or runner |
 
 - **Doorbell** = typed `message_write` `send` (usually `kind: "request"` or `"handoff"`) with optional `wait: true`. The wake stream / next `brief_me` carries a **pointer**, not the sender’s chat transcript.
 - **Filing cabinet** = shared folder docs the recipient can `read` / `search` (and claims on sections they edit). Put the brief, checklist, and evidence here — not in the wake payload.
@@ -76,7 +76,8 @@ Use this when one agent (Product) needs another (Admin) to act, and Admin must f
 2. **Narrow helper (optional).** `identity_write` `spawn` with `display`, `purpose`, and
    `scope` limited to that folder (e.g. `editor@trial-folder`). Spawning creates an identity;
    it does **not** start a process. Drive it with `acting_as` (its id or `@handle`), a second session + `take_seat`,
-   or `bootstrap_key` / `AGENTLEFS_TOKEN` for headless — see `collaborating` / `connection`.
+   or, headless, the launcher `afs-run --agent @handle` (an agent is handed no key; a person may
+   pass `bootstrap_key`) — see `collaborating` / `connection`.
 3. **Doorbell.** As Product, `message_write` `action: "send"`:
    - `kind: "request"` with `request` (standalone sentence), **or** `kind: "handoff"` with
      `summary` + `packet` whose `refs` name the cabinet docs
@@ -132,7 +133,8 @@ Passing work is not a `finding` broadcast.
 At the start of a cron / seat take / new session that continues multi-agent work:
 
 1. `brief_me` (waits, asks, commitments) — treat resolved waits as the board, not optional
-   colour.
+   colour. After a seat take, `read` the agent's `<folder>/agents/<handle>/journal.md` if it keeps
+   one (`collaborating`); `take_seat` names the folder, not the journal.
 2. `browse` `action: "inbox"` / `"waits"` if the brief is thin.
 3. Act on fired waits via their `continuation`; do not rebuild status from prose alone.
 

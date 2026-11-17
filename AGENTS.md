@@ -18,7 +18,9 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
 
 - Start with `brief_me` to see who you are and what is waiting on you. Driving a persistent or
   intermittent agent, take its seat first (`identity_write` with `action: "take_seat"`) and pass the
-  token as `seat` on every call; read the journal it hands back before carrying on.
+  token as `seat` on every call. It names the agent's folder; if the agent keeps a journal at
+  `<folder>/agents/<handle>/journal.md` (a convention, the `collaborating` skill), read its end
+  before carrying on.
 - **Unnamed work ask** (implement / fix / build / improve UI / lost in project, with no project or
   folder named): before coding, run the `proactive-assembly` skill once — soft-infer entry mode
   (`lost` / `ui` / `bug` / `feature`, no picker), load `entry-mode-playbooks` for that mode
@@ -38,6 +40,13 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
   cabinet** (shared folder docs + request/handoff; wake is a pointer; next `brief_me`
   recovers). Even under cron, register waits so the next `brief_me` sees what resolved.
   Waits do not auto-start harnesses — they surface on the next `brief_me`.
+- A process you start as one of those agents (`codex exec`, a script, a worker) gets its
+  credential from the launcher `afs-run --agent @<handle> [--seat <seat token>] -- <command>`, which
+  puts a short-lived token in that process's environment only; never type or print a credential.
+  In Gemini CLI it is in this extension's folder at `plugins/agentlefs-workflows/bin/afs-run`;
+  elsewhere fetch `https://mcp.agentlefs.com/install/afs-run` and run it only if
+  `curl -fsSL https://mcp.agentlefs.com/install/afs-run.sha256 | sha256sum -c -` prints
+  `afs-run: OK`. Where `sh` cannot run, the `collaborating` skill has the same exchange with curl.
 - Find things with `search` (every hit carries a citation), list them with `browse` and
   `action: "folders"`, and open one with `read` and `action: "document"`. Cite what you used.
 - Write with `doc_create` into a folder the user chooses, and change part of a document with

@@ -22,6 +22,22 @@ the host's hook controls; installing the plugin does not trust them.
 - **Scripts** (`scripts/`): `project_hooks.py` and `decision_workflow.py`, which the hooks run,
   and `mandate_ballot.py`, the ballot formatter the `mandate-ledger` skill runs when you ask for
   a team ballot. Standard library only; none of them opens a network connection.
+- **Launcher** (`bin/afs-run`), which no hook runs: you or your agent run it to start a worker as
+  one of your agents, `afs-run --agent @handle --seat <seat token> [--github owner/repo] -- <command>`.
+  It supervises the command for as long as it runs. Its network calls: to the agentleFS token endpoint
+  (`https://mcp.agentlefs.com/token`), one RFC 8693 token exchange per credential with the
+  `AGENTLEFS_TOKEN` already in its environment (used once), then a renewal of each at about two thirds
+  of its lifetime; to the agentleFS MCP server, `renew_seat` as the agent every third of the seat's
+  lease; to GitHub, with `--github`, a revoke of each repository token it replaces; and when the
+  command ends, those revokes and one to `https://mcp.agentlefs.com/revoke` per renewal token. The
+  current tokens are in 0600 files in a private directory (`AGENTLEFS_TOKEN_FILE`, `GH_TOKEN_FILE`,
+  which git reads through a credential helper set for the command); `AGENTLEFS_TOKEN` and `GH_TOKEN`
+  hold the first ones only, since an environment variable cannot rotate. None is printed or put on a
+  command line. When agentleFS refuses a renewal (the grant revoked, the seat lost, the agent asleep)
+  it stops the command and exits 77. POSIX `sh` and `curl`. It starts from `AGENTLEFS_TOKEN_FILE` or
+  `AGENTLEFS_TOKEN`, and `AGENTLEFS_URL` names another server. The same file is published at
+  `https://mcp.agentlefs.com/install/afs-run`, with its SHA-256 at `/install/afs-run.sha256`, for a
+  harness that has no package carrying it.
 
 No hook records your prompts, tool calls or replies, and nothing is saved to agentleFS unless you
 ask. What the hooks inject only describes and suggests: nothing tells the agent to act without

@@ -152,14 +152,14 @@ folder (the filing cabinet). Someone in **another organization** gets a folder t
 `access_grant` with `action: "share_out"` (the `sharing` skill), not a separate coordination
 space on this tool surface.
 
-## Driving an agent: its seat and its journal
+## Driving an agent: its seat
 
 A persistent or intermittent agent is driven by one session at a time. `brief_me` lists the agents
 directly below you, each with its `@handle`, whether a session holds its seat (which client, until
 when) and how many asks wait on it. Before writing as one (with its own credential, or `acting_as`
 it, by id or `@handle`), take its seat: `identity_write` with `action: "take_seat"`.
-The answer carries a seat token, the agent's home folder, and the end of its journal; read the
-journal before carrying on. Pass the token as `seat` on every call after (over stdio,
+The answer carries a seat token, the folder the agent works in (`folder`, when it has one) and how
+many asks wait on it. Pass the token as `seat` on every call after (over stdio,
 `AGENTLEFS_SEAT` in the environment): every call that carries it, a read as much as a write, keeps
 the seat yours for its lease (`lease_s` on `take_seat`, 120 to 300 seconds, default 120), so the
 default lease is enough for a working session. Only when you will make no calls for longer than that, renew it
@@ -172,8 +172,42 @@ agent's person puts the agent to sleep, which vacates the seat. If you are told 
 stop and take the seat again rather than retrying. Give it up with `action: "release_seat"` when
 done. An ephemeral helper needs no seat.
 
-Keep the journal as you work: `identity_write` with `action: "journal"` and `entry` (a decision and
-why, or what the next session must know). Only the agent and those above it read its home.
+## An agent's journal and standing instructions (a convention, not a feature)
+
+agentleFS makes no home for an agent; keep one with ordinary documents:
+
+1. Keep the journal at `<folder>/agents/<handle>/journal.md` and standing instructions in
+   `<folder>/agents/<handle>/CLAUDE.md`, where `<folder>` is the one `take_seat` returned. Create
+   them with `doc_create` the first time. Everyone who reads that folder reads them.
+2. After `take_seat`, `read` the journal and start from its last entries.
+3. Append an entry as you work (a decision and why, or what the next session must know):
+   `doc_update` with `action: "edit"`, `location` the journal and `append` set to a dated
+   `## <time>` heading and the entry.
+4. So the instructions load at connect, add `<folder>/agents/<handle>` to the agent's load set.
+   An identity cannot widen its own, so whoever is above it does: `load_memory_and_skills` on
+   `spawn`, or later `identity_write` with `action: "update"`, `target` the agent and the whole
+   list (`access_read` with `action: "loads"` shows the current one).
+
+No `folder` in the answer means the agent works in none: ask its person where to keep it. An agent
+seated before this has a private home, which `brief_me` names as `me.home`; keep using it.
+
+`browse` with `action: "agents"` and `location` (a folder you can read) lists the agents working in it
+and below it: each one's `@handle`, purpose, status, open asks, and its seat, free or held
+until when and from when `take_over` works.
+
+**Know when a worker stopped.** Subscribe the person to the agent (`coordination_write` with
+`action: "subscribe"` and `identity` its id), then `read` with `action: "changes"`, or park a wait
+on that subscription. A refused credential renewal (`capability.renewal_refused`) and a released or
+taken-over seat (`seat.released`) arrive there. Two do not: a seat that simply lapses records no
+event, and a refusal is not shown to the person who drove the worker themself (your own events are
+never your changes). For those, read the agent's seat in `brief_me` or `browse` `action: "agents"`
+(the "seat held until" time).
+
+**Wake me in N minutes.** A wait needs a condition as well as a deadline, so subscribe to something
+quiet (your journal) and `coordination_write` with `action: "wait_for"`, `on_subscription` and `deadline` set N
+minutes ahead: it resolves `timed_out` at the deadline (within the sweeper's interval), through your
+card's wake channel and the next `brief_me`, and wakes you if you sleep `until: "reply"`. Or use your
+harness's own scheduler.
 
 An agent can be put to sleep (`action: "sleep"`, `until: "reply"` or `"woken"`): its messages and
 waits stay, but no session may drive it until it is woken (`action: "wake"`, by someone above it)
@@ -196,11 +230,62 @@ list of `role@location`, for example `["viewer@docs"]` for read-only on the `doc
 The answer carries the child's id and its first access and refresh tokens, shown once.
 Spawning does not start a process; it creates the identity whatever runs the helper will use.
 Put the child's **id** in the helper's prompt and tell it to pass `acting_as` with that id on
-every agentleFS call when it shares this connection. Give the credentials to the user only
-when a process needs its own sign-in, and never write them into a document, a message or a
-file — they are a credential. For a headless helper that cannot run a refresh flow, add
-`bootstrap_key: true` for a long-lived key bound to the child, which dies when the child is
-retired.
+every agentleFS call when it shares this connection. For a process you start, never handle a
+credential yourself: start it with the launcher (below, *Get the launcher*),
+`afs-run --agent @<handle> --seat <its seat token> [--github <owner>/<repo>] -- <command>`, which
+exchanges the sign-in already in the environment for a short-lived token for that agent (and, with
+`--github`, a token for that one repository if its folder was granted it) and puts them only in
+the command's environment. It keeps them fresh for as long as the command runs: the current ones are
+in the files `AGENTLEFS_TOKEN_FILE` and `GH_TOKEN_FILE` (git uses the second on its own), and it
+stops the command if agentleFS refuses a renewal. `identity_write action=mint_key` refuses an agent
+for this reason. Never write a credential into a prompt, a document, a message, a command line or a
+file.
+
+### Get the launcher
+
+`afs-run` is one POSIX `sh` script, the same file in every harness:
+
+- **Claude Code, Codex, Cursor:** the `agentlefs-workflows` plugin carries it, at `bin/afs-run` in
+  the plugin's folder.
+- **Antigravity:** the `agentlefs-workflows` Antigravity plugin, at `bin/afs-run`.
+- **Gemini CLI:** the extension's folder, at `plugins/agentlefs-workflows/bin/afs-run`.
+- **Anywhere else** (Grok, ChatGPT, a harness with only this plugin, a plain shell): the server
+  publishes it. Fetch it and its checksum, and run it only if the check prints `afs-run: OK`
+  (a self-hosted server serves both at its own origin):
+
+  ```sh
+  curl -fsSLO https://mcp.agentlefs.com/install/afs-run
+  curl -fsSL https://mcp.agentlefs.com/install/afs-run.sha256 | sha256sum -c -   # macOS: shasum -a 256 -c -
+  chmod +x afs-run
+  ```
+
+It needs `sh` and `curl`, and starts from the agentleFS credential the person set for that machine
+(`AGENTLEFS_TOKEN_FILE` or `AGENTLEFS_TOKEN`); `AGENTLEFS_URL` names a server other than the hosted one.
+
+**Where it cannot run** (no POSIX shell, such as Windows without WSL or Git Bash), make the same
+exchange with curl: OAuth 2.0 Token Exchange (RFC 8693) at the server's `/token`. Keep every token
+in a file, never on a command line or in what you print. `seat` only when the agent has one:
+
+```sh
+curl -fsS https://mcp.agentlefs.com/token \
+  --data-urlencode grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+  --data-urlencode subject_token_type=urn:ietf:params:oauth:token-type:access_token \
+  --data-urlencode subject_token@<file holding the person's agentleFS credential, no trailing newline> \
+  --data-urlencode resource=agentlefs \
+  --data-urlencode agent=@<handle> \
+  --data-urlencode seat=<its seat token> \
+  -o <private answer file>
+```
+
+The answer is JSON: `access_token` (15 minutes), `expires_in`, and `refresh_token`, an `afx_`
+renewal token. Copy `access_token` into a file of its own without printing it (`sed -n
+'s/.*"access_token":"\([^"]*\)".*/\1/p'`, or PowerShell's `ConvertFrom-Json`) and start the worker
+with `AGENTLEFS_TOKEN_FILE` naming that file. `resource=github:<owner>/<repo>`, with an optional
+`scope` such as `issues:write`, asks for a token for that one repository instead, if the agent's
+folder holds that capability. Before `expires_in` runs out, post `grant_type=refresh_token` with that
+`refresh_token` to the same `/token` (each use returns the next; a spent one ends the family), and
+when the work ends post `token=<it>` to `/revoke`. Nothing renews or revokes for you on this path,
+so use the launcher wherever it runs.
 
 To end one: `access_revoke` with `action: "retire"` and `target`. Everything below it ends
 too; what it owned passes to the nearest living ancestor, and its private drafts are purged,

@@ -2,7 +2,7 @@
 
 Optional companion to the agentleFS plugin for Antigravity (the mirror's `antigravity/` folder).
 That plugin connects Antigravity to agentleFS and carries the skills, and runs nothing on your
-computer. This one adds lifecycle hooks and a helper script.
+computer. This one adds lifecycle hooks, a helper script and the launcher.
 
 ## Install
 
@@ -19,6 +19,15 @@ agy plugin install https://github.com/agentleFS/plugins/tree/main/antigravity-wo
 - **Scripts** (`scripts/`): the Python 3.9+ hook scripts, and `mandate_ballot.py`, the formatter
   the `mandate-ledger` skill runs when you ask for a team ballot. Standard library only; none of
   them opens a network connection.
+- **Launcher** (`bin/afs-run`), which no hook runs: you or your agent run it to start a worker as
+  one of your agents, `afs-run --agent @handle --seat <seat token> [--github owner/repo] -- <command>`.
+  It exchanges the agentleFS credential already in its environment (`AGENTLEFS_TOKEN_FILE` or
+  `AGENTLEFS_TOKEN`) at `https://mcp.agentlefs.com/token` (RFC 8693) for a short-lived token for that
+  agent, puts it only in the command's environment and a private 0600 file, renews it at about two
+  thirds of its lifetime, renews the seat over MCP, and on exit revokes the renewal tokens at
+  `https://mcp.agentlefs.com/revoke` (and, with `--github`, each repository token at GitHub). It stops
+  the command when a renewal is refused. POSIX `sh` and `curl`; the same file the server publishes
+  at `/install/afs-run`.
 
 ## Hooks
 

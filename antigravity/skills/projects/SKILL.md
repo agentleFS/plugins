@@ -79,15 +79,21 @@ How it runs is your tool's business; the identity step is the same for each:
    Tell it to report with `reply_comment` before it finishes, and to pass `acting_as` with that
    id on every agentleFS call so it works with that agent's narrower access and its work is
    recorded as that agent's.
-3. For a process you start yourself (`codex exec` or similar), give it the spawn credential
-   only as `AGENTLEFS_TOKEN` in that process's environment instead of `acting_as`. Never write a
-   credential into a prompt, a document, a comment or a file.
+3. For a process you start yourself (`codex exec` or similar), start it with the launcher:
+   `afs-run --agent @<handle> --seat <its seat token> -- codex exec …`. It puts a short-lived token
+   for that agent in the process's environment only, so you never see or type one. Never write a
+   credential into a prompt, a document, a comment, a command line or a file. Where it is: the
+   `agentlefs-workflows` plugin's `bin/afs-run` (Claude Code, Codex, Cursor, Antigravity), the Gemini
+   extension's `plugins/agentlefs-workflows/bin/afs-run`; anywhere else fetch
+   `https://mcp.agentlefs.com/install/afs-run` and check it against `/install/afs-run.sha256`
+   before running it. Where no POSIX shell can run it, the `collaborating` skill's *Get the
+   launcher* has the same exchange with curl.
 
 | How it runs | After spawn |
 |---|---|
 | **A subagent in this session** (Claude Code or Codex) | It shares your MCP connection; put the agent id in its prompt and require `acting_as` on every call. |
 | **A Claude Code cloud session** (`claude --cloud`, or a routine) | It signs in as your person otherwise; same — id in the prompt, `acting_as` on every call. |
-| **`codex exec` or any process you start yourself** | Credential as `AGENTLEFS_TOKEN` only. |
+| **`codex exec` or any process you start yourself** | `afs-run --agent @<handle> -- <command>`: the agent's token reaches the process's environment only. |
 
 A helper spawned with `lifecycle: "ephemeral"` ends on its own: a day after it was made (unless
 `expires_at` says otherwise), or as soon as every thread it took is resolved, so it can still answer
