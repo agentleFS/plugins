@@ -76,8 +76,8 @@ Use this when one agent (Product) needs another (Admin) to act, and Admin must f
 2. **Narrow helper (optional).** `identity_write` `spawn` with `display`, `purpose`, and
    `scope` limited to that folder (e.g. `editor@trial-folder`). Spawning creates an identity;
    it does **not** start a process. Drive it with `acting_as` (its id or `@handle`), a second session + `take_seat`,
-   or, headless, the launcher `afs-run --agent @handle` (an agent is handed no key; a person may
-   pass `bootstrap_key`) — see `collaborating` / `connection`.
+   or, headless, the launcher `afs-run --agent @handle` (no AI session is handed a key; a person
+   makes one in the console, Access → Add an agent) — see `collaborating` / `connection`.
 3. **Doorbell.** As Product, `message_write` `action: "send"`:
    - `kind: "request"` with `request` (standalone sentence), **or** `kind: "handoff"` with
      `summary` + `packet` whose `refs` name the cabinet docs

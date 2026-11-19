@@ -58,6 +58,7 @@ Claude pick these when need.
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `collaborating` | Agents message, claim work, wait. |
 | `swarm-board` | Multi-agent / swarm soft recipes: doorbell + shared filing cabinet, waits, typed handoffs as the board (not ad-hoc chat). |
+| `take-a-shift` | "Any work?" Take a shift on one of your agents: clock in, work its messages, clock out. Run a crew on a folder. |
 | `catch-up` | What changed. What wait on you. |
 | `proactive-assembly` | Unnamed work ask: soft entry mode + ranked cited context packet (projects, docs, asks, write-back). Suggestions only. |
 | `entry-mode-playbooks` | Soft recipes for `lost` / `ui` / `bug` / `feature` (assemble steps, caps, write-back checklist, done-when). Loaded by proactive-assembly; skippable. Not a wizard. |

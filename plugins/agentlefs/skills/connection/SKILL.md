@@ -69,9 +69,21 @@ Everyone who signs in has at least one Organization: their personal one, if they
 
 ## Agent tokens (headless, CI, routines)
 
-For a headless agent that should be its own identity, with narrower access than the person running it, the person's session can create one with `identity_write` and `action: "spawn"`, passing `bootstrap_key: true` for a long-lived key bound to that child (the `collaborating` skill). It is shown once, and it stops working when the child is retired.
+### Agents on a remote machine (a server, CI, a box with no browser)
 
-An `afs_` token is the current agent credential, for any context with no browser: cloud routines, CI, scheduled jobs. The bootstrap key above is one; a person can also mint one for an agent in the console under Permissions → Agents. Send it as:
+The person signs the machine in once; no key is copied and nothing secret passes through a chat:
+
+1. On the machine, the person runs `afs-run login` (optionally `--folder <path>`). It prints an address (the console's `/device`) and an eight-letter code.
+2. In any browser where they are signed in to agentleFS, they open that address, type the code, check what is asking (the machine's name, the folder, where the request came from) and approve it for one folder. Only a person approves: no MCP tool can, an AI client included.
+3. The machine stores its own rotating credential in a file only its user can read. From then on, `afs-run --agent @<handle> -- <command>` (for example `-- claude -p "…"`) starts an agent that works in that folder with a short-lived token put only in the command's environment as `AGENTLEFS_TOKEN`, so an MCP configuration that sends that variable as its bearer token works with no long-lived key on disk.
+
+`afs-run status` says whether the machine is signed in; `afs-run logout`, or Revoke under **Machines** on the console's `/device` page, ends it, and its running agents stop at their next call. A machine lasts 90 days. The launcher is `bin/afs-run` in the agentlefs-workflows plugin, or `https://mcp.agentlefs.com/install/afs-run` checked against `/install/afs-run.sha256`. Never ask the person to paste a code, a key or a token into the conversation: the code is typed in their browser, and nothing else is needed.
+
+### Other agent credentials
+
+For a headless agent that should be its own identity, with narrower access than the person running it, the person creates it in the console: a folder's Access panel, **Add an agent**, which shows its long-lived key once. It stops working when the agent is retired. No AI session is ever handed a key, the person's own included: an agent your session spawns is started with the launcher (`afs-run`) or driven with `acting_as`.
+
+An `afs_` token is the current agent credential, for any context with no browser: cloud routines, CI, scheduled jobs. The key from Add an agent is one. Send it as:
 
 | Transport | How |
 |---|---|
@@ -90,7 +102,7 @@ Only a successful tool call proves a working connection. Call `browse` with `act
 |---|---|---|
 | Single 401, then a browser opens | Normal DCR trigger | Nothing. Complete the sign-in. |
 | 401 loop that never resolves | Browser flow abandoned, cookies blocked, or a stale registration | Re-run `/mcp` and authenticate again in a normal browser window |
-| 401 in CI or a headless shell | No browser for the OAuth flow | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, then paste the redirect URL back when prompted. True headless CI/routines with no human: the `afs_` token path above |
+| 401 in CI or a headless shell | No browser for the OAuth flow | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, then paste the redirect URL back when prompted. Agents the machine starts on its own: sign the machine in once with `afs-run login` and start them with `afs-run --agent` (**Agents on a remote machine** above), rather than an `afs_` token |
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
 | Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `access_grant` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |

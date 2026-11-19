@@ -93,7 +93,7 @@ Where it belongs depends on what it is:
   [Save this conversation](references/conversation-summary.md). Load that workflow before
   writing: preserve its destination reuse, 500-word limit, secret stripping, and re-sync rules.
 
-`doc_create` with `action: "folder"` makes a folder (you become its manager), for starting
+`doc_create` with `action: "folder"` makes a folder (a new top-level one makes you its manager; one inside a folder follows that folder), for starting
 a project before anything is in it. `action: "document"` starts one too when its top-level
 folder does not exist — the difference is that this one says so as the intent, instead of as
 a side effect of a document you had to invent.

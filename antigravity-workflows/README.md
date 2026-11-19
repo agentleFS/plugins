@@ -26,8 +26,12 @@ agy plugin install https://github.com/agentleFS/plugins/tree/main/antigravity-wo
   agent, puts it only in the command's environment and a private 0600 file, renews it at about two
   thirds of its lifetime, renews the seat over MCP, and on exit revokes the renewal tokens at
   `https://mcp.agentlefs.com/revoke` (and, with `--github`, each repository token at GitHub). It stops
-  the command when a renewal is refused. POSIX `sh` and `curl`; the same file the server publishes
-  at `/install/afs-run`.
+  the command when a renewal is refused. On a machine with no browser, `afs-run login` signs the
+  machine in once instead (OAuth 2.0 Device Authorization Grant: a request to
+  `https://mcp.agentlefs.com/device_authorization`, a code you approve in your browser, polls of the
+  token endpoint until you do) and keeps the machine's rotating credential in a 0600 file; later runs
+  start from it, taking an agent's seat over MCP when none is given, and `afs-run logout` revokes it
+  at `/revoke`. POSIX `sh` and `curl`; the same file the server publishes at `/install/afs-run`.
 
 ## Hooks
 

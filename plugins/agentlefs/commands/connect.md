@@ -96,11 +96,13 @@ Say plainly that semantic search is already on server-side (`vectorIndex: true`)
 | 404 on every call | Endpoint points at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`, not `https://agentlefs.com` |
 | Connects, zero folders | An empty Organization you approve, or a credential with no grants | Phase 3 |
 | "startup failed" in a non-Claude client | That client sends only configured headers and never walks the OAuth discovery chain, so it gets the initial 401 | Set `Authorization: Bearer afs_…` as a static header. See "Agent tokens" below |
-| Works locally, fails in CI or over SSH | No browser available for OAuth | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, paste the redirect URL back. True headless CI: see "Agent tokens" below |
+| Works locally, fails in CI or over SSH | No browser available for OAuth | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, paste the redirect URL back. Agents the machine starts on its own: `afs-run login` once, then `afs-run --agent` ("Agent tokens" below) |
 
 ## Agent tokens (headless, CI, routines)
 
-For CI, cloud routines and other contexts with no browser, use an `afs_` agent token, the current agent credential: `Authorization: Bearer afs_…` over HTTP, or `AGENTLEFS_TOKEN` in the environment for stdio. A person mints one for an agent in the console under Permissions → Agents, or gets one as a bootstrap key when spawning a headless child (the connection skill). Prefer OAuth wherever a browser exists. Only `cht_` tokens, minted before the agentleFS rename, are legacy. The plugin's committed configuration ships no token. Keep it that way: a token written into a file is a credential anyone with the file can use.
+For agents on a remote machine (a server, CI, a box with no browser): the person runs `afs-run login` once on the machine, approves the code it prints in their own browser, and then starts agents with `afs-run --agent @<handle> -- <command>`, which puts a short-lived token only in the command's environment as `AGENTLEFS_TOKEN`. No key is copied, and no code, key or token is ever pasted into this conversation (the connection skill, "Agents on a remote machine").
+
+Otherwise, for CI, cloud routines and other contexts with no browser, use an `afs_` agent token, the current agent credential: `Authorization: Bearer afs_…` over HTTP, or `AGENTLEFS_TOKEN` in the environment for stdio. A person mints one for an agent in the console under Permissions → Agents, or gets one as a bootstrap key when spawning a headless child (the connection skill). Prefer OAuth wherever a browser exists. Only `cht_` tokens, minted before the agentleFS rename, are legacy. The plugin's committed configuration ships no token. Keep it that way: a token written into a file is a credential anyone with the file can use.
 
 ## Do not
 

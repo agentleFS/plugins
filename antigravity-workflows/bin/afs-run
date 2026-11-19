@@ -1,12 +1,38 @@
 #!/bin/sh
 # afs-run: run a worker as an agentleFS agent, keeping its short-lived credentials fresh.
 #
+#   afs-run login [--folder <path>] [--name <machine name>]   sign this machine in, once
+#   afs-run status                                            say whether this machine is signed in
+#   afs-run logout                                            revoke this machine and forget it
 #   afs-run --agent @handle [--seat <seat token>] [--github owner/repo [--scope "issues:write"]] -- <command...>
+#   afs-run mcp --agent @handle [--seat <seat token>]          a stdio MCP server for a client that
+#                                                             sends only a static header
+#
+# ON A MACHINE WITH NO BROWSER (a server, CI, a box where Temporal starts `claude -p`): run
+# `afs-run login` once. It prints an address and a code; open the address in any browser where you
+# are signed in to agentleFS, type the code, check what is asking, and approve (OAuth 2.0 Device
+# Authorization Grant, RFC 8628). The machine then holds its own credential, for the one folder you
+# approved, in a file only you can read (AGENTLEFS_MACHINE_CREDENTIAL, default
+# ${XDG_CONFIG_HOME:-~/.config}/agentlefs/machine-credential). Nothing secret is printed or pasted.
+# An AI agent that runs `afs-run login` for a person never approves it itself: it relays the address
+# and the code to that person, word for word, and waits while they approve in their own browser.
+# From then on, `afs-run --agent @x -- claude -p ...` starts agents that work in that folder (an
+# agent added there in the console as Editor or Manager, or spawned there with folder=).
+# Revoke the machine in the console (Machines, on its /device page) or with `afs-run logout`. It lasts
+# 90 days, ends if unused for 30, and ends if its credential is used from two places.
+#
+# IN A GITHUB ACTIONS JOB: trust the workflow on the folder in the console (Access, Trust a GitHub
+# Actions workflow), give the job `permissions: id-token: write`, and set AGENTLEFS_TRUST to the
+# trust's id (not a secret). With no AGENTLEFS_TOKEN_FILE or AGENTLEFS_TOKEN, afs-run asks GitHub for
+# the job's ID token, with the token endpoint as its audience, and exchanges it (RFC 8693, jwt
+# subject); the exchange takes the agent's seat for the run and answers it, and afs-run renews and
+# releases it as below. Each exchange spends one ID token, so --github asks GitHub for another. No
+# secret is stored in the repository or on the runner.
 #
 # A supervisor in the shape of a Kubernetes projected token or Vault Agent: it exchanges the
-# credential already in this environment (see below; used once and then forgotten) at the
-# agentleFS token endpoint (OAuth 2.0 Token Exchange, RFC 8693), starts the command, and while it
-# runs renews each credential at about two thirds of its lifetime, writing the current one to a file:
+# credential it starts from (see below; used once and then forgotten) at the agentleFS token
+# endpoint (OAuth 2.0 Token Exchange, RFC 8693), starts the command, and while it runs renews each
+# credential at about two thirds of its lifetime, writing the current one to a file:
 #   AGENTLEFS_TOKEN_FILE  the agent's token (15 minutes, renewed); the MCP server over stdio and the
 #                         agentlefs CLI read it on every call. AGENTLEFS_TOKEN holds the FIRST one only.
 #   AGENTLEFS_URL         the MCP endpoint, so the agentlefs CLI in the command reaches the same server.
@@ -16,7 +42,15 @@
 #                         cannot rotate, so a long run should read the file. Each replaced GitHub
 #                         token is revoked at GitHub.
 #   AGENTLEFS_SEAT        the agent's seat (--seat or AGENTLEFS_SEAT); renewed on a schedule, since a
-#                         worker that only talks to GitHub never touches it.
+#                         worker that only talks to GitHub never touches it. With none given, an agent
+#                         that is driven from a seat has its seat taken for the command and released
+#                         when it ends.
+# AN MCP CLIENT THAT ONLY SENDS A STATIC HEADER (Cline, a generic HTTP client): configure it with the
+# command `afs-run mcp --agent @x` instead of a URL and a token. It is a stdio MCP server that forwards
+# each JSON-RPC message on its standard input to agentleFS over HTTP, carrying the agent's CURRENT
+# token from the renewal below and its seat on every tool call, and writes each answer to standard
+# output as one line. Nothing secret goes in the client's configuration, and it keeps working past
+# any one token's 15 minutes. Messages are forwarded one at a time, in order.
 # Every renewal is checked again by agentleFS. When one is refused for good (the folder's grant
 # revoked, the seat lost, the agent asleep, the driver no longer allowed), the command is stopped
 # (TERM, then KILL after 10 s) with a message on stderr and exit status 77. When the command ends or
@@ -25,15 +59,188 @@
 #
 # The same in every harness and outside one: POSIX sh and curl, nothing else. The credential it starts
 # from is read as the agentlefs CLI and the stdio MCP server read theirs: AGENTLEFS_TOKEN_FILE when set
-# (so a command under another afs-run starts from its current token), else AGENTLEFS_TOKEN.
-# AGENTLEFS_URL (the MCP endpoint, the CLI's name; default https://mcp.agentlefs.com/mcp) names the
-# server; AGENTLEFS_TOKEN_ENDPOINT (default: that origin's /token) and AGENTLEFS_GITHUB_API (default
+# (so a command under another afs-run starts from its current token), else AGENTLEFS_TOKEN, else this
+# machine's own from `afs-run login`. AGENTLEFS_URL (the MCP endpoint, the CLI's name; default the
+# server this machine signed in to, else https://mcp.agentlefs.com/mcp) names the server;
+# AGENTLEFS_TOKEN_ENDPOINT (default: that origin's /token) and AGENTLEFS_GITHUB_API (default
 # https://api.github.com) override. Published at <server>/install/afs-run, with its SHA-256 beside it.
 set -u
 umask 077
 
 die() { printf 'afs-run: %s\n' "$*" >&2; exit 2; }
+command -v curl >/dev/null 2>&1 || die "curl is required"
 
+# A curl config line's value in double quotes, with \ and " escaped.
+q() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
+str() { printf '%s' "$answer" | sed -n "s/.*\"$1\" *: *\"\\([^\"]*\\)\".*/\\1/p"; }
+num() { printf '%s' "$answer" | sed -n "s/.*\"$1\" *: *\\([0-9][0-9]*\\).*/\\1/p"; }
+now() { date +%s; }
+
+# post: curl with the config in $cfg on its stdin; sets `answer` (the body) and `code` (the HTTP
+# status, 000 when nothing answered). Not the end of a pipeline: that would run in a subshell.
+post() {
+  out=$(printf '%s\n' "$cfg" | curl -sS --max-time 30 -w '\n%{http_code}' -K - 2>/dev/null) || out="
+000"
+  code=$(printf '%s' "$out" | tail -n 1)
+  answer=$(printf '%s' "$out" | sed '$d')
+}
+
+# This machine's own credential (`afs-run login`): the token endpoint it came from and a rotating
+# refresh token, in a 0600 file in a 0700 directory.
+cred_file="${AGENTLEFS_MACHINE_CREDENTIAL:-}"
+if [ -z "$cred_file" ]; then
+  conf="${XDG_CONFIG_HOME:-}"
+  [ -n "$conf" ] || { [ -n "${HOME:-}" ] && conf="$HOME/.config"; }
+  [ -n "$conf" ] && cred_file="$conf/agentlefs/machine-credential"
+fi
+cred_get() { [ -n "$cred_file" ] && [ -r "$cred_file" ] && sed -n "s/^$1=//p" "$cred_file" | head -n 1; }
+
+# The token endpoint and the MCP endpoint: AGENTLEFS_TOKEN_ENDPOINT, else AGENTLEFS_URL's origin
+# (AGENTLEFS_MCP_URL is this script's earlier name for it), else the server this machine signed in
+# to, else agentleFS's own.
+resolve_endpoints() {
+  mcp_url="${AGENTLEFS_URL:-${AGENTLEFS_MCP_URL:-}}"
+  if [ -n "${AGENTLEFS_TOKEN_ENDPOINT:-}" ]; then
+    endpoint="$AGENTLEFS_TOKEN_ENDPOINT"
+  elif [ -n "$mcp_url" ]; then
+    origin=$(printf '%s' "$mcp_url" | sed -n 's|^\(https\{0,1\}://[^/?#]*\).*|\1|p')
+    [ -n "$origin" ] || die "AGENTLEFS_URL is not an http(s) URL"
+    endpoint="$origin/token"
+  elif [ -n "$(cred_get endpoint)" ]; then
+    endpoint=$(cred_get endpoint)
+  else
+    endpoint="https://mcp.agentlefs.com/token"
+  fi
+  [ -n "$mcp_url" ] || mcp_url="${endpoint%/token}/mcp"
+  revoke_url="${endpoint%/token}/revoke"
+}
+
+# Write the credential file whole, through a temporary file beside it; nothing is printed.
+save_credential() {
+  cdir=$(dirname "$cred_file")
+  mkdir -p "$cdir" && chmod 700 "$cdir" || return 1
+  printf 'endpoint=%s\nrefresh_token=%s\nsaved=%s\n' "$endpoint" "$1" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$cred_file.tmp.$$" &&
+    chmod 600 "$cred_file.tmp.$$" && mv -f "$cred_file.tmp.$$" "$cred_file" || { rm -f "$cred_file.tmp.$$"; return 1; }
+}
+
+# The machine's refresh token rotates, and a spent one presented again ends the machine. So it is
+# spent and its successor stored one afs-run at a time, under a lock directory beside the file.
+# Sets `person` to the machine's 15-minute access token.
+machine_sign_in() {
+  lock="$cred_file.lock"
+  i=0
+  until mkdir "$lock" 2>/dev/null; do
+    i=$((i + 1))
+    [ $i -le 30 ] || die "another afs-run has held $lock for 30 s; if none is running, remove that directory"
+    sleep 1
+  done
+  cfg=$(
+    printf 'data-urlencode = "grant_type=refresh_token"\n'
+    printf 'data-urlencode = "refresh_token=%s"\n' "$(q "$(cred_get refresh_token)")"
+    printf 'url = "%s"\n' "$(q "$endpoint")"
+  )
+  post
+  if [ "$code" = 200 ] && [ -n "$(str refresh_token)" ] && [ -n "$(str access_token)" ]; then
+    save_credential "$(str refresh_token)" || { rmdir "$lock"; die "could not store this machine's next credential in $cred_file"; }
+    rmdir "$lock"
+    person=$(str access_token)
+    return 0
+  fi
+  rmdir "$lock"
+  case "$code" in
+    4??) die "this machine's sign-in was refused ($(str error) $(str error_description)); run afs-run login again" ;;
+    *) die "the token endpoint answered $code; try again" ;;
+  esac
+}
+
+case "${1:-}" in
+  login)
+    shift
+    folder=""
+    name=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --folder) [ $# -ge 2 ] || die "--folder needs a folder path"; folder="$2"; shift 2 ;;
+        --name) [ $# -ge 2 ] || die "--name needs a name for this machine"; name="$2"; shift 2 ;;
+        *) die "login takes --folder <path> and --name <machine name>" ;;
+      esac
+    done
+    [ -n "$cred_file" ] || die "set AGENTLEFS_MACHINE_CREDENTIAL (or HOME) so the credential has somewhere to live"
+    resolve_endpoints
+    [ -n "$name" ] || name=$(hostname 2>/dev/null || uname -n)
+    cfg=$(
+      printf 'data-urlencode = "client_name=%s"\n' "$(q "$name")"
+      [ -n "$folder" ] && printf 'data-urlencode = "folder=%s"\n' "$(q "$folder")"
+      printf 'url = "%s"\n' "$(q "${endpoint%/token}/device_authorization")"
+    )
+    post
+    [ "$code" = 200 ] || die "the server refused a sign-in ($code $(str error) $(str error_description))"
+    device=$(str device_code)
+    user=$(str user_code)
+    uri=$(str verification_uri)
+    interval=$(num interval)
+    left=$(num expires_in)
+    [ -n "$device" ] && [ -n "$user" ] && [ -n "$uri" ] || die "the server's answer had no code"
+    [ -n "$interval" ] || interval=5
+    [ -n "$left" ] || left=600
+    printf 'To sign this machine (%s) in to agentleFS:\n\n  1. Open %s in a browser where you are signed in.\n  2. Type the code  %s\n  3. Check what is asking, and approve.\n\nApprove only a code you started here. It expires in %s minutes. Waiting...\n(An AI agent running this for a person: give them this address and code as they are, and wait; never approve it yourself.)\n' \
+      "$name" "$uri" "$user" "$((left / 60))" >&2
+    deadline=$(($(now) + left))
+    while [ "$(now)" -lt "$deadline" ]; do
+      sleep "$interval"
+      cfg=$(
+        printf 'data-urlencode = "grant_type=urn:ietf:params:oauth:grant-type:device_code"\n'
+        printf 'data-urlencode = "device_code=%s"\n' "$(q "$device")"
+        printf 'url = "%s"\n' "$(q "$endpoint")"
+      )
+      post
+      if [ "$code" = 200 ]; then
+        [ -n "$(str refresh_token)" ] || die "the server's answer had no credential"
+        save_credential "$(str refresh_token)" || die "could not store the credential in $cred_file"
+        printf 'Signed in. The credential is in %s, readable by you alone.\nStart an agent with: afs-run --agent @<handle> -- <command>\n' "$cred_file" >&2
+        exit 0
+      fi
+      case "$(str error)" in
+        authorization_pending) ;;
+        slow_down) interval=$((interval + 5)) ;;
+        access_denied) die "the sign-in was denied in the browser" ;;
+        expired_token) die "the code expired before it was approved; run afs-run login again" ;;
+        "") [ "$code" = 000 ] || die "the token endpoint answered $code" ;;
+        *) die "the sign-in failed: $(str error) $(str error_description)" ;;
+      esac
+    done
+    die "the code expired before it was approved; run afs-run login again"
+    ;;
+  status)
+    if [ -n "$cred_file" ] && [ -r "$cred_file" ] && [ -n "$(cred_get refresh_token)" ]; then
+      printf 'Signed in to %s since %s; the credential is in %s.\nRevoke it in the console (Machines, on its /device page) or with: afs-run logout\n' \
+        "$(cred_get endpoint | sed 's|/token$||')" "$(cred_get saved)" "$cred_file"
+      exit 0
+    fi
+    printf 'This machine is not signed in. Run: afs-run login\n'
+    exit 1
+    ;;
+  logout)
+    if [ -z "$cred_file" ] || [ ! -r "$cred_file" ]; then
+      printf 'This machine is not signed in.\n'
+      exit 0
+    fi
+    resolve_endpoints
+    cfg=$(
+      printf 'data-urlencode = "token=%s"\n' "$(q "$(cred_get refresh_token)")"
+      printf 'data-urlencode = "token_type_hint=refresh_token"\n'
+      printf 'url = "%s"\n' "$(q "$revoke_url")"
+    )
+    post
+    rm -f "$cred_file"
+    [ "$code" = 200 ] || die "the credential is deleted here, but the server answered $code: revoke the machine in the console (Machines, on its /device page)"
+    printf 'Signed out: this machine is revoked and its credential deleted.\n'
+    exit 0
+    ;;
+esac
+
+bridge=""
+if [ "${1:-}" = mcp ]; then bridge=1; shift; fi
 agent=""
 seat="${AGENTLEFS_SEAT:-}"
 github=""
@@ -50,55 +257,54 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$agent" ] || die "--agent is required"
-[ $# -gt 0 ] || die "no command given after --"
-command -v curl >/dev/null 2>&1 || die "curl is required"
+if [ -n "$bridge" ]; then
+  [ $# -eq 0 ] || die "afs-run mcp takes no command: it is the MCP server"
+  [ -z "$github" ] || die "afs-run mcp takes no --github"
+  # The client's messages arrive on this standard input; the bridge reads them as fd 3, since a
+  # command started in the background has its standard input taken away.
+  exec 3<&0
+else
+  [ $# -gt 0 ] || die "no command given after --"
+fi
 case "$github" in ""|*/*) ;; *) die "--github is owner/repo" ;; esac
 
-# The credential this starts from: the file wins, as it does for the CLI and the stdio MCP server.
+# The credential this starts from: the file wins, as it does for the CLI and the stdio MCP server;
+# then the variable; then this machine's own.
+# `started_from` names it in every refusal, since a variable left in a shell silently wins over the
+# machine's sign-in.
 person=""
+started_from=""; shadow=""
 if [ -n "${AGENTLEFS_TOKEN_FILE:-}" ]; then
   [ -r "$AGENTLEFS_TOKEN_FILE" ] || die "AGENTLEFS_TOKEN_FILE names a file that cannot be read"
   person=$(tr -d ' \t\r\n' < "$AGENTLEFS_TOKEN_FILE")
+  started_from="AGENTLEFS_TOKEN_FILE ($AGENTLEFS_TOKEN_FILE)"; shadow=AGENTLEFS_TOKEN_FILE
 elif [ -n "${AGENTLEFS_TOKEN:-}" ]; then
   person="$AGENTLEFS_TOKEN"
+  started_from="AGENTLEFS_TOKEN"; shadow=AGENTLEFS_TOKEN
 fi
-[ -n "$person" ] || die "no agentleFS credential: set AGENTLEFS_TOKEN or AGENTLEFS_TOKEN_FILE for this command (an agentleFS key the person made for this machine)"
-# The person's credential is used for the first exchanges only.
+resolve_endpoints
+# A GitHub Actions job with a trust: its ID token is the credential, one per exchange (id_token).
+trust=""
+if [ -z "$person" ] && [ -n "${AGENTLEFS_TRUST:-}" ]; then
+  [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] && [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ] ||
+    die "AGENTLEFS_TRUST is for a GitHub Actions job: give the job 'permissions: id-token: write' so GitHub can sign it an ID token"
+  trust="$AGENTLEFS_TRUST"
+  started_from="this GitHub Actions job's ID token (trust $trust)"; shadow=""
+fi
+if [ -z "$person" ] && [ -z "$trust" ] && [ -n "$cred_file" ] && [ -r "$cred_file" ]; then
+  machine_sign_in
+  started_from="this machine's sign-in ($cred_file)"; shadow=""
+fi
+[ -n "$person" ] || [ -n "$trust" ] || die "no agentleFS credential: run afs-run login once on this machine, set AGENTLEFS_TRUST in a GitHub Actions job, or set AGENTLEFS_TOKEN or AGENTLEFS_TOKEN_FILE for this command"
+# The starting credential is used for the first exchanges only.
 unset AGENTLEFS_TOKEN AGENTLEFS_TOKEN_FILE
 
-# AGENTLEFS_MCP_URL is this script's earlier name for AGENTLEFS_URL.
-mcp_url="${AGENTLEFS_URL:-${AGENTLEFS_MCP_URL:-}}"
-if [ -n "${AGENTLEFS_TOKEN_ENDPOINT:-}" ]; then
-  endpoint="$AGENTLEFS_TOKEN_ENDPOINT"
-elif [ -n "$mcp_url" ]; then
-  origin=$(printf '%s' "$mcp_url" | sed -n 's|^\(https\{0,1\}://[^/?#]*\).*|\1|p')
-  [ -n "$origin" ] || die "AGENTLEFS_URL is not an http(s) URL"
-  endpoint="$origin/token"
-else
-  endpoint="https://mcp.agentlefs.com/token"
-fi
-[ -n "$mcp_url" ] || mcp_url="${endpoint%/token}/mcp"
-revoke_url="${endpoint%/token}/revoke"
 github_api="${AGENTLEFS_GITHUB_API:-https://api.github.com}"
 
 dir=$(mktemp -d "${TMPDIR:-/tmp}/afs-run.XXXXXX") || die "could not make a private directory"
 chmod 700 "$dir"
 
-# A curl config line's value in double quotes, with \ and " escaped.
-q() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
-str() { printf '%s' "$answer" | sed -n "s/.*\"$1\" *: *\"\\([^\"]*\\)\".*/\\1/p"; }
-num() { printf '%s' "$answer" | sed -n "s/.*\"$1\" *: *\\([0-9][0-9]*\\).*/\\1/p"; }
-now() { date +%s; }
 put() { printf '%s' "$2" > "$dir/$1.tmp" && mv -f "$dir/$1.tmp" "$dir/$1"; }
-
-# post: curl with the config in $cfg on its stdin; sets `answer` (the body) and `code` (the HTTP
-# status, 000 when nothing answered). Not the end of a pipeline: that would run in a subshell.
-post() {
-  out=$(printf '%s\n' "$cfg" | curl -sS --max-time 30 -w '\n%{http_code}' -K - 2>/dev/null) || out="
-000"
-  code=$(printf '%s' "$out" | tail -n 1)
-  answer=$(printf '%s' "$out" | sed '$d')
-}
 
 # grant <resource> <scope> | renew <refresh token>: sets tok, ref, ttl; status 0 issued, 1 refused for
 # good, 2 not answered (retry).
@@ -111,10 +317,29 @@ token_call() {
     *) why="the token endpoint answered $code"; return 2 ;;
   esac
 }
+# The job's ID token from GitHub, its audience this server's token endpoint: sets `person`; 0 got,
+# 2 not answered. The request token goes in a header on curl's standard input, never argv.
+id_token() {
+  cfg=$(
+    printf 'header = "Authorization: bearer %s"\n' "$(q "$ACTIONS_ID_TOKEN_REQUEST_TOKEN")"
+    printf 'get\ndata-urlencode = "audience=%s"\n' "$(q "$endpoint")"
+    printf 'url = "%s"\n' "$(q "$ACTIONS_ID_TOKEN_REQUEST_URL")"
+  )
+  post
+  person=$(str value)
+  [ "$code" = 200 ] && [ -n "$person" ] && return 0
+  why="GitHub answered $code for the job's ID token"; return 2
+}
 grant() {
+  if [ -n "$trust" ]; then id_token || return 2; fi
   cfg=$(
     printf 'data-urlencode = "grant_type=urn:ietf:params:oauth:grant-type:token-exchange"\n'
-    printf 'data-urlencode = "subject_token_type=urn:ietf:params:oauth:token-type:access_token"\n'
+    if [ -n "$trust" ]; then
+      printf 'data-urlencode = "subject_token_type=urn:ietf:params:oauth:token-type:jwt"\n'
+      printf 'data-urlencode = "client_id=%s"\n' "$(q "$trust")"
+    else
+      printf 'data-urlencode = "subject_token_type=urn:ietf:params:oauth:token-type:access_token"\n'
+    fi
     printf 'data-urlencode = "subject_token=%s"\n' "$(q "$person")"
     printf 'data-urlencode = "resource=%s"\n' "$(q "$1")"
     printf 'data-urlencode = "agent=%s"\n' "$(q "$agent")"
@@ -123,7 +348,10 @@ grant() {
     printf 'url = "%s"\n' "$(q "$endpoint")"
   )
   post
-  token_call
+  token_call || return $?
+  # A run's exchange takes the agent's seat for it when none was given, and answers it.
+  if [ -z "$seat" ] && [ -n "$(str seat)" ]; then seat=$(str seat); took_seat=1; fi
+  return 0
 }
 renew() {
   cfg=$(
@@ -153,8 +381,27 @@ revoke_renewal() {
     curl -sS --max-time 10 -o /dev/null -K - 2>/dev/null || true
 }
 
-a_tok=""; a_ref=""; g_tok=""; g_ref=""; child=""
+# One identity_write call over MCP with `token` as the bearer: mcp_call <token> <json arguments>.
+# Sets `answer` and `code` as post does.
+mcp_call() {
+  printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"identity_write","arguments":%s}}' "$2" > "$dir/mcp-call.json"
+  cfg=$(
+    printf 'header = "Authorization: Bearer %s"\n' "$(q "$1")"
+    printf 'header = "Content-Type: application/json"\nheader = "Accept: application/json, text/event-stream"\n'
+    printf 'data-binary = "@%s"\nurl = "%s"\n' "$(q "$dir/mcp-call.json")" "$(q "$mcp_url")"
+  )
+  post
+}
+
+a_tok=""; a_ref=""; g_tok=""; g_ref=""; child=""; took_seat=""
+# A seat this run took for the command is given back, as the agent, before its renewal ends.
+release_seat() {
+  [ -n "$took_seat" ] && [ -n "$a_tok" ] || return 0
+  mcp_call "$a_tok" "{\"action\":\"release_seat\",\"seat\":\"$seat\"}" || true
+  took_seat=""
+}
 cleanup() {
+  release_seat
   revoke_github "$g_tok"; g_tok=""
   revoke_renewal "$g_ref"; g_ref=""
   revoke_renewal "$a_ref"; a_ref=""
@@ -175,13 +422,7 @@ trap 'stop_child; exit 143' TERM
 
 # renew_seat over MCP, as the agent: 0 renewed (sets lease), 1 lost for good, 2 not answered.
 seat_call() {
-  printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"identity_write","arguments":{"action":"renew_seat","seat":"%s"}}}' "$seat" > "$dir/seat-call.json"
-  cfg=$(
-    printf 'header = "Authorization: Bearer %s"\n' "$(q "$a_tok")"
-    printf 'header = "Content-Type: application/json"\nheader = "Accept: application/json, text/event-stream"\n'
-    printf 'data-binary = "@%s"\nurl = "%s"\n' "$(q "$dir/seat-call.json")" "$(q "$mcp_url")"
-  )
-  post
+  mcp_call "$a_tok" "{\"action\":\"renew_seat\",\"seat\":\"$seat\"}"
   case "$code" in
     200) ;;
     401|403) why="the agent is no longer admitted"; return 1 ;;
@@ -196,14 +437,95 @@ seat_call() {
   return 0
 }
 
+# take_seat over MCP with the starting credential, acting as the agent: for an agent driven from a
+# seat when none was given. Sets `seat`; 0 taken, 1 not.
+take_seat() {
+  agent_json=$(printf '%s' "$agent" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  mcp_call "$person" "{\"action\":\"take_seat\",\"acting_as\":\"$agent_json\"}"
+  [ "$code" = 200 ] || { why="the MCP server answered $code"; return 1; }
+  if printf '%s' "$answer" | grep -q '"isError": *true'; then
+    why=$(printf '%s' "$answer" | grep -o 'seat_held[^"]*' | head -n 1)
+    [ -n "$why" ] || why="take_seat was refused"
+    return 1
+  fi
+  seat=$(printf '%s' "$answer" | grep -o '"token": *"[0-9][0-9]*\.[0-9a-f-]*"' | head -n 1 | sed 's/.*"\([0-9][0-9]*\.[0-9a-f-]*\)"/\1/')
+  [ -n "$seat" ] || { why="take_seat answered no seat"; return 1; }
+  took_seat=1
+  return 0
+}
+
+# afs-run mcp: each JSON-RPC message on standard input, one per line, to the MCP endpoint with the
+# token the renewal loop last wrote and, on a tool call, the agent's seat; each answer to standard
+# output as one line. A server-sent-event answer is unwrapped to its data lines. A notification's
+# empty answer prints nothing; a refusal with no JSON-RPC body is answered as an error for its id.
+mcp_bridge() {
+  sid=""
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    if [ -n "${AGENTLEFS_SEAT:-}" ] && printf '%s' "$line" | grep -q '"method"[[:space:]]*:[[:space:]]*"tools/call"' &&
+      ! printf '%s' "$line" | grep -q '"seat"[[:space:]]*:'; then
+      line=$(printf '%s' "$line" | sed "s|\"arguments\"[[:space:]]*:[[:space:]]*{[[:space:]]*}|\"arguments\":{\"seat\":\"$AGENTLEFS_SEAT\"}|; t
+        s|\"arguments\"[[:space:]]*:[[:space:]]*{|\"arguments\":{\"seat\":\"$AGENTLEFS_SEAT\",|")
+    fi
+    printf '%s' "$line" > "$dir/bridge-request.json"
+    cfg=$(
+      printf 'header = "Authorization: Bearer %s"\n' "$(q "$(cat "$AGENTLEFS_TOKEN_FILE")")"
+      printf 'header = "Content-Type: application/json"\nheader = "Accept: application/json, text/event-stream"\n'
+      [ -n "$sid" ] && printf 'header = "Mcp-Session-Id: %s"\n' "$(q "$sid")"
+      printf 'data-binary = "@%s"\nurl = "%s"\n' "$(q "$dir/bridge-request.json")" "$(q "$mcp_url")"
+    )
+    rm -f "$dir/bridge-headers" "$dir/bridge-body"
+    code=$(printf '%s\n' "$cfg" | curl -sS --max-time 600 -D "$dir/bridge-headers" -o "$dir/bridge-body" -w '%{http_code}' -K - 2>/dev/null) || code=000
+    got=$(sed -n 's/^[Mm][Cc][Pp]-[Ss][Ee][Ss][Ss][Ii][Oo][Nn]-[Ii][Dd]: *\([^[:space:]]*\).*/\1/p' "$dir/bridge-headers" 2>/dev/null | tail -n 1)
+    [ -z "$got" ] || sid=$got
+    if grep -qi '^content-type: *text/event-stream' "$dir/bridge-headers" 2>/dev/null; then
+      sed -n 's/^data: \{0,1\}//p' "$dir/bridge-body" | tr -d '\r'
+    elif [ -s "$dir/bridge-body" ] && grep -q '"jsonrpc"' "$dir/bridge-body"; then
+      tr -d '\r\n' < "$dir/bridge-body"; printf '\n'
+    else
+      id=$(printf '%s' "$line" | sed -n 's/^.*"id"[[:space:]]*:[[:space:]]*\("[^"]*"\).*$/\1/p' | head -n 1)
+      [ -n "$id" ] || id=$(printf '%s' "$line" | sed -n 's/^.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*$/\1/p' | head -n 1)
+      if [ -n "$id" ] && ! printf '%s' "$line" | grep -qE '"(result|error)"[[:space:]]*:'; then
+        printf '{"jsonrpc":"2.0","id":%s,"error":{"code":-32000,"message":"agentleFS answered HTTP %s"}}\n' "$id" "$code"
+      fi
+    fi
+  done
+}
+
 refused() {
   printf 'afs-run: %s; stopping the command\n' "$*" >&2
   stop_child
   exit 77
 }
 
+# The first exchange was refused: say so, which credential it started from, and what would help.
+start_refused() {
+  printf 'afs-run: %s (started from %s)\n' "$*" "$started_from" >&2
+  if [ -n "$shadow" ] && [ -n "$cred_file" ] && [ -r "$cred_file" ]; then
+    printf 'afs-run: this machine is signed in too (%s), but %s takes precedence; unset %s to start from the machine'"'"'s sign-in\n' "$cred_file" "$shadow" "$shadow" >&2
+  fi
+  case "$why" in
+    *"agent: not found"*)
+      if [ -z "$shadow" ]; then
+        printf 'afs-run: an agent this machine starts must work in the folder this machine was approved for: add it on that folder in the console as Editor or Manager, or spawn it there with folder=\n' >&2
+      else
+        printf 'afs-run: the credential must belong to the agent, an identity above it, or one that can write the folder it works in\n' >&2
+      fi ;;
+  esac
+  exit 1
+}
+
 # ── start ──
-grant agentlefs || { printf 'afs-run: agentlefs refused: %s\n' "$why" >&2; exit 1; }
+if ! grant agentlefs; then
+  # An agent driven from a seat needs its current one; with none given, this run takes it.
+  case "$why" in
+    *seat_required*)
+      [ -z "$seat" ] || start_refused "agentlefs refused: $why"
+      take_seat || start_refused "the agent's seat could not be taken: $why"
+      grant agentlefs || start_refused "agentlefs refused: $why" ;;
+    *) start_refused "agentlefs refused: $why" ;;
+  esac
+fi
 a_tok=$tok; a_ref=$ref; a_exp=$(($(now) + ttl)); a_next=$(next_at "$ttl"); put agentlefs-token "$a_tok"
 g_next=""; s_next=""
 if [ -n "$github" ]; then
@@ -234,6 +556,7 @@ fi
     eval "export GIT_CONFIG_KEY_$m GIT_CONFIG_VALUE_$m"
     GIT_CONFIG_COUNT=$((n + 2)); export GIT_CONFIG_COUNT
   fi
+  if [ -n "$bridge" ]; then exec 0<&3 3<&-; mcp_bridge; exit $?; fi
   exec "$@"
 ) &
 child=$!

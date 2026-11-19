@@ -35,7 +35,16 @@ the host's hook controls; installing the plugin does not trust them.
   hold the first ones only, since an environment variable cannot rotate. None is printed or put on a
   command line. When agentleFS refuses a renewal (the grant revoked, the seat lost, the agent asleep)
   it stops the command and exits 77. POSIX `sh` and `curl`. It starts from `AGENTLEFS_TOKEN_FILE` or
-  `AGENTLEFS_TOKEN`, and `AGENTLEFS_URL` names another server. The same file is published at
+  `AGENTLEFS_TOKEN`, else from this machine's own credential, and `AGENTLEFS_URL` names another
+  server. On a machine with no browser, `afs-run login` signs the machine in once (OAuth 2.0 Device
+  Authorization Grant): one request to `https://mcp.agentlefs.com/device_authorization`, which
+  answers an address and a code it prints for you to approve in your browser, then a poll of the
+  token endpoint every few seconds until you do; it keeps the machine's rotating credential in a
+  0600 file (`~/.config/agentlefs/machine-credential`) and prints no secret. Each later run spends
+  that credential once at the token endpoint and stores the next one, and for an agent driven from a
+  seat, with no `--seat` given, takes the seat over MCP for the command and releases it after.
+  `afs-run status` makes no network call; `afs-run logout` sends the credential to `/revoke`, which
+  ends the machine, and deletes the file. The same file is published at
   `https://mcp.agentlefs.com/install/afs-run`, with its SHA-256 at `/install/afs-run.sha256`, for a
   harness that has no package carrying it.
 
