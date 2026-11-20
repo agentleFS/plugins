@@ -59,7 +59,8 @@
 #
 # The same in every harness and outside one: POSIX sh and curl, nothing else. The credential it starts
 # from is read as the agentlefs CLI and the stdio MCP server read theirs: AGENTLEFS_TOKEN_FILE when set
-# (so a command under another afs-run starts from its current token), else AGENTLEFS_TOKEN, else this
+# (so a command under another afs-run starts from its current token, for that same agent only: a
+# capped agent token exchanges for no other), else AGENTLEFS_TOKEN, else this
 # machine's own from `afs-run login`. AGENTLEFS_URL (the MCP endpoint, the CLI's name; default the
 # server this machine signed in to, else https://mcp.agentlefs.com/mcp) names the server;
 # AGENTLEFS_TOKEN_ENDPOINT (default: that origin's /token) and AGENTLEFS_GITHUB_API (default
@@ -539,6 +540,9 @@ if [ -n "$seat" ]; then
 fi
 
 (
+  # The job's ID-token request and its trust are the launcher's starting credential, never the
+  # command's: with them it could mint ID tokens and exchange them past what was granted here.
+  unset ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN AGENTLEFS_TRUST
   AGENTLEFS_TOKEN="$a_tok"; AGENTLEFS_TOKEN_FILE="$dir/agentlefs-token"; AGENTLEFS_URL="$mcp_url"
   export AGENTLEFS_TOKEN AGENTLEFS_TOKEN_FILE AGENTLEFS_URL
   if [ -n "$seat" ]; then AGENTLEFS_SEAT="$seat"; export AGENTLEFS_SEAT; fi
