@@ -28,8 +28,11 @@ a note, a document, a command line or your reply.
   that answer may start someone else's write to the same document, which your claim would refuse.
 - Every call that carries the seat renews it to a whole lease from that call, so a shift keeps its
   seat while it keeps calling. Before a step that will run for minutes with no agentleFS call (a
-  build, a test run, a long wait on a command), `identity_write` `action: renew_seat` with `lease_s: 300`, and renew between
-  checks if it runs longer. Never leave a loop running that renews a seat after your session ends: a
+  build, a test run, a long wait on a command), `identity_write` `action: renew_seat` with `lease_s: 300`.
+  300 seconds is the longest lease, so a step that may run longer goes in the background: start it,
+  then check on it at least every four minutes, renewing the seat at each check, until it finishes.
+  Stay in your session until then, headless too: a session that ends while its step runs leaves the
+  work unfinished and the seat to lapse. Never leave a loop running that renews a seat after your session ends: a
   crashed session must let its seat lapse so another can take over. `seat_expired` means the lease
   ran out: take the seat again and carry on; `seat_stale` means another session took over: stop and
   tell the person.
@@ -37,27 +40,29 @@ a note, a document, a command line or your reply.
 - Every write carries an `idempotency_key` you make up for it (e.g. `<agent>-<message id>-answer`).
   If a write fails with no answer (a 502, a timeout, a dropped connection), it may still have
   happened: retry once with the same key, which returns the first answer instead of writing twice.
-- Never handle a credential. No agentleFS answer hands a key to an AI session, yours included, and
-  you never ask the person for one: keys are made by a person, in the console or with `afs-run login`
-  (Setup).
+- Never handle a credential. No agentleFS answer hands one to an AI session, yours included, and
+  you never ask the person for one: a machine is signed in by a person with `afs-run login` (Setup).
 
 ## 1. Any work? (reads only; takes nothing)
 
 1. Find the agents and their work in one read: for the folder they are working in, `browse`
    `action: agents`, `location` that folder (every agent working there or below, whoever made it,
-   with its open asks, when the oldest of them was sent (`oldestAt`), and its seat: free, or held
-   until when); else `brief_me`, which lists yours the same way (`oldestAskAt`). Keep the live
-   ones, and the ones the person named if they named any. `acting_as` takes an agent's id or its
-   `@handle`.
-2. An agent with open asks has work. One with none may still be waiting for answers to its own
-   questions: read its `state.md` (`<folder>/agents/<handle>/state.md`, as yourself, without
-   `acting_as`), and if `Waiting on:` names someone, it has work too, after the agents with open
-   asks. Otherwise it has no work: take no seat on it. Do not read an agent's inbox here: its inbox
+   with its open asks (`asks.open`), the answers to its own questions it has not acked
+   (`answers.unacked`), its resolved waits (`waits.resolved`), each with the oldest one's time
+   (`oldestAt`), and its seat: free, or held until when); else `brief_me`, which lists yours the
+   same way (`asksWaiting`,
+   `answersWaiting`, `resolvedWaits`, with `oldestAskAt`, `oldestAnswerAt`, `oldestResolvedWaitAt`).
+   Keep the live ones, and the ones the person named if they named any. `acting_as` takes an agent's
+   id or its `@handle`.
+2. An agent with open asks, unacked answers or resolved waits has work. One with none may still be
+   waiting for answers to its own questions: read its `state.md` (`<folder>/agents/<handle>/state.md`,
+   as yourself, without `acting_as`), and if `Waiting on:` names someone, it has work too, after the
+   others. Otherwise it has no work: take no seat on it. Do not read an agent's inbox here: its inbox
    is read with its seat (step 2), and without the seat you may be refused (`seat_required`).
-3. Show one short line per agent with work: name, how many asks, seat free or held. Then start:
-   clock in on the agent holding the oldest item, the earliest `oldestAt`, among those whose seat is
-   free (step 2). Stop at the list only if the person asked just to look ("just check", "only list
-   it").
+3. Show one short line per agent with work: name, how many asks, answers and resolved waits, seat
+   free or held. Then start: clock in on the agent holding the oldest item, the earliest of its
+   `oldestAt` times, among those whose seat is free (step 2). Stop at the list only if the person
+   asked just to look ("just check", "only list it").
 
 ## 2. Clock in
 
@@ -148,7 +153,7 @@ are the mother session: you set the work up and start the workers; the workers t
 1. **Start.** Spawn N agents in the folder (`identity_write` `action: spawn`, `folder` the folder,
    `display` `<folder>-1` … `<folder>-N`, `load_memory_and_skills: [<folder>]`, `expires_at` as long
    as the work should last; each gets editor on that folder and nothing outside it). The answer names
-   each agent and how to start it, never a key: do not ask for `bootstrap_key`, which is refused. Then
+   each agent and how to start it, never a key: none exists to ask for. Then
    give each its home: `doc_create` `<folder>/agents/<handle>/CLAUDE.md` with its standing
    instructions, and `identity_write` `action: update`, `target` the agent,
    `load_memory_and_skills: [<folder>, <folder>/agents/<handle>]`, so they load when it connects.
@@ -267,7 +272,10 @@ with its plan, and every headless run (`-p`, `exec`) uses that sign-in.
 | Grok Build | `grok login` | starts without asking | `XAI_API_KEY` |
 
 - Start workers with those keys removed from their environment (`env -u <KEY> …`), unless the
-  person chose API billing; a key that is present bills the API silently.
+  person chose API billing; a key that is present bills the API silently. Run each tool's check
+  with its key removed too (`env -u CURSOR_API_KEY cursor-agent status`): a tool signed in only by
+  its key (CI, a cloud session) has no plan here, so keep that key for its workers, which fail to
+  start without it, or give its agents to another tool.
 - A plan is a pool per window (five hours, a week, a day), shared with the person's own chat and
   editor use, and parallel workers drain it together. So spread a crew across tools: two plans are
   two pools. When a worker stops on a usage limit, its agent waits safely; continue it in another
@@ -293,10 +301,13 @@ signed in, and `afs-run logout` (or Machines, on the console's `/device` page) r
 agent's seat for the command when none is given. Only the person runs `afs-run login` and approves the
 code; you never do either.
 
-Where the device sign-in does not fit (a CI variable, a shared runner), the person makes a key in the
-console (a folder's Access panel, **Add an agent**) and puts it in the environment as `AGENTLEFS_TOKEN`
-(or a file named by `AGENTLEFS_TOKEN_FILE`); each tool's agentleFS connection sends it as its bearer
-token from that variable, never written into a config file. You never see it.
+In GitHub Actions, the person trusts the workflow on the folder's Access panel instead, and the job
+sets `AGENTLEFS_TRUST` (the trust's id, not a secret) and runs `afs-run --agent`. A tool whose
+agentleFS connection must work headless for longer than one token's fifteen minutes is configured
+with the stdio command `afs-run mcp --agent @<handle>` instead of the URL, on a machine signed in as
+above: it sends the agent's current token on every call, and nothing secret is in its configuration.
+A command started with `afs-run --agent` finds its current token in the file `AGENTLEFS_TOKEN_FILE` names.
+There are no long-lived keys: a key sent to agentleFS is refused. You never see a credential.
 
 **The launcher, `afs-run`**, for processes that need a credential of their own: the
 `agentlefs-workflows` plugin carries it at `bin/afs-run` (Claude Code, Codex, Cursor, and Gemini's

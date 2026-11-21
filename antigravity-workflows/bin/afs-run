@@ -125,16 +125,20 @@ save_credential() {
 }
 
 # The machine's refresh token rotates, and a spent one presented again ends the machine. So it is
-# spent and its successor stored one afs-run at a time, under a lock directory beside the file.
-# Sets `person` to the machine's 15-minute access token.
+# spent and its successor stored one afs-run at a time, under a lock directory beside the file,
+# holding the owner's pid. A lock whose owner is gone (stopped mid-refresh, even by SIGKILL) is taken
+# over rather than waited out. Sets `person` to the machine's 15-minute access token.
 machine_sign_in() {
   lock="$cred_file.lock"
   i=0
   until mkdir "$lock" 2>/dev/null; do
+    owner=$(cat "$lock/pid" 2>/dev/null)
+    if [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; then rm -rf "$lock"; continue; fi
     i=$((i + 1))
     [ $i -le 30 ] || die "another afs-run has held $lock for 30 s; if none is running, remove that directory"
     sleep 1
   done
+  printf '%s\n' "$$" > "$lock/pid"
   cfg=$(
     printf 'data-urlencode = "grant_type=refresh_token"\n'
     printf 'data-urlencode = "refresh_token=%s"\n' "$(q "$(cred_get refresh_token)")"
@@ -142,12 +146,12 @@ machine_sign_in() {
   )
   post
   if [ "$code" = 200 ] && [ -n "$(str refresh_token)" ] && [ -n "$(str access_token)" ]; then
-    save_credential "$(str refresh_token)" || { rmdir "$lock"; die "could not store this machine's next credential in $cred_file"; }
-    rmdir "$lock"
+    save_credential "$(str refresh_token)" || { rm -rf "$lock"; die "could not store this machine's next credential in $cred_file"; }
+    rm -rf "$lock"
     person=$(str access_token)
     return 0
   fi
-  rmdir "$lock"
+  rm -rf "$lock"
   case "$code" in
     4??) die "this machine's sign-in was refused ($(str error) $(str error_description)); run afs-run login again" ;;
     *) die "the token endpoint answered $code; try again" ;;
@@ -418,8 +422,11 @@ stop_child() {
   child=""
 }
 trap 'cleanup' EXIT
-trap 'stop_child; exit 130' INT
-trap 'stop_child; exit 143' TERM
+# A bridge gives its seat back before anything else: an MCP client allows a stdio server well under
+# a second (Claude Code: SIGINT, SIGTERM 100 ms later, SIGKILL at 600 ms), and nothing the bridge
+# runs needs the seat once its client has gone. A command keeps its seat until it has stopped.
+trap '[ -z "$bridge" ] || release_seat; stop_child; exit 130' INT
+trap '[ -z "$bridge" ] || release_seat; stop_child; exit 143' TERM
 
 # renew_seat over MCP, as the agent: 0 renewed (sets lease), 1 lost for good, 2 not answered.
 seat_call() {

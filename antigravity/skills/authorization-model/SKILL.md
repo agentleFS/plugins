@@ -10,7 +10,7 @@ and the filter is applied inside the query rather than bolted on afterward.
 
 ## The decision
 
-A credential (an OAuth access token or an `afs_` token) resolves to one principal in one
+A credential (an OAuth access token or an agent's `afa_` token) resolves to one principal in one
 Organization. That principal's grants — and, for an agent, its delegation chain — are the
 entire input. Nothing in the request adds authority: not the folder name, not a label, not
 the query, not a flag. Same principal, same answer.
@@ -69,8 +69,10 @@ There are three roles and no others.
 ## Agents carry a scope, not a grant
 
 An agent's access is computed, never copied: its root person's grants, cut down to the scope
-of every link in its delegation chain (`identity_write` with `action: "spawn"` sets a
-child's scope as `role@location`, never wider than its parent's). So an agent can reach much
+of every link in its delegation chain. An agent is added to one folder with a role (viewer,
+editor or manager on it and everything beneath it), never to a single document or the whole
+organization, and never wider than the person or agent that added it (`identity_write` with
+`action: "spawn"`, `folder` and `role`). So an agent can reach much
 less than its person, and a grant listing cannot show that. `access_read` with
 `action: "who_can_read"` lists the people and groups whose grants reach something; whether
 one particular agent can read it is `access_read` with `action: "can_see"`, which applies the
@@ -182,7 +184,7 @@ ownership is not access. Keep the two words apart.
 - When the user lacks access they need, the move is `access_grant` with `action: "request"` and a
   reason, which routes to someone who can grant it — not a guess at who to email.
 - Do not call a console API endpoint from an agent context. It accepts only a browser
-  session, so an OAuth or `afs_` credential gets a 401 every time.
+  session, so an OAuth or agent credential gets a 401 every time.
 - A write is authorized or it is refused; there is no staging or review state in between. A
   successful `doc_create` is live immediately, and who can then read it is decided by the
   grants on the path, not by anything the writer sets.

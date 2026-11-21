@@ -73,11 +73,11 @@ Use this when one agent (Product) needs another (Admin) to act, and Admin must f
 1. **Cabinet.** Create or reuse a shared folder the recipient can reach. Put the brief there with
    `doc_create` / `doc_update` (ask, definition of done, checklist, standing instructions).
    Everything Admin needs must live in docs + the typed message — not in chat paste later.
-2. **Narrow helper (optional).** `identity_write` `spawn` with `display`, `purpose`, and
-   `scope` limited to that folder (e.g. `editor@trial-folder`). Spawning creates an identity;
+2. **Narrow helper (optional).** `identity_write` `spawn` with `display`, `purpose`, `folder`
+   (that folder, e.g. `trial-folder`) and `role` (`viewer` or `editor`): the agent lives there. Spawning creates an identity;
    it does **not** start a process. Drive it with `acting_as` (its id or `@handle`), a second session + `take_seat`,
-   or, headless, the launcher `afs-run --agent @handle` (no AI session is handed a key; a person
-   makes one in the console, Access → Add an agent) — see `collaborating` / `connection`.
+   or, headless, the launcher `afs-run --agent @handle` on a machine its person signed in with
+   `afs-run login` (no AI session is handed a credential) — see `collaborating` / `connection`.
 3. **Doorbell.** As Product, `message_write` `action: "send"`:
    - `kind: "request"` with `request` (standalone sentence), **or** `kind: "handoff"` with
      `summary` + `packet` whose `refs` name the cabinet docs

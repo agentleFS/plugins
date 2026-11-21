@@ -271,22 +271,19 @@ custom connector if you prefer that over the plugin.
 ## Other agents
 
 agentleFS is a plain MCP server, so any MCP-capable client can connect to
-`https://mcp.agentlefs.com/mcp` today - OAuth for humans, or a `afs_` bearer
-token for headless and CI use. VS Code and Cline take that URL; ChatGPT takes
+`https://mcp.agentlefs.com/mcp` today - OAuth for humans, and a machine signed in
+with `afs-run login` (or a trusted GitHub Actions workflow) for headless and CI use.
+VS Code and Cline take that URL; ChatGPT takes
 it as a custom MCP server; Meta's Muse connects when you ask for it in a chat on muse.ai.
 
-**If your client doesn't do OAuth, you need a bearer token.** Many desktop clients
+**If your client doesn't do OAuth, run the launcher's bridge.** Many desktop clients
 send only the headers you configure and never walk the discovery chain, so they get
-the initial 401 and report "startup failed." Mint a token and set one header:
-
-| Field | Value |
-|---|---|
-| URL | `https://mcp.agentlefs.com/mcp` |
-| Header name | `Authorization` |
-| Header value | `Bearer afs_...` |
-
-Scope it by minting against a narrow principal - a token in a desktop app's config
-carries that principal's roles, and it's revocable if the config ever leaks.
+the initial 401 and report "startup failed." Sign the machine in once with
+`afs-run login` (you approve its code in the console), add an agent on the folder it
+works in, and configure the client with the stdio command
+`afs-run mcp --agent @<handle>` instead of a URL. It sends the agent's current
+fifteen-minute token on every call, so nothing secret sits in the client's config.
+Long-lived `afs_` keys are no longer accepted.
 
 ## The one thing worth knowing
 

@@ -222,13 +222,15 @@ give it only that identity's id (or credential) and the task — it acts as that
 you. The `projects` skill's "Split the work across helpers" covers how each runner uses the
 identity (`acting_as` on a shared connection, or `AGENTLEFS_TOKEN` in a process you start).
 
-`identity_write` with `action: "spawn"`, `display` (its name), `purpose`, and `scope` — a
-list of `role@location`, for example `["viewer@docs"]` for read-only on the `docs` folder, or
-`editor@specs/api.md` for one document. A child can never hold more than its parent, and
-`expires_at` can bound it in time. For a short-lived helper, add `lifecycle: "ephemeral"`.
+`identity_write` with `action: "spawn"`, `display` (its name), `purpose`, `folder` and `role`:
+an agent is added to ONE folder and lives there, with `viewer`, `editor` (the default) or
+`manager` on it and everything beneath it, for example `folder: "docs", role: "viewer"` for
+read-only on the `docs` folder. There is no agent for a single document or for the whole
+organization; pick the narrowest folder that holds the work. A child can never hold more than
+its parent, and `expires_at` can bound it in time. For a short-lived helper, add `lifecycle: "ephemeral"`.
 
-The answer carries the child's id and its first access and refresh tokens, shown once.
-Spawning does not start a process; it creates the identity whatever runs the helper will use.
+The answer carries the child's id, handle and folder and how to start it; it never carries a
+credential, to anyone. Spawning does not start a process; it creates the identity whatever runs the helper will use.
 Put the child's **id** in the helper's prompt and tell it to pass `acting_as` with that id on
 every agentleFS call when it shares this connection. For a process you start, never handle a
 credential yourself: start it with the launcher (below, *Get the launcher*),
@@ -237,8 +239,7 @@ exchanges the sign-in already in the environment for a short-lived token for tha
 `--github`, a token for that one repository if its folder was granted it) and puts them only in
 the command's environment. It keeps them fresh for as long as the command runs: the current ones are
 in the files `AGENTLEFS_TOKEN_FILE` and `GH_TOKEN_FILE` (git uses the second on its own), and it
-stops the command if agentleFS refuses a renewal. `identity_write action=mint_key` refuses an agent
-for this reason. Never write a credential into a prompt, a document, a message, a command line or a
+stops the command if agentleFS refuses a renewal. Never write a credential into a prompt, a document, a message, a command line or a
 file.
 
 ### Get the launcher
@@ -259,8 +260,10 @@ file.
   chmod +x afs-run
   ```
 
-It needs `sh` and `curl`, and starts from the agentleFS credential the person set for that machine
-(`AGENTLEFS_TOKEN_FILE` or `AGENTLEFS_TOKEN`); `AGENTLEFS_URL` names a server other than the hosted one.
+It needs `sh` and `curl`, and starts from the machine's own sign-in (`afs-run login`, which the
+person approves in their browser), a GitHub Actions trust (`AGENTLEFS_TRUST`), or the current token
+of an `afs-run` it runs under (`AGENTLEFS_TOKEN_FILE`); `AGENTLEFS_URL` names a server other than the
+hosted one.
 
 **Where it cannot run** (no POSIX shell, such as Windows without WSL or Git Bash), make the same
 exchange with curl: OAuth 2.0 Token Exchange (RFC 8693) at the server's `/token`. Keep every token

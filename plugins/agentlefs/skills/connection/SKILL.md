@@ -67,7 +67,7 @@ It is deliberately a literal rather than a templated value. Claude Code can inte
 
 Everyone who signs in has at least one Organization: their personal one, if they have not created or joined another. A new personal account is the manager of its Organization and reaches everything in it. What a sign-in does not bring is **grants** elsewhere. In a company Organization, a member reaches only what has been shared with them — except a manager of the Organization's root, who reaches all of it — and an agent reaches only its person's access, narrowed by its own scope. A credential with no grants authenticates fine and reaches nothing, which looks like a working connection returning an empty world — and is.
 
-## Agent tokens (headless, CI, routines)
+## Signing in with no browser (headless, CI, routines)
 
 ### Agents on a remote machine (a server, CI, a box with no browser)
 
@@ -79,18 +79,17 @@ The person signs the machine in once; no key is copied and nothing secret passes
 
 `afs-run status` says whether the machine is signed in; `afs-run logout`, or Revoke under **Machines** on the console's `/device` page, ends it, and its running agents stop at their next call. A machine lasts 90 days. The launcher is `bin/afs-run` in the agentlefs-workflows plugin, or `https://mcp.agentlefs.com/install/afs-run` checked against `/install/afs-run.sha256`. Never ask the person to paste a code, a key or a token into the conversation: the code is typed in their browser, and nothing else is needed.
 
-### Other agent credentials
+### In GitHub Actions
 
-For a headless agent that should be its own identity, with narrower access than the person running it, the person creates it in the console: a folder's Access panel, **Add an agent**, which shows its long-lived key once. It stops working when the agent is retired. No AI session is ever handed a key, the person's own included: an agent your session spawns is started with the launcher (`afs-run`) or driven with `acting_as`.
+A workflow signs in with no stored secret: the person trusts it on the folder's Access panel in the console (**Trust a GitHub Actions workflow**), the job gets `permissions: id-token: write`, and `AGENTLEFS_TRUST` names the trust (its id, not a secret). `afs-run --agent @<handle> -- <command>` in the job then exchanges the job's GitHub ID token for the agent's short-lived token.
 
-An `afs_` token is the current agent credential, for any context with no browser: cloud routines, CI, scheduled jobs. The key from Add an agent is one. Send it as:
+### Agents and clients with no browser of their own
 
-| Transport | How |
-|---|---|
-| HTTP | `Authorization: Bearer afs_…` |
-| stdio | `AGENTLEFS_TOKEN` environment variable |
+An agent that should be its own identity, with narrower access than its person, is added in the console (a folder's Access panel, **Add an agent**) or spawned with `identity_write action=spawn`. Neither answers a credential: the agent is started with the launcher (`afs-run --agent`) on a machine signed in for its folder, or driven with `acting_as`. No AI session is ever handed a key, the person's own included.
 
-Prefer OAuth wherever a browser exists. `cht_` tokens, minted before the agentleFS rename, are the only legacy prefix: still accepted until the last one expires. A token carries its agent's whole reach; narrowing one to a folder is #686, not yet built. The plugin's committed configuration ships no token. Keep an `afs_` token out of committed files and treat it as a secret supplied by the environment: anyone holding it acts as that agent.
+A client that only sends a static header (Cline, a generic HTTP client) is configured with the stdio command `afs-run mcp --agent @<handle>` instead of a URL and a token: it carries the agent's current token on every call, and nothing secret goes in its configuration.
+
+agentleFS no longer accepts long-lived `afs_` keys (or the older `cht_` ones). A call with one answers 401 with how to sign in instead: `afs-run login` for a machine, Add an agent and `afs-run` for an agent, a trust (`AGENTLEFS_TRUST`) for GitHub Actions, and the agentleFS connector or OAuth for a person's client. Prefer OAuth wherever a browser exists. The plugin's committed configuration ships no token; keep it that way.
 
 ## Verifying a connection
 
@@ -102,7 +101,7 @@ Only a successful tool call proves a working connection. Call `browse` with `act
 |---|---|---|
 | Single 401, then a browser opens | Normal DCR trigger | Nothing. Complete the sign-in. |
 | 401 loop that never resolves | Browser flow abandoned, cookies blocked, or a stale registration | Re-run `/mcp` and authenticate again in a normal browser window |
-| 401 in CI or a headless shell | No browser for the OAuth flow | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, then paste the redirect URL back when prompted. Agents the machine starts on its own: sign the machine in once with `afs-run login` and start them with `afs-run --agent` (**Agents on a remote machine** above), rather than an `afs_` token |
+| 401 in CI or a headless shell | No browser for the OAuth flow | SSH with a person at the far end: `claude mcp login agentlefs --no-browser`, then paste the redirect URL back when prompted. Agents the machine starts on its own: sign the machine in once with `afs-run login` and start them with `afs-run --agent` (**Agents on a remote machine** above); a key is refused |
 | 404 on every call | Pointed at the console host instead of the MCP host | Use `https://mcp.agentlefs.com/mcp`. `https://agentlefs.com` is the human console and serves no MCP. |
 | 404 on a self-hosted deployment | the `url` in `.mcp.json` is missing the `/mcp` path | The path matters, not just the host |
 | Connected, zero folders | An empty Organization you approve, "(nothing stored yet …)", or a credential with no grants, "(no folders you can reach …)" | Empty: `/agentlefs:connect` offers to make the first folder. No grants: `access_grant` with `action: "request"` for a folder the user can name, or ask a manager of the Organization |
@@ -136,7 +135,7 @@ For an email switch, use **Use another account** on consent rather than signing 
 
 ## Avoid
 
-- Calling a console API endpoint from an agent context. The console API accepts only a browser session, so an OAuth or `afs_` credential gets a 401 every time. For anything needing the cross-principal view, deep-link the person to `https://agentlefs.com`.
+- Calling a console API endpoint from an agent context. The console API accepts only a browser session, so an OAuth or agent credential gets a 401 every time. For anything needing the cross-principal view, deep-link the person to `https://agentlefs.com`.
 - Diagnosing "connected but empty" as a broken connection. It is an authorization outcome, and saying so correctly is the difference between a useful answer and a wasted hour.
 - Concluding the store is empty from an empty view. See the `authorization-model` skill.
 - Treating a nearly empty store as "no content" without checking whether this connection is the wrong Organization or email (row above).

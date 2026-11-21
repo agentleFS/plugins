@@ -73,8 +73,10 @@ reports on its thread before it ends. **Before handing a helper any work, spawn 
 it** — a subagent, cloud session or process you start must not run as you with your full grants.
 How it runs is your tool's business; the identity step is the same for each:
 
-1. `identity_write` with `action: "spawn"`, `display`, `purpose`, `lifecycle: "ephemeral"` and
-   `scope` narrowed to what the task needs (for example `["editor@<project folder>"]`).
+1. `identity_write` with `action: "spawn"`, `display`, `purpose`, `lifecycle: "ephemeral"`,
+   `folder` (the narrowest folder the task needs, for example the project folder) and `role`
+   (`viewer` or `editor`). An agent lives in that one folder; there is no document or
+   organization-wide agent.
 2. Give the helper the project folder, the thread id, the task, and only that agent's **id**.
    Tell it to report with `reply_comment` before it finishes, and to pass `acting_as` with that
    id on every agentleFS call so it works with that agent's narrower access and its work is
