@@ -41,8 +41,9 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
   recovers). Even under cron, register waits so the next `brief_me` sees what resolved.
   Waits do not auto-start harnesses — they surface on the next `brief_me`.
 - A process you start as one of those agents (`codex exec`, a script, a worker) gets its
-  credential from the launcher `afs-run --agent @<handle> [--seat <seat token>] -- <command>`, which
-  puts a short-lived token in that process's environment only; never type or print a credential.
+  credential from the launcher `afs-run --agent @<handle> -- <command>`, which puts a short-lived
+  token in that process's environment only and takes no seat (a process that writes takes the
+  agent's seat itself); never type or print a credential.
   In Gemini CLI it is in this extension's folder at `plugins/agentlefs-workflows/bin/afs-run`;
   elsewhere fetch `https://mcp.agentlefs.com/install/afs-run` and run it only if
   `curl -fsSL https://mcp.agentlefs.com/install/afs-run.sha256 | sha256sum -c -` prints

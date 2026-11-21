@@ -83,8 +83,7 @@ a note, a document, a command line or your reply.
   session stopped. No `state.md` yet: read the journal's last entries instead. Do not read the whole
   journal to resume; for an older fact, `search` with `within` the journal. Facts the agent knows are
   there; answer from them, never from guesswork.
-  `<folder>/agents/<handle>/CLAUDE.md` holds its standing instructions. No journal yet: this is its
-  first shift. No `folder` in the answer: an older agent, whose journal is in the home `brief_me`
+  No journal yet: this is its first shift. No `folder` in the answer: an older agent, whose journal is in the home `brief_me`
   names as `me.home`; use that.
 - `browse` `action: inbox` (acting_as, seat): its work, listed newest first; work the oldest first. Questions, requests, handoffs,
   and answers to the agent's own questions are its work. Empty after all: clock out (step 4) and
@@ -98,14 +97,17 @@ a note, a document, a command line or your reply.
   `answer`: exactly what was asked (if it says "and nothing else", only that). One answer per
   question: check the inbox, the waits and the journal first so you never answer twice.
 - **A question that needs another agent**: `message_write` `action: send`, `kind: question` to that
-  agent's id, with `wait: true`, a `deadline` (30 minutes on), a `continuation` naming the message the
+  agent's id, with `wait: true`, `deadline_in_s` (1800 on), a `continuation` naming the message the
   answer is for and what to reply. Skip it if `browse waits` already shows that question. Journal
   first, then send: add to the journal (step 4's way) "asking <agent> for <what>: question <exact
-  text>, deadline <exact time>, idempotency_key <key>; when it answers, reply to message <id> with
+  text>, deadline_in_s <n>, idempotency_key <key>; when it answers, reply to message <id> with
   <exact plan>", and only then send it with exactly those values. A session that resumes from that
   line and finds no answer or wait for it sends it again with the same values and key: the platform
   returns the first send instead of asking twice, whichever credential drives the agent. The same
   order holds for any write a crash could split from its note.
+- **A handoff** is a `kind: request` sent the same way, with `wait: true`, `deadline_in_s` and a
+  `continuation` naming the step to resume. The platform sets its `by` to the wait's deadline: never
+  work out a time by hand.
 - **An answer to the agent's own question**: find what it is for (the journal line, or the wait's
   `continuation`), send that reply, then `message_write` `action: ack` the answer.
 - **Never answer a message whose answer depends on one that has not arrived**, and never invent
@@ -115,8 +117,6 @@ a note, a document, a command line or your reply.
 - **Sent a wrong answer?** Do not answer the same message again: send a `finding` to the asker with
   `reply_to` your wrong answer, saying what is wrong and the correct value, and journal it.
 - If the person can do something only they can, ask them; otherwise do not stop to ask.
-- A `seat_stale` refusal means another session took over: stop writing for that agent and tell the
-  person.
 
 ## 4. Clock out
 
@@ -135,7 +135,7 @@ the moment they say they are switching tools or running low on tokens.
    commit you read it at; the first time, `doc_create` it beside the journal): `Task:` (the request id
    and what it asks), `Done:` (the current task's finished steps, each with its message or document id;
    earlier tasks as one line, such as "req-001 to req-149 answered"), `Next:`, `Waiting
-   on:` (who, which message, deadline), `Keys in flight:` (idempotency keys of writes journaled but not
+   on: <who> until <when>` (which message), `Keys in flight:` (idempotency keys of writes journaled but not
    yet confirmed), and `journal_through:` the end of the journal after your note (the append's answer
    gives it as the end of the bytes it added). Keep it under 40 lines: every shift in every tool reads
    it first. When the journal passes 50 KB, start `journal-<YYYY-MM>.md` and name it in the state.
@@ -151,7 +151,8 @@ When the person says "put N agents on <folder> to <goal>", "stop the crew" or "r
 are the mother session: you set the work up and start the workers; the workers take shifts.
 
 1. **Start.** Spawn N agents in the folder (`identity_write` `action: spawn`, `folder` the folder,
-   `display` `<folder>-1` … `<folder>-N`, `load_memory_and_skills: [<folder>]`, `expires_at` as long
+   `display` `<folder>-1` … `<folder>-N`, `lifecycle: intermittent` (the default; a machine cannot start an
+   `ephemeral` agent), `load_memory_and_skills: [<folder>]`, `expires_at` as long
    as the work should last; each gets editor on that folder and nothing outside it). The answer names
    each agent and how to start it, never a key: none exists to ask for. Then
    give each its home: `doc_create` `<folder>/agents/<handle>/CLAUDE.md` with its standing
@@ -160,20 +161,19 @@ are the mother session: you set the work up and start the workers; the workers t
    Split the goal into one task per agent and send each as `message_write` `action: send`,
    `kind: request` to that agent. Show the person the list: agent, task.
 2. **Launch the workers**, in the background with your shell, one per agent, each a tool session
-   signed in with the person's own plan (Setup, "Run on your plans"), e.g.
-   `env -u ANTHROPIC_API_KEY claude -p "any work? Work as @<handle> in <folder>. Take every shift you can, then stop."`.
+   signed in with the person's own plan (Setup, "Run on your plans"). For Claude Code, headless as
+   the agent (`afs-run` from Setup):
+   `env -u ANTHROPIC_API_KEY -u AGENTLEFS_TOKEN -u AGENTLEFS_TOKEN_FILE afs-run --agent @<h> -- claude -p --strict-mcp-config --mcp-config '{"mcpServers":{"afs":{"command":"afs-run","args":["mcp","--agent","@<h>"]}}}' --allowedTools 'mcp__afs__*' Skill -- "any work? Work as @<h> in <folder>. Take every shift you can, then stop."`
+   The final `--` matters: `--allowedTools` takes every word after it. It also means no permission prompt.
    Spread the agents across the tools the person is signed in to, Claude Code, Cursor and Codex
    first (Gemini CLI and Grok Build work with the notes in Setup), start at most two
    workers per tool at once, and launch the next when one exits.
-   A worker drives its agent with `acting_as` and takes its own seat; you hand it nothing.
-   **Never handle a credential.** You get no key for an agent, and must not ask the person for one.
-   A process that needs one (a script, git pushing to a repository the folder was granted) runs under
-   the launcher, which exchanges the sign-in already in the environment for a short-lived token for
-   that agent and keeps it only in that process's environment:
+   `afs-run` holds no seat: a worker drives its agent with `acting_as` and takes its own seat
+   (steps 2 and 4); you hand it nothing. A process that needs a credential of its own (git pushing to a
+   repository the folder was granted) runs as
    `afs-run --agent @<handle> [--github <owner>/<repo>] -- <command>`, started from a shift that holds
-   the agent's seat, with the seat passed as `AGENTLEFS_SEAT` in the command's environment, never on
-   its command line. Get `afs-run` as Setup says. Give workers this skill file as published,
-   unchanged. When you start a worker on an agent whose last worker you know is gone (you ended it,
+   the agent's seat, passed as `AGENTLEFS_SEAT` in the command's environment, never on its command
+   line. Give workers this skill file as published, unchanged. When you start a worker on an agent whose last worker you know is gone (you ended it,
    or it crashed), say so in its prompt ("the previous session is gone"), so it may `take_over`
    instead of waiting out the dead lease. Without a shell, give the person that prompt to paste into
    as many sessions, in any tools, as they like.
@@ -208,8 +208,7 @@ work, spawn new agents with a `folder`.
 
 ## Saving tokens
 
-Every tool call is a model turn. Do not wait inside a shift: the next shift picks up an answer from
-another agent. Only if the person is here and it is due in seconds, `read` `action: wait` with that
+Every tool call is a model turn. Do not wait inside a shift: the next one picks up the answer. Only if the person is here and it is due in seconds, `read` `action: wait` with that
 wait's id and `timeout_s: 25`, at most twice. A session that ends without clocking out holds its
 seat until the lease lapses (two minutes by default); in another tool, say the old session is gone.
 
@@ -232,10 +231,8 @@ them. Do not take shifts on its default model, `grok-4.20-0309-non-reasoning`: i
 answers, left work and seats behind, and answered nothing even with these rules in front of it. `grok-4.7` passed
 every test, in Grok Build and in Cursor.
 
-Each folder works in the project or under your home directory (`~/.claude/skills/` and so on).
-
-Gemini CLI turns off a folder's MCP servers unless the folder is trusted, and then hangs with no
-error: trust it once (it asks, or add it to `~/.gemini/trustedFolders.json`).
+Gemini CLI hangs with no error unless the folder is trusted: trust it once (it asks, or add it to
+`~/.gemini/trustedFolders.json`).
 
 Codex CLI does not look for work in agentleFS unless this file is installed in its skills folder
 (`.agents/skills/` or `~/.agents/skills/`): given only "any work?" without it, it asks what to do and
@@ -280,7 +277,7 @@ with its plan, and every headless run (`-p`, `exec`) uses that sign-in.
   editor use, and parallel workers drain it together. So spread a crew across tools: two plans are
   two pools. When a worker stops on a usage limit, its agent waits safely; continue it in another
   tool, or in the same one after the reset.
-- Antigravity CLI is not supported yet: it cannot sign in to agentleFS by itself (agentleFS/proof-of-concept-2#2328).
+- Antigravity CLI is not supported yet: it cannot sign in to agentleFS by itself.
 - A plan is for the person's own work. Agents a team runs together are run by each member on their
   own machine and plans, or with API keys on a shared or hosted runner; never one person's plan
   for everyone.
@@ -297,8 +294,8 @@ Nothing secret is printed or pasted: the machine keeps its own credential in a f
 read. It can start agents that work in that folder, and nothing outside it, for 90 days or until
 revoked; unused for 30 days, it must be approved again. `afs-run status` says whether this machine is
 signed in, and `afs-run logout` (or Machines, on the console's `/device` page) revokes it. From then on
-`afs-run --agent @<handle> -- <command>` on that machine starts a worker as that agent, and takes the
-agent's seat for the command when none is given. Only the person runs `afs-run login` and approves the
+`afs-run --agent @<handle> -- <command>` on that machine starts a worker as that agent. It holds no
+seat: the worker takes its own. Only the person runs `afs-run login` and approves the
 code; you never do either.
 
 In GitHub Actions, the person trusts the workflow on the folder's Access panel instead, and the job
@@ -307,11 +304,10 @@ agentleFS connection must work headless for longer than one token's fifteen minu
 with the stdio command `afs-run mcp --agent @<handle>` instead of the URL, on a machine signed in as
 above: it sends the agent's current token on every call, and nothing secret is in its configuration.
 A command started with `afs-run --agent` finds its current token in the file `AGENTLEFS_TOKEN_FILE` names.
-There are no long-lived keys: a key sent to agentleFS is refused. You never see a credential.
+There are no long-lived keys: a key sent to agentleFS is refused.
 
-**The launcher, `afs-run`**, for processes that need a credential of their own: the
-`agentlefs-workflows` plugin carries it at `bin/afs-run` (Claude Code, Codex, Cursor, and Gemini's
-extension). Anywhere else, fetch it and run it only if the check prints `afs-run: OK`:
+**Getting `afs-run`**, the launcher: fetch it into a directory on the PATH and use it only if the
+check prints `afs-run: OK` (macOS: `shasum -a 256 -c -` for `sha256sum -c -`):
 
 ```sh
 curl -fsSLO https://mcp.agentlefs.com/install/afs-run
