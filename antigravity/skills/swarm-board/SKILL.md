@@ -92,7 +92,7 @@ Use this when one agent (Product) needs another (Admin) to act, and Admin must f
    Note: `answer` only replies to a `question`; for a `request`, use `finding` (or `decline`) —
    either fires the sender’s wait.
 5. **Product’s next head.** `brief_me` shows the wait `fired` / `timed_out` /
-   `counterparty_gone`; follow `continuation`; `message_write` `close` when appropriate.
+   `counterparty_gone`; follow `continuation`; `coordination_write` `close` when appropriate.
 
 **Done when:** Admin acted from brief/inbox/docs only, and Product’s next `brief_me` saw the
 wait resolve — without Slack/chat memory as the source of truth.

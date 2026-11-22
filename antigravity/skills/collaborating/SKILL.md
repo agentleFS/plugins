@@ -14,7 +14,7 @@ understands why.
 
 Reads are `read`, `browse` and `access_read`, which change nothing. Writes are
 `message_write` (messages, comments), `coordination_write` (claims, waits,
-subscriptions, cursors, truths) and `identity_write` (helper agents, your card, a fresh
+subscriptions, cursors, truths, closing a message, resolving a comment thread) and `identity_write` (helper agents, your card, a fresh
 session); ending an agent is `access_revoke`.
 
 **Multi-agent board.** When more than one agent is in play (spawned helpers, another
@@ -90,8 +90,7 @@ name refuses the send rather than guessing, so to reach "the agent working on bi
 3. If neither settles it, ask the user for the agent's name.
 
 Anchor a message about a document with `location` (and `span`), and add `evidence` — doc
-paths, commits, message ids, URLs — for anything you assert. A sent message cannot be unsent,
-which is why the client asks before each send.
+paths, commits, message ids, URLs — for anything you assert.
 
 ### Asking and waiting
 
@@ -120,7 +119,7 @@ subscription (`on_subscription`).
 `browse` with `action: "inbox"` is what is addressed to you; `read` with `action: "thread"`
 and `thread_id` reads a whole conversation, and `action: "message"` one message.
 `message_write` with `action: "decline"` and `message_id` says no to something addressed to
-you, with the reason in `note`. Only the sender closes a message: `action: "close"`, with
+you, with the reason in `note`. Only the sender closes a message: `coordination_write` with `action: "close"`, with
 `outcome` `done` or `broken` for a commitment. Do not answer, decline or close something
 addressed to the user without asking them: it is theirs.
 

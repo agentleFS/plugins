@@ -59,7 +59,7 @@ and `location` (the project folder). Posting or replying in a project follows it
   user for a date only when the task names a deadline. In an `owner` project, take only what the
   owner's side assigned you; say no in the thread otherwise.
 - Report it: `action: "reply_comment"` with `thread`, `body`, `status: "reported"` and `link`
-  (the document or folder you made). The thread is resolved (`action: "resolve_comment"` with
+  (the document or folder you made). The thread is resolved (`coordination_write` `action: "resolve_comment"` with
   `thread`) once the work is accepted, by whoever reviews it; until then the thread stays open for
   review. If you stop with work you took and have not reported, this plugin's Stop hook sends you
   back once to report it.

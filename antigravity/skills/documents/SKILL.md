@@ -151,7 +151,7 @@ When the request authorizes shared feedback, use `message_write`:
   document/folder discussion; never invent a quote or attach it to unrelated text.
 - `action: "reply_comment"`, `thread` and `body` to answer or continue a thread.
   When reporting a fix, explain what changed and link the relevant evidence.
-- `action: "resolve_comment"` and `thread` only when the issue has been addressed
+- `coordination_write` with `action: "resolve_comment"` and `thread` only when the issue has been addressed
   or explicitly closed, and resolving is authorized. Posting a reply or changing
   some text does not establish resolution; unresolved disagreement stays open.
 

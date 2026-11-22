@@ -110,6 +110,9 @@ a note, a document, a command line or your reply.
   work out a time by hand.
 - **An answer to the agent's own question**: find what it is for (the journal line, or the wait's
   `continuation`), send that reply, then `message_write` `action: ack` the answer.
+- **A wait that timed out** (its deadline passed with no answer): decide the outcome (carry on without the answer, ask again, or stop), then
+  `coordination_write` `action: close` the request it was for with a `note` saying what you decided, so it stops
+  showing as work.
 - **Never answer a message whose answer depends on one that has not arrived**, and never invent
   another agent's answer. Leave it; the shift note says it is waiting. A fact the agent should know
   (its instructions, its journal) but that you cannot find is a question to whoever sent the work,
@@ -128,7 +131,8 @@ the moment they say they are switching tools or running low on tokens.
 2. The shift note, in the agent's journal: `doc_update` `action: edit`, `location`
    `<folder>/agents/<handle>/journal.md`, `append` a `## <UTC time>` heading and the note (acting_as,
    seat); the first time, `doc_create` it in `[<folder>, agents, <handle>]` named `journal.md`. What
-   you did (message ids, exact replies), what is next, what it waits on (who, which message). Everyone
+   you did (full message ids, never the 8-character short form that `coordination_write` close and `read` refuse;
+   exact replies), what is next, what it waits on (who, which message). Everyone
    who can read the folder can read it, so never a secret. If the shift found nothing to do and
    changed nothing, skip the note and the checkpoint.
 3. The checkpoint, `state.md`, replaced whole (`doc_update` `action: replace`, `expected_commit` the
@@ -165,6 +169,9 @@ are the mother session: you set the work up and start the workers; the workers t
    the agent (`afs-run` from Setup):
    `env -u ANTHROPIC_API_KEY -u AGENTLEFS_TOKEN -u AGENTLEFS_TOKEN_FILE afs-run --agent @<h> -- claude -p --strict-mcp-config --mcp-config '{"mcpServers":{"afs":{"command":"afs-run","args":["mcp","--agent","@<h>"]}}}' --allowedTools 'mcp__afs__*' Skill -- "any work? Work as @<h> in <folder>. Take every shift you can, then stop."`
    The final `--` matters: `--allowedTools` takes every word after it. It also means no permission prompt.
+   With `--strict-mcp-config` the tool schemas may be deferred: a worker loads them (ToolSearch) before its
+   first call. `read` `action: wait` takes `wait_id`, and `doc_update` `action: edit` with `append` cannot
+   carry `expected_commit` (an append applies to the document as it is).
    Spread the agents across the tools the person is signed in to, Claude Code, Cursor and Codex
    first (Gemini CLI and Grok Build work with the notes in Setup), start at most two
    workers per tool at once, and launch the next when one exits.
@@ -240,15 +247,14 @@ calls nothing. The other tools also find this skill through agentleFS when a pro
 
 ### Fewer permission prompts (the person's choice)
 
-Shift writes (`doc_update`, `doc_create`, `message_write`) are marked destructive, so most tools ask
-the person before each one. Offer once in a session, and only when the person mentions approvals or
+The journal and document writes (`doc_update`) and closing a request (`coordination_write`) are marked
+destructive, so many clients ask the person before each one; `doc_create` and `message_write` are additive. Offer once in a session, and only when the person mentions approvals or
 prompts, or declines one of your writes. Never pause the shift for it: finish the shift first
 (journal, checkpoint, seat released), then put the offer at the end of your reply as a short
 question naming your tool. You often cannot tell whether anyone is reading, so the offer must never
 hold up the work.
 
-- Suggest allowing `doc_update` and `doc_create`, plus `message_write` if they want answers sent
-  without asking; suggest leaving `doc_delete`, `access_grant` and `access_revoke` on asking.
+- Suggest allowing `doc_update` and `coordination_write`; suggest leaving `doc_delete`, `access_grant` and `access_revoke` on asking.
 - Never change their permission settings yourself, and never add a hook or allow rule that approves
   your own calls. The setting is theirs.
 - If they say yes, read `references/permissions.md` beside this file: where each tool keeps the

@@ -105,7 +105,7 @@ them, not to you.
 
 What the user asked of others and is still open is the brief's `asked`, and
 answers that came back since the last acknowledged session are `answered`. Only
-the sender closes a message (`message_write` `action: "close"`), so close one of the user's own
+the sender closes a message (`coordination_write` `action: "close"`), so close one of the user's own
 asks once it is settled.
 
 ## Acknowledging
