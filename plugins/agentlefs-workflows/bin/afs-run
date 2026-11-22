@@ -30,7 +30,7 @@
 #
 # A TOKEN, NEVER A SEAT. afs-run gets the agent's token and never takes, renews or releases the
 # agent's seat: a token says who the agent is, never whose turn it is. The worker in the command takes
-# its own seat (identity_write take_seat, over `afs-run mcp` or any MCP connection) and passes it as
+# its own seat (seat_write take_seat, over `afs-run mcp` or any MCP connection) and passes it as
 # `seat` on its calls; agentleFS refuses a seated agent's writes without it, whatever the token.
 #
 # A supervisor in the shape of a Kubernetes projected token or Vault Agent: it exchanges the
@@ -453,9 +453,9 @@ mcp_bridge() {
     if [ -z "$client" ] && printf '%s' "$line" | grep -q '"method"[[:space:]]*:[[:space:]]*"initialize"'; then
       client=$(printf '%s' "$line" | sed -n 's/.*"clientInfo"[[:space:]]*:[[:space:]]*{[^}]*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | tr -cd 'A-Za-z0-9 ._-' | cut -c 1-40)
     fi
-    # A take_seat names its holder as "<client> via afs-run on <machine>" (the call's clientInfo, which
+    # A take_seat or take_over names its holder as "<client> via afs-run on <machine>" (the call's clientInfo, which
     # the server records), unless the client named itself on the call.
-    if printf '%s' "$line" | grep -q '"action"[[:space:]]*:[[:space:]]*"take_seat"' &&
+    if printf '%s' "$line" | grep -q '"action"[[:space:]]*:[[:space:]]*"take_\(seat\|over\)"' &&
       ! printf '%s' "$line" | grep -q 'io.modelcontextprotocol/clientInfo'; then
       holder="$(machine_label)"; [ -z "$client" ] || holder="$client via $holder"
       info="\"io.modelcontextprotocol/clientInfo\":{\"name\":\"$holder\"}"

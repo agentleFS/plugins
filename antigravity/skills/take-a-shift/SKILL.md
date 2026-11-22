@@ -21,14 +21,15 @@ a note, a document, a command line or your reply.
 
 **Rules** (the steps below say how):
 
-- Take one agent's seat at a time. Never `take_over` unless the person says the other session is gone.
+- Take one agent's seat at a time. Never take a seat over (`identity_write` `action: take_over`) unless the
+  person says the other session is gone.
 - Every seat you take, you release (`release_seat`) before you move on or end, even when you did nothing.
 - One answer per question: once sent, it is done; never send it again.
 - Release any claim you hold on a document before you send the answer that says the work is done:
   that answer may start someone else's write to the same document, which your claim would refuse.
 - Every call that carries the seat renews it to a whole lease from that call, so a shift keeps its
   seat while it keeps calling. Before a step that will run for minutes with no agentleFS call (a
-  build, a test run, a long wait on a command), `identity_write` `action: renew_seat` with `lease_s: 300`.
+  build, a test run, a long wait on a command), `seat_write` `action: renew_seat` with `lease_s: 300`.
   300 seconds is the longest lease, so a step that may run longer goes in the background: start it,
   then check on it at least every four minutes, renewing the seat at each check, until it finishes.
   Stay in your session until then, headless too: a session that ends while its step runs leaves the
@@ -66,13 +67,13 @@ a note, a document, a command line or your reply.
 
 ## 2. Clock in
 
-`identity_write` `action: take_seat`, `acting_as` the agent. Every call you make with the seat keeps it.
+`seat_write` `action: take_seat`, `acting_as` the agent. Every call you make with the seat keeps it.
 
 - **`seat_held ... until <time>`**: another session is on this agent. Do not wait for the lease
   to run out, not even once: that session is working, and waiting burns turns doing nothing. Say
   who holds it, move to the next agent with work, and if every one is held, say so and stop. Only
   when the person says that session is gone (closed, crashed, out of tokens), call
-  `identity_write` `action: take_seat` with `take_over: true`; it fences the old session off. If `take_over` is refused with a time, the dead
+  `identity_write` `action: take_over`, `acting_as` the agent; it fences the old session off. If `take_over` is refused with a time, the dead
   session's lease has not lapsed yet: that is the one wait allowed, so retry at that time.
 - The answer names the agent's `folder` and its open `inbox`. Read its record before anything else
   (acting_as, seat): first `state.md` (`read` `action: document`, `location`
@@ -140,10 +141,11 @@ the moment they say they are switching tools or running low on tokens.
    and what it asks), `Done:` (the current task's finished steps, each with its message or document id;
    earlier tasks as one line, such as "req-001 to req-149 answered"), `Next:`, `Waiting
    on: <who> until <when>` (which message), `Keys in flight:` (idempotency keys of writes journaled but not
-   yet confirmed), and `journal_through:` the end of the journal after your note (the append's answer
+   yet confirmed), `Permissions offer:` (once made, `made <date>` and the answer; carry it into every
+   later checkpoint), and `journal_through:` the end of the journal after your note (the append's answer
    gives it as the end of the bytes it added). Keep it under 40 lines: every shift in every tool reads
    it first. When the journal passes 50 KB, start `journal-<YYYY-MM>.md` and name it in the state.
-4. `identity_write` `action: release_seat` (acting_as, seat), so the next session clocks in at once.
+4. `seat_write` `action: release_seat` (acting_as, seat), so the next session clocks in at once.
 
 Then take the next agent with work, unless the person asked for one shift. One session can work
 several agents in turn; answering as one may be what another was waiting for, so re-check its
@@ -247,19 +249,27 @@ calls nothing. The other tools also find this skill through agentleFS when a pro
 
 ### Fewer permission prompts (the person's choice)
 
-The journal and document writes (`doc_update`) and closing a request (`coordination_write`) are marked
-destructive, so many clients ask the person before each one; `doc_create` and `message_write` are additive. Offer once in a session, and only when the person mentions approvals or
-prompts, or declines one of your writes. Never pause the shift for it: finish the shift first
-(journal, checkpoint, seat released), then put the offer at the end of your reply as a short
-question naming your tool. You often cannot tell whether anyone is reading, so the offer must never
+A shift writes through five tools: `seat_write`, `doc_create` and `message_write` only add, and
+`doc_update` and `coordination_write` are marked destructive, so most tools ask the person before
+each of them until they allow it. Offer once per
+agent, at the end of a shift that wrote something, unless its `state.md` has a `Permissions offer:` line;
+also offer when the person mentions approvals or prompts, or declines one of your writes. Never pause
+the shift for it: finish the shift first (journal, checkpoint, seat released), then put the offer at
+the end of your reply as a short question naming your tool, and write `Permissions offer: made <date>`
+into the checkpoint (step 3 of clocking out), which every later session reads in full. You often cannot tell whether anyone is reading, so the offer must never
 hold up the work.
 
-- Suggest allowing `doc_update` and `coordination_write`; suggest leaving `doc_delete`, `access_grant` and `access_revoke` on asking.
+- Offer two choices. Recommended: allow `seat_write`, `doc_create`, `doc_update`, `message_write` and
+  `coordination_write`, the writes a shift makes, and keep `doc_delete`, `access_grant`,
+  `access_revoke` and `identity_write` (agent administration) on asking. Or, if they prefer, allow
+  every agentleFS tool at once; say that this includes deletes, shares and agent administration.
+- Say the setting must be made permanent in the tool's own settings: "allow for this session" in a
+  prompt lasts only for that session, and the next shift asks again.
 - Never change their permission settings yourself, and never add a hook or allow rule that approves
   your own calls. The setting is theirs.
 - If they say yes, read `references/permissions.md` beside this file: where each tool keeps the
-  setting (give only your tool's line), and what to check if it still asks.
-- If they decline or do not answer, do not offer again in this session. Either way, the shift goes on.
+  setting (give only your tool's line), and what to check if it still asks. Add their answer to the `Permissions offer:` line.
+- If they decline or do not answer, do not offer again for this agent. Either way, the shift goes on.
 
 ### Run on your plans
 

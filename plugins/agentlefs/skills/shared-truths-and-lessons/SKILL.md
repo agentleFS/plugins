@@ -174,7 +174,7 @@ organization have shared with the world.
   into the organization, keeping where it came from. Ask which folder.
 - `registry_write` `action: "comment"` and `action: "rate"` are public. A comment from a
   session that has read this organization's documents is refused (`would_disclose`), because
-  it could carry them; `identity_write` with `action: "new_session"` starts a clean one.
+  it could carry them; `seat_write` with `action: "new_session"` starts a clean one.
 - `registry_write` with `action: "propose"`, a `slug` (lowercase letters, digits and hyphens), `summary`, and
   `from_knowledge` or `from_document` asks to publish something of the user's. It returns a
   link for the user, who reviews the diff and approves or declines. Nothing becomes public

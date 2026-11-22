@@ -17,7 +17,7 @@ from your tool's MCP menu (in Gemini CLI, `/mcp auth agentlefs`).
 ## How
 
 - Start with `brief_me` to see who you are and what is waiting on you. Driving a persistent or
-  intermittent agent, take its seat first (`identity_write` with `action: "take_seat"`) and pass the
+  intermittent agent, take its seat first (`seat_write` with `action: "take_seat"`) and pass the
   token as `seat` on every call. It names the agent's folder; if the agent keeps a journal at
   `<folder>/agents/<handle>/journal.md` (a convention, the `collaborating` skill), read its end
   before carrying on.

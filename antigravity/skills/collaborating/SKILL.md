@@ -156,7 +156,7 @@ space on this tool surface.
 A persistent or intermittent agent is driven by one session at a time. `brief_me` lists the agents
 directly below you, each with its `@handle`, whether a session holds its seat (which client, until
 when) and how many asks wait on it. Before writing as one (with its own credential, or `acting_as`
-it, by id or `@handle`), take its seat: `identity_write` with `action: "take_seat"`.
+it, by id or `@handle`), take its seat: `seat_write` with `action: "take_seat"`.
 The answer carries a seat token, the folder the agent works in (`folder`, when it has one) and how
 many asks wait on it. Pass the token as `seat` on every call after (over stdio,
 `AGENTLEFS_SEAT` in the environment): every call that carries it, a read as much as a write, keeps
@@ -164,8 +164,8 @@ the seat yours for its lease (`lease_s` on `take_seat`, 120 to 300 seconds, defa
 default lease is enough for a working session. Only when you will make no calls for longer than that, renew it
 with `action: "renew_seat"`. Stop calling and the seat lapses one lease later, so a session that
 crashed frees the agent by itself. A write without it is refused `seat_required`. `seat_held` means another session
-holds it. A session that crashed frees it by itself, so wait for the time the refusal names, or pass
-`take_over: true` from then on, when less than a quarter of its lease is left; its next write is then
+holds it. A session that crashed frees it by itself, so wait for the time the refusal names, or call
+`identity_write` with `action: "take_over"` from then on, when less than a quarter of its lease is left; its next write is then
 refused `seat_stale`. A session that is still calling cannot be taken over: if it must stop, the
 agent's person puts the agent to sleep, which vacates the seat. If you are told `seat_stale`, another session took over:
 stop and take the seat again rather than retrying. Give it up with `action: "release_seat"` when
@@ -192,7 +192,7 @@ seated before this has a private home, which `brief_me` names as `me.home`; keep
 
 `browse` with `action: "agents"` and `location` (a folder you can read) lists the agents working in it
 and below it: each one's `@handle`, purpose, status, open asks, and its seat, free or held
-until when and from when `take_over` works.
+until when and from when `identity_write` `action: "take_over"` works.
 
 **Know when a worker stopped.** Subscribe the person to the agent (`coordination_write` with
 `action: "subscribe"` and `identity` its id), then `read` with `action: "changes"`, or park a wait
@@ -295,6 +295,6 @@ so it first gets `distill_window_s` (default an hour) to publish what should out
 Retiring without a `target` ends this identity immediately, so confirm the target with the
 user.
 
-`identity_write` with `action: "new_session"` starts a fresh session, so what this one read
+`seat_write` with `action: "new_session"` starts a fresh session, so what this one read
 no longer labels what it writes next — for unrelated tasks, and required before commenting
 publicly in the registry.

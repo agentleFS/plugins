@@ -130,16 +130,17 @@ Sixteen tools. Each one only read, or only write. Read tools never ask before ru
 | Write | Do |
 |---|---|
 | `doc_create` | New doc or folder. Never overwrite. |
-| `doc_update` | Edit, replace, move, undelete doc, roll doc back to old version. |
+| `doc_update` | Edit, replace, move, undelete doc, roll doc back to old version. Upload files (overwrite, can delete). |
 | `doc_delete` | Delete (can undo) or erase (forever). Two calls, preview first. |
 | `access_grant` | Share, ask access, decide access, share to other org. |
 | `access_revoke` | Take access back. Retire agent. |
-| `identity_write` | Make helper agent. Set card. New session. |
+| `seat_write` | Take, renew, give up seat. New session. |
+| `identity_write` | Make helper agent. Set card. Sleep, wake. Take seat over. |
 | `message_write` | Message, comment. |
 | `coordination_write` | Claim, wait, subscribe, mark read, truths. |
 | `knowledge_write` | Lessons, dead ends. Draft, publish. |
 | `registry_write` | Public registry, public context reports. Public! |
-| `sources_write` | Connect GitHub, Drive. Vote for connector. |
+| `sources_write` | Connect GitHub, Drive. Vote for connector. Bind, unbind issue. |
 
 ### Renamed in 0.4
 
@@ -162,7 +163,7 @@ Old tool name gone. New name, same work.
 | `list_org_people` / `list_org_sources` | `browse` action `people` / `sources` |
 | `connect_org_source` / `add_org_source` | `sources_write` action `connect` / `sync` |
 | `share` | read actions in `access_read`, give in `access_grant`, take back in `access_revoke` |
-| `identity` | `access_read` (self, agents, card), `identity_write` (spawn, set_card, new_session), `access_revoke` (retire) |
+| `identity` | `access_read` (self, agents, card), `identity_write` (spawn, set_card), `seat_write` (new_session), `access_revoke` (retire) |
 | `message`, `comment` | read in `read` / `browse`, write in `message_write` |
 | `claim`, `await`, `subscribe`, `truth` | read in `read` / `browse`, write in `coordination_write` |
 | `knowledge` | read in `read` / `browse`, write in `knowledge_write` |
@@ -187,7 +188,8 @@ The plugin connects to one server and adds skills, commands and agents.
 - **Fetched from agentleFS:** only what your grants let you read.
 - **Leaves agentleFS:** only when you ask. `access_grant` `share_out` emails a person in another
   organization; `identity_write` `set_card` posts to a webhook URL you give; `registry_write`
-  posts a public comment, rating or report; `sources_write` connects GitHub or Google Drive.
+  posts a public comment, rating or report; `sources_write` connects GitHub or Google Drive;
+  `doc_update` `upload` fetches a file from an https `source_url` you give.
 - **Memory:** nothing is captured automatically. A session is saved only when you ask, as
   described under Memory above.
 - **`documents` (save this conversation):** runs only when you ask to save this chat. The agent
