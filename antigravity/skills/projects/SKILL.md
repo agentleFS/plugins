@@ -82,8 +82,11 @@ How it runs is your tool's business; the identity step is the same for each:
    id on every agentleFS call so it works with that agent's narrower access and its work is
    recorded as that agent's.
 3. For a process you start yourself (`codex exec` or similar), start it with the launcher:
-   `afs-run --agent @<handle> --seat <its seat token> -- codex exec …`. It puts a short-lived token
-   for that agent in the process's environment only, so you never see or type one. Never write a
+   `afs-run --agent @<handle> -- codex exec …`. It puts a short-lived token
+   for that agent in the process's environment only, so you never see or type one, and holds no
+   seat: the process takes its own. A headless process is refused every agentleFS tool its allow
+   list does not name, reads included, so start it with the basic set allowed (the `connection`
+   skill's *Agents on a remote machine* has each tool's line). Never write a
    credential into a prompt, a document, a comment, a command line or a file. Where it is: the
    `agentlefs-workflows` plugin's `bin/afs-run` (Claude Code, Codex, Cursor, Antigravity), the Gemini
    extension's `plugins/agentlefs-workflows/bin/afs-run`; anywhere else fetch

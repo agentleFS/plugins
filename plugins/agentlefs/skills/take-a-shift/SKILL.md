@@ -169,8 +169,11 @@ are the mother session: you set the work up and start the workers; the workers t
 2. **Launch the workers**, in the background with your shell, one per agent, each a tool session
    signed in with the person's own plan (Setup, "Run on your plans"). For Claude Code, headless as
    the agent (`afs-run` from Setup):
-   `env -u ANTHROPIC_API_KEY -u AGENTLEFS_TOKEN -u AGENTLEFS_TOKEN_FILE afs-run --agent @<h> -- claude -p --strict-mcp-config --mcp-config '{"mcpServers":{"afs":{"command":"afs-run","args":["mcp","--agent","@<h>"]}}}' --allowedTools 'mcp__afs__*' Skill -- "any work? Work as @<h> in <folder>. Take every shift you can, then stop."`
-   The final `--` matters: `--allowedTools` takes every word after it. It also means no permission prompt.
+   `env -u ANTHROPIC_API_KEY -u AGENTLEFS_TOKEN -u AGENTLEFS_TOKEN_FILE afs-run --agent @<h> -- claude -p --strict-mcp-config --mcp-config '{"mcpServers":{"afs":{"command":"afs-run","args":["mcp","--agent","@<h>"]}}}' --allowedTools 'mcp__afs__read,mcp__afs__browse,mcp__afs__search,mcp__afs__brief_me,mcp__afs__seat_write,mcp__afs__doc_create,mcp__afs__doc_update,mcp__afs__message_write,mcp__afs__coordination_write' -- "any work? Work as @<h> in <folder>. Take every shift you can, then stop."`
+   That allow list is the basic set ("Basic tools, always approved"): headless, every tool not on it
+   is refused, reads included, and a worker that cannot `browse` or `brief_me` cannot start a shift.
+   Use `'mcp__afs__*'` instead only if the person asked to allow every tool. The final `--` matters:
+   `--allowedTools` takes every word after it.
    With `--strict-mcp-config` the tool schemas may be deferred: a worker loads them (ToolSearch) before its
    first call. `read` `action: wait` takes `wait_id`, and `doc_update` `action: edit` with `append` cannot
    carry `expected_commit` (an append applies to the document as it is).
@@ -247,29 +250,46 @@ Codex CLI does not look for work in agentleFS unless this file is installed in i
 (`.agents/skills/` or `~/.agents/skills/`): given only "any work?" without it, it asks what to do and
 calls nothing. The other tools also find this skill through agentleFS when a project folder holds it.
 
-### Fewer permission prompts (the person's choice)
+### Basic tools, always approved (ask the person)
 
-A shift writes through five tools: `seat_write`, `doc_create` and `message_write` only add, and
-`doc_update` and `coordination_write` are marked destructive, so most tools ask the person before
-each of them until they allow it. Offer once per
-agent, at the end of a shift that wrote something, unless its `state.md` has a `Permissions offer:` line;
-also offer when the person mentions approvals or prompts, or declines one of your writes. Never pause
-the shift for it: finish the shift first (journal, checkpoint, seat released), then put the offer at
-the end of your reply as a short question naming your tool, and write `Permissions offer: made <date>`
-into the checkpoint (step 3 of clocking out), which every later session reads in full. You often cannot tell whether anyone is reading, so the offer must never
+A shift reads through `read`, `browse`, `search` and `brief_me` and writes through `seat_write`,
+`doc_create`, `doc_update`, `message_write` and `coordination_write`. Most tools ask the person before
+each write until they allow it, and a headless worker is refused every tool not on its allow list,
+reads included, since nobody is there to approve it. So ask the person, once per agent, whether they
+want these always approved: at the end of a shift that wrote something, unless its `state.md` has a
+`Permissions offer:` line; also when the person mentions approvals or prompts, or declines one of
+your writes. Never pause the shift for it: finish the shift first (journal, checkpoint, seat
+released), then put the question at the end of your reply, naming your tool, and write
+`Permissions offer: made <date>` into the checkpoint (step 3 of clocking out), which every later
+session reads in full. You often cannot tell whether anyone is reading, so the question must never
 hold up the work.
 
-- Offer two choices. Recommended: allow `seat_write`, `doc_create`, `doc_update`, `message_write` and
-  `coordination_write`, the writes a shift makes, and keep `doc_delete`, `access_grant`,
-  `access_revoke` and `identity_write` (agent administration) on asking. Or, if they prefer, allow
-  every agentleFS tool at once; say that this includes deletes, shares and agent administration.
-- Say the setting must be made permanent in the tool's own settings: "allow for this session" in a
-  prompt lasts only for that session, and the next shift asks again.
-- Never change their permission settings yourself, and never add a hook or allow rule that approves
-  your own calls. The setting is theirs.
-- If they say yes, read `references/permissions.md` beside this file: where each tool keeps the
-  setting (give only your tool's line), and what to check if it still asks. Add their answer to the `Permissions offer:` line.
-- If they decline or do not answer, do not offer again for this agent. Either way, the shift goes on.
+- Ask with three choices:
+  1. **Basic set (recommended)**: always allow those nine, the reads and routine writes a shift
+     makes, and keep `doc_delete`, `access_grant`, `access_revoke` and `identity_write` (agent
+     administration) asking. Where each tool keeps that setting is in `references/permissions.md`.
+  2. **Every tool (allow-all)**: allow every agentleFS tool at once. Say plainly that this includes
+     deletes, shares and agent administration, which then run without asking. How the person turns
+     it on:
+     - Claude (claude.ai, the desktop app, Claude in a browser): open
+       https://claude.ai/settings/connectors (if that does not list connectors,
+       https://claude.ai/customize/connectors, the address Claude's help centre gives), open
+       agentleFS, and set every group of tools to Always allow.
+     - Claude Code with the agentleFS plugin: `/permissions`, or in `~/.claude/settings.json`
+       `"permissions": {"allow": ["mcp__plugin_agentlefs_agentlefs__*"]}`.
+     - Claude Code workers started by `afs-run`: `--allowedTools 'mcp__afs__*'`.
+     - Any other tool: its line in `references/permissions.md`.
+  3. **Keep asking**: change nothing.
+- Always ask; never assume an answer or approve anything on the person's behalf. Never change their
+  permission settings yourself, and never add a hook or allow rule that approves your own calls. The
+  setting is theirs, made in their tool's own settings: "allow for this session" in a prompt lasts
+  only for that session, and the next shift asks again.
+- If they choose 1 or 2, read `references/permissions.md` beside this file and give them only your
+  tool's line: for Claude (claude.ai, the desktop app, a browser) the connector settings link, for
+  Claude Code the allow entries, for the others the setting it names. It also says what to check if
+  it still asks. Add their answer to the `Permissions offer:` line.
+- If they choose 3, decline or do not answer, do not ask again for this agent. Either way, the shift
+  goes on.
 
 ### Run on your plans
 
