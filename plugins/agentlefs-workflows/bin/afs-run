@@ -7,6 +7,8 @@
 #   afs-run --agent @handle [--github owner/repo [--scope "issues:write"]] -- <command...>
 #   afs-run mcp --agent @handle                               a stdio MCP server for a client that
 #                                                             sends only a static header
+#   afs-run watch --agent @a [--agent @b ...] [-- <command...>]   a line (or the command) for each
+#                                                             agent the moment it has new work
 #
 # ON A MACHINE WITH NO BROWSER (a server, CI, a box where Temporal starts `claude -p`): run
 # `afs-run login` once. It prints an address and a code; open the address in any browser where you
@@ -57,6 +59,14 @@
 # this machine ("<client> via afs-run on <machine>"), so a person sees who holds the seat. Nothing
 # secret goes in the client's configuration, and it keeps working past any one token's 15 minutes.
 # Messages are forwarded one at a time, in order.
+# A CREW'S SUPERVISOR (a mother session, a script): `afs-run watch --agent @a --agent @b` holds each
+# agent's wake stream (GET <server>/stream) with its renewed token and prints one line when an agent
+# has new work: `mail @a` (a message arrived) or `wake @a` (one of its waits resolved), a burst within
+# a few seconds being one line. The stream carries no content, so neither does the line. A closed
+# stream (the token's expiry, a deploy) is reopened, backing off up to a minute; an agent whose
+# renewal is refused is no longer watched, and with none left it exits 77. With `-- <command>` it
+# starts the command instead, `{agent}` replaced by the agent, one at a time per agent: work that
+# arrives while one runs starts it once more when it ends. The command gets no token.
 # Every renewal is checked again by agentleFS. When one is refused for good (the folder's grant
 # revoked, the agent asleep, the driver no longer allowed, GitHub's seat lost), the command is stopped
 # (TERM, then KILL after 10 s) with a message on stderr and exit status 77. When the command ends or
@@ -266,13 +276,19 @@ esac
 
 bridge=""
 if [ "${1:-}" = mcp ]; then bridge=1; shift; fi
+watch=""
+if [ "${1:-}" = watch ]; then watch=1; shift; fi
 agent=""
+agents=""
 seat="${AGENTLEFS_SEAT:-}"
 github=""
 scope=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --agent) [ $# -ge 2 ] || die "--agent needs an id or @handle"; agent="$2"; shift 2 ;;
+    --agent) [ $# -ge 2 ] || die "--agent needs an id or @handle"
+      # The watcher prints it and puts it in a command and a sed expression: an id or a handle only.
+      case "$2" in ""|*[!A-Za-z0-9@._-]*) [ -z "$watch" ] || die "--agent $2 is not an id or @handle" ;; esac
+      agent="$2"; agents="$agents $2"; shift 2 ;;
     --seat) die "afs-run takes no seat: the worker takes its own (take_seat). For --github, the shift that holds the seat passes it as AGENTLEFS_SEAT" ;;
     --github) [ $# -ge 2 ] || die "--github needs owner/repo"; github="$2"; shift 2 ;;
     --scope) [ $# -ge 2 ] || die "--scope needs permissions, e.g. issues:write"; scope="$2"; shift 2 ;;
@@ -282,7 +298,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$agent" ] || die "--agent is required"
-if [ -n "$bridge" ]; then
+if [ -n "$watch" ]; then
+  [ -z "$github" ] || die "afs-run watch takes no --github"
+  agent="${agents# }"
+  # The command, each word single-quoted, for the eval that replaces {agent} at each start.
+  cmd_q=""
+  for w in "$@"; do cmd_q="$cmd_q '$(printf '%s' "$w" | sed "s/'/'\\\\''/g")'"; done
+elif [ -n "$bridge" ]; then
   [ $# -eq 0 ] || die "afs-run mcp takes no command: it is the MCP server"
   [ -z "$github" ] || die "afs-run mcp takes no --github"
   # The client's messages arrive on this standard input; the bridge reads them as fd 3, since a
@@ -426,6 +448,7 @@ cleanup() {
   revoke_github "$g_tok"; g_tok=""
   revoke_renewal "$g_ref"; g_ref=""
   revoke_renewal "$a_ref"; a_ref=""
+  [ -z "$watch" ] || watch_stop
   rm -rf "$dir"
 }
 stop_child() {
@@ -511,7 +534,130 @@ start_refused() {
   exit 1
 }
 
+# afs-run watch: agent i (1..n) keeps its token, renewal, stream and command in w_<name>_<i>. Each
+# stream is a curl appending to its own file, read here once a second, so this process holds the pid
+# of every curl and command it started and stops each one itself.
+v() { eval "printf '%s' \"\${w_$1_$2:-}\""; }
+setv() { eval "w_$1_$2=\$3"; }
+watch_debounce=2
+watch_connect() {
+  : > "$dir/stream.$1"
+  printf 'header = "Authorization: Bearer %s"\nheader = "Accept: text/event-stream"\nuser-agent = "afs-run"\nurl = "%s"\n' \
+    "$(q "$(v tok "$1")")" "$(q "${endpoint%/token}/stream")" | curl -sSN -K - >> "$dir/stream.$1" 2>/dev/null &
+  setv curl "$1" $!; setv lines "$1" 0; setv since "$1" "$(now)"
+}
+# The events since the last read. A burst starts at its first event; a wake in it names the line.
+watch_read() {
+  n=$(wc -l < "$dir/stream.$1" | tr -d ' ')
+  seen=$(v lines "$1")
+  [ "$n" -gt "$seen" ] || return 0
+  kinds=$(sed -n "$((seen + 1)),${n}p" "$dir/stream.$1" | tr -d '\r' | sed -n -e 's/^event: *mail$/mail/p' -e 's/^event: *wake$/wake/p')
+  setv lines "$1" "$n"
+  [ -n "$kinds" ] || return 0
+  [ -n "$(v first "$1")" ] || setv first "$1" "$(now)"
+  case "$kinds" in *wake*) setv kind "$1" wake ;; *) [ -n "$(v kind "$1")" ] || setv kind "$1" mail ;; esac
+}
+watch_run() {
+  h=$(v agent "$1")
+  (
+    exec </dev/null
+    eval "set -- $cmd_q"
+    n=$#
+    while [ "$n" -gt 0 ]; do w=$1; shift; set -- "$@" "$(printf '%s\n' "$w" | sed "s/{agent}/$h/g")"; n=$((n - 1)); done
+    exec "$@"
+  ) &
+  setv run "$1" $!
+}
+watch_fire() {
+  if [ -z "$cmd_q" ]; then printf '%s %s\n' "$2" "$(v agent "$1")"
+  elif [ -n "$(v run "$1")" ]; then setv again "$1" 1
+  else watch_run "$1"; fi
+}
+watch_drop() {
+  c=$(v curl "$1")
+  [ -z "$c" ] || { kill -TERM "$c" 2>/dev/null; wait "$c" 2>/dev/null; }
+  setv curl "$1" ""
+  live=$(printf '%s\n' $live | grep -vx "$1" | tr '\n' ' ')
+}
+# Every stream closed, every command stopped (TERM, then KILL after 10 s), every renewal revoked.
+watch_stop() {
+  for i in $all; do
+    [ -z "$(v curl "$i")" ] || kill -TERM "$(v curl "$i")" 2>/dev/null
+    [ -z "$(v run "$i")" ] || kill -TERM "$(v run "$i")" 2>/dev/null
+  done
+  for i in $all; do
+    r=$(v run "$i")
+    k=0
+    while [ -n "$r" ] && kill -0 "$r" 2>/dev/null && [ $k -lt 10 ]; do sleep 1; k=$((k + 1)); done
+    [ -z "$r" ] || kill -KILL "$r" 2>/dev/null
+    revoke_renewal "$(v ref "$i")"
+    setv ref "$i" ""; setv run "$i" ""; setv curl "$i" ""
+  done
+}
+watch_main() {
+  all=""
+  i=0
+  trap 'watch_stop; exit 130' INT
+  trap 'watch_stop; exit 143' TERM
+  for a in $agents; do
+    i=$((i + 1)); all="$all $i"; agent="$a"; setv agent "$i" "$a"
+    grant agentlefs || start_refused "$a: agentlefs refused: $why"
+    setv tok "$i" "$tok"; setv ref "$i" "$ref"; setv exp "$i" $(($(now) + ttl)); setv next "$i" "$(next_at "$ttl")"
+    setv at "$i" 0; setv backoff "$i" 1
+  done
+  person=""
+  live="$all"
+  while [ -n "$(printf '%s' "$live" | tr -d ' ')" ]; do
+    t=$(now)
+    for i in $live; do
+      if [ "$t" -ge "$(v next "$i")" ]; then
+        if renew "$(v ref "$i")"; then
+          setv tok "$i" "$tok"; setv ref "$i" "$ref"; setv exp "$i" $((t + ttl)); setv next "$i" "$(next_at "$ttl")"
+        elif [ $? -eq 1 ]; then
+          setv ref "$i" ""
+          printf 'afs-run: %s: its renewal was refused (%s); no longer watching it\n' "$(v agent "$i")" "$why" >&2
+          watch_drop "$i"; continue
+        elif [ "$t" -ge "$(v exp "$i")" ]; then
+          printf 'afs-run: %s: its token expired before it could be renewed (%s); no longer watching it\n' "$(v agent "$i")" "$why" >&2
+          watch_drop "$i"; continue
+        else setv next "$i" $((t + 5)); fi
+      fi
+      c=$(v curl "$i")
+      if [ -n "$c" ]; then
+        watch_read "$i"
+        if ! kill -0 "$c" 2>/dev/null; then
+          # Closed: reopen after the backoff, which a stream that stayed open half a minute resets.
+          wait "$c" 2>/dev/null
+          watch_read "$i"
+          setv curl "$i" ""
+          b=$(v backoff "$i"); [ $((t - $(v since "$i"))) -lt 30 ] || b=1
+          setv at "$i" $((t + b))
+          b=$((b * 2)); [ $b -le 60 ] || b=60
+          setv backoff "$i" $b
+        fi
+      elif [ "$t" -ge "$(v at "$i")" ]; then watch_connect "$i"; fi
+      f=$(v first "$i")
+      if [ -n "$f" ] && [ $((t - f)) -ge $watch_debounce ]; then
+        watch_fire "$i" "$(v kind "$i")"; setv first "$i" ""; setv kind "$i" ""
+      fi
+    done
+    for i in $all; do
+      r=$(v run "$i")
+      if [ -n "$r" ] && ! kill -0 "$r" 2>/dev/null; then
+        wait "$r" 2>/dev/null
+        setv run "$i" ""
+        if [ -n "$(v again "$i")" ]; then setv again "$i" ""; watch_run "$i"; fi
+      fi
+    done
+    sleep 1 &
+    wait $! 2>/dev/null
+  done
+  printf 'afs-run: no agent is left to watch\n' >&2
+  exit 77
+}
+
 # ── start ──
+[ -z "$watch" ] || watch_main
 grant agentlefs || start_refused "agentlefs refused: $why"
 a_tok=$tok; a_ref=$ref; a_exp=$(($(now) + ttl)); a_next=$(next_at "$ttl"); put agentlefs-token "$a_tok"
 g_next=""

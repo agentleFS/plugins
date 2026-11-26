@@ -129,7 +129,6 @@ Also included, and triggered by what you ask rather than by a slash command:
 | `writeback-loop` | Guided write-back before stop — commit findings/docs/comments to suggested targets (soft checklist; human may skip) |
 | `collaborating` | Another agent is involved: claiming a section before editing, asking and waiting for an answer, being told when a doc changes, or a helper agent with narrower access |
 | `swarm-board` | Multi-agent / swarm: doorbell + shared filing cabinet, waits, typed handoffs as the board — soft recipes (especially under cron), not ad-hoc chat |
-| `take-a-shift` | You ask "any work?", or to take a shift on, continue as or check on one of your agents, or to put a crew of agents on a folder — clocks in on a free seat, works its messages, clocks out with a shift note the next session in any tool picks up |
 | `shared-truths-and-lessons` | Record everyday decisions with their rationale, alternatives, relevant attributed human discussion and evidence, without Mandate. Also contest facts, keep lessons and dead ends, or find public skills. |
 | `mandate-ledger` | Create and update team approval requests and decisions in AFS, shared with the AFS-backed Mandate Decisions board. |
 | `sharing` | You share something, need access you lack, have requests to approve, ask who (or which agent) can see something, or offer a folder to another organization |
